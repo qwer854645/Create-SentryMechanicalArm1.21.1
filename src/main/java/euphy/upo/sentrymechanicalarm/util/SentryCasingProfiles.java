@@ -25,6 +25,7 @@ public final class SentryCasingProfiles {
     }
     @SubscribeEvent public static void stop(ServerStoppedEvent event) { profiles=Map.of();SentryCasingDrops.clear(); }
     public static void rebuild(MinecraftServer server) {
+        if(!euphy.upo.sentrymechanicalarm.registry.SentryRegistry.EMPTY_CASING.isBound()){profiles=Map.of();return;}
         var resources=server.getResourceManager();var packs=resources.listPacks().toList();
         Map<ResourceLocation,Boolean> loaded=new LinkedHashMap<>();
         for(var entry:TimelessAPI.getAllCommonAmmoIndex()) {

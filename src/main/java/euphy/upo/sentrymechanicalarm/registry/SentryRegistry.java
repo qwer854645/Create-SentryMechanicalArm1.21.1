@@ -51,8 +51,8 @@ public class SentryRegistry {
 
     public static final DeferredHolder<Item, UnfinishedAmmoItem> UNFINISHED_AMMO = ITEMS.register("unfinished_ammo",
             id -> new UnfinishedAmmoItem(new Item.Properties()));
-    public static final DeferredHolder<Item, EmptyCasingItem> EMPTY_CASING = ITEMS.register("empty_casing",
-            () -> new EmptyCasingItem(new Item.Properties().stacksTo(64)));
+    public static final DeferredHolder<Item, EmptyCasingItem> EMPTY_CASING = euphy.upo.sentrymechanicalarm.SMAStartupConfig.ENABLE_CASINGS.get() ? ITEMS.register("empty_casing",
+            () -> new EmptyCasingItem(new Item.Properties().stacksTo(64))) : DeferredHolder.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MODID,"empty_casing"));
 
     public static final DeferredHolder<Block, BlazeFireControlBlock> BLAZE_FIRE_CONTROL = BLOCKS.register("blaze_fire_control",
             id -> new BlazeFireControlBlock(BlockBehaviour.Properties.of()));
@@ -90,10 +90,12 @@ public class SentryRegistry {
                         output.accept(new net.minecraft.world.item.ItemStack(BLAZE_FIRE_CONTROL_ITEM.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(FIRE_CONTROL_CLIPBOARD.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(UNFINISHED_AMMO.get(), 1));
+                        if(EMPTY_CASING.isBound()){
                         output.accept(new net.minecraft.world.item.ItemStack(EMPTY_CASING.get()));
                         com.tacz.guns.api.TimelessAPI.getAllCommonAmmoIndex().stream()
                                 .sorted(java.util.Map.Entry.comparingByKey())
                                 .forEach(entry -> output.accept(EmptyCasingItem.create(entry.getKey(), 1)));
+                        }
                         output.accept(new net.minecraft.world.item.ItemStack(APPLE_PIE.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(SENTRY_SCOPE.get(), 1));
                     })

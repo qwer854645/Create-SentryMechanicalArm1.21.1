@@ -109,8 +109,14 @@ neoForge {
                     programArgument("--world")
                     programArgument("disabled-alpha10")
                 }
-                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart", "reload", "gunpacks", "randompacks")) suite else "true")
+                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart", "reload", "gunpacks", "randompacks", "casingconfig")) suite else "true")
                 if (providers.gradleProperty("trainDepotSmoke").isPresent) systemProperty("sentry.trainDepot","true")
+                if (suite == "casingconfig") {
+                    programArgument("--universe")
+                    programArgument(file("../casing-config-worlds").absolutePath)
+                    programArgument("--world")
+                    programArgument("validation-"+System.currentTimeMillis())
+                }
                 if (suite == "randompacks") {
                     val namespace=providers.gradleProperty("randomNamespace").get()
                     require(namespace.matches(Regex("[a-z0-9_]+")))

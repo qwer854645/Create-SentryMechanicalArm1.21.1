@@ -14,6 +14,7 @@ public final class EmptyCasingItem extends Item {
     public EmptyCasingItem(Properties properties) { super(properties); }
     public static ResourceLocation ammoId(ItemStack stack) { return stack.get(ModDataComponents.CASING_AMMO.get()); }
     public static ItemStack create(ResourceLocation ammoId, int count) {
+        if(!SentryRegistry.EMPTY_CASING.isBound())return ItemStack.EMPTY;
         var stack = new ItemStack(SentryRegistry.EMPTY_CASING.get(), count);
         stack.set(ModDataComponents.CASING_AMMO.get(), ammoId);
         return stack;

@@ -32,14 +32,23 @@ public final class SentryCasingDrops {
     public static void clear(){pending.clear();budgets.clear();}
     @SubscribeEvent(priority=EventPriority.LOWEST) public static void tick(ServerTickEvent.Post event){clear();}
     private static boolean shooterAllowed(LivingEntity shooter, ResourceLocation ammo) {
-        if(!SMAServerConfig.ENABLE_CASINGS.get()||!SentryCasingProfiles.enabled(ammo))return false;
+        if(!SentryRegistry.EMPTY_CASING.isBound()||!SMAServerConfig.ENABLE_CASINGS.get()||!SentryCasingProfiles.enabled(ammo))return false;
         if(shooter instanceof FakePlayer fp){
             var arm=SentryFakePlayer.getArmFromPlayer(fp);
             if(arm==null||!arm.isShooterActive()||!SMAServerConfig.SENTRY_CASINGS.get())return false;
             // Infinite boxes can feed finite magazines; do not mint recoverable material from them.
             for(var box:arm.attachedAmmoBoxes)if(box.getItem() instanceof IAmmoBox b && b.isCreative(box)
                     &&(b.isAllTypeCreative(box)||ammo.equals(b.getAmmoId(box))))return false;
-        }else if(!(shooter instanceof Player player)||player.isCreative()||player.isSpectator()||!SMAServerConfig.PLAYER_CASINGS.get())return false;
+        }else if(shooter instanceof Player player){
+            if(player.isCreative()||player.isSpectator()||!SMAServerConfig.PLAYER_CASINGS.get())return false;
+        }else{
+            if(!SMAServerConfig.OTHER_CASINGS.get())return false;
+            for(var slot:net.minecraft.world.entity.EquipmentSlot.values()){
+                var stack=shooter.getItemBySlot(slot);
+                if(stack.getItem() instanceof IAmmoBox box&&box.isCreative(stack)
+                        &&(box.isAllTypeCreative(stack)||ammo.equals(box.getAmmoId(stack))))return false;
+            }
+        }
         if(shooter instanceof Player player)for(var stack:player.getInventory().items)
             if(stack.getItem() instanceof IAmmoBox box&&box.isCreative(stack)&&(box.isAllTypeCreative(stack)||ammo.equals(box.getAmmoId(stack))))return false;
         return true;
@@ -57,6 +66,7 @@ public final class SentryCasingDrops {
     @SubscribeEvent(priority=EventPriority.LOWEST) public static void before(GunFireEvent event) {
         if(event.getLogicalSide()!=LogicalSide.SERVER)return;
         var shooter=event.getShooter();pending.remove(shooter);
+        if(!SentryRegistry.EMPTY_CASING.isBound())return;
         var gun=event.getGunItemStack();var api=IGun.getIGunOrNull(gun);if(api==null)return;
         var index=TimelessAPI.getCommonGunIndex(api.getGunId(gun));if(index.isEmpty())return;
         var ammo=index.get().getGunData().getAmmoId();if(!shooterAllowed(shooter,ammo))return;
