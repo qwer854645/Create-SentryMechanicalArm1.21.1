@@ -3,6 +3,7 @@ package euphy.upo.sentrymechanicalarm.util;
 import com.mojang.authlib.GameProfile;
 import com.tacz.guns.api.entity.IGunOperator;
 import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.util.time.GunTime;
 import euphy.upo.sentrymechanicalarm.compat.AeronauticsHelper;
 import euphy.upo.sentrymechanicalarm.content.SentryArmBlock;
 import euphy.upo.sentrymechanicalarm.content.SentryArmBlockEntity;
@@ -301,7 +302,8 @@ public class SentryFakePlayer {
             fp.setItemSlot(EquipmentSlot.MAINHAND, newStack);
 
             operator.draw(() -> newStack);
-            operator.getDataHolder().drawTimestamp = System.currentTimeMillis() - 10000;
+            // TaCZ 1.2 uses its pause-aware clock, not wall-clock epoch time.
+            operator.getDataHolder().drawTimestamp = GunTime.nowMillis() - 10000;
 
         } else {
             if (ItemNBTHelper.hasTag(gunStack)) {

@@ -1114,7 +1114,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
         }
 
         long boltDurationMs = (long) (boltTime * 1000);
-        long elapsed = System.currentTimeMillis() - boltTimestamp;
+        long elapsed = com.tacz.guns.util.time.GunTime.nowMillis() - boltTimestamp;
 
         if (elapsed > boltDurationMs + 500) {
             if (!ctx.iGunFake.hasBulletInBarrel(ctx.fakeHeldItem)) {
@@ -1133,7 +1133,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
 
     private void handleOverheated(FireContext ctx) {
         long heatTimestamp = ctx.dataHolder.heatTimestamp;
-        long currentTimestamp = System.currentTimeMillis();
+        long currentTimestamp = com.tacz.guns.util.time.GunTime.nowMillis();
         long idleTime = currentTimestamp - heatTimestamp;
 
         long coolingDelay = 2000L;

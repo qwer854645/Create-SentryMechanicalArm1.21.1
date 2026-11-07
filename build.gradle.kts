@@ -14,6 +14,11 @@ java {
     toolchain.languageVersion = JavaLanguageVersion.of(21)
 }
 
+// Optional integration smoke test; never packaged in a normal build.
+if (providers.gradleProperty("sentrySmoke").isPresent) {
+    sourceSets.main { java.srcDir("src/smoke/java") }
+}
+
 repositories {
     mavenCentral()
     maven {
@@ -74,6 +79,9 @@ neoForge {
         register("server") {
             server()
             programArgument("--nogui")
+            if (providers.gradleProperty("sentrySmoke").isPresent) {
+                systemProperty("sentry.smoke", "true")
+            }
         }
         register("data") {
             data()
