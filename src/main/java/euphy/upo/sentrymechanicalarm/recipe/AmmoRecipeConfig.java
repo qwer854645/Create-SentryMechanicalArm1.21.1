@@ -92,15 +92,17 @@ public class AmmoRecipeConfig {
     );
 
     public static Config getOverride(ResourceLocation ammoId) {
-        String path = ammoId.getPath().toLowerCase();
-        for (var entry : OVERRIDES.entrySet()) {
+        String path = ammoId.getPath().toLowerCase(java.util.Locale.ROOT);
+        for (var entry : OVERRIDES.entrySet().stream()
+                .sorted(java.util.Comparator.<Map.Entry<String, Config>>comparingInt(e -> e.getKey().length()).reversed()
+                        .thenComparing(Map.Entry::getKey)).toList()) {
             if (path.contains(entry.getKey())) return entry.getValue();
         }
         return null;
     }
 
     public static Config getCategoryDefault(ResourceLocation ammoId) {
-        String lower = ammoId.getPath().toLowerCase();
+        String lower = ammoId.getPath().toLowerCase(java.util.Locale.ROOT);
 
         if (lower.contains(".50") || lower.contains("50ae") || lower.contains("50bmg") || lower.contains("bmg")
                 || lower.contains("magnum") || lower.contains("12.7") || lower.contains("40mm")

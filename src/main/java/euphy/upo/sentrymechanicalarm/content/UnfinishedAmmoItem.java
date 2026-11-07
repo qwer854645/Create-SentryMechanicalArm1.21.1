@@ -51,7 +51,7 @@ public class UnfinishedAmmoItem extends SequencedAssemblyItem {
     public static ResourceLocation getAmmoId(ItemStack stack) {
         CompoundTag tag = ItemNBTHelper.getTag(stack);
         if (tag != null && tag.contains("AmmoId")) {
-            return ResourceLocation.parse(tag.getString("AmmoId"));
+            return ResourceLocation.tryParse(tag.getString("AmmoId"));
         }
         return null;
     }

@@ -121,7 +121,7 @@ public class DeployerHandlerMixin {
                 ResourceLocation ammoId = ammoItem.getAmmoId(handStack);
                 if (ammoId != null) {
                     int copperCount = stackOnBelt.getCount();
-                    int processCount = (copperCount / 3) * 3;
+                    int processCount = Math.min(copperCount, handStack.getCount());
                     if (processCount == 0) {
                         return TransportedItemStackHandlerBehaviour.TransportedResult.doNothing();
                     }
@@ -139,7 +139,10 @@ public class DeployerHandlerMixin {
                     newTransported.stack = unfinished;
 
                     processed.set(true);
-                    return TransportedItemStackHandlerBehaviour.TransportedResult.convertTo(newTransported);
+                    if (processCount == copperCount) return TransportedItemStackHandlerBehaviour.TransportedResult.convertTo(newTransported);
+                    TransportedItemStack remainder = transported.copy();
+                    remainder.stack = stackOnBelt.copyWithCount(copperCount - processCount);
+                    return TransportedItemStackHandlerBehaviour.TransportedResult.convertTo(java.util.List.of(newTransported, remainder));
                 }
             }
 

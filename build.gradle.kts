@@ -80,6 +80,7 @@ neoForge {
             client()
             if (providers.gradleProperty("sentryClientSmoke").isPresent) {
                 systemProperty("sentry.clientSmoke", "true")
+                if (providers.gradleProperty("sentryClientReloadSmoke").isPresent) systemProperty("sentry.clientReloadSmoke", "true")
                 programArgument("--quickPlaySingleplayer")
                 programArgument("phase3-validation")
             }
@@ -89,8 +90,16 @@ neoForge {
             programArgument("--nogui")
             if (providers.gradleProperty("sentrySmoke").isPresent) {
                 val suite = providers.gradleProperty("sentrySmoke").get()
-                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart")) suite else "true")
+                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart", "reload")) suite else "true")
                 if (providers.gradleProperty("trainDepotSmoke").isPresent) systemProperty("sentry.trainDepot","true")
+                if (suite == "reload") {
+                    programArgument("--universe")
+                    programArgument(file("../reload-worlds").absolutePath)
+                    programArgument("--world")
+                    val reloadWorld = providers.gradleProperty("reloadWorld").getOrElse("reload-alpha9-validation")
+                    require(reloadWorld.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,79}"))) { "Use a simple reload world name without paths" }
+                    programArgument(reloadWorld)
+                }
                 if (suite == "restart") {
                     systemProperty("sentry.restartPhase",providers.gradleProperty("restartPhase").getOrElse("prepare"))
                     programArgument("--universe")

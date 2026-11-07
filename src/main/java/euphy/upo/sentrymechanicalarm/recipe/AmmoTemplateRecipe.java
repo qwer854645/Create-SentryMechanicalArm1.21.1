@@ -70,7 +70,8 @@ public class AmmoTemplateRecipe extends CustomRecipe {
         ResourceLocation ammoId = ammo.getAmmoId(ammoStack);
         if (ammoId == null) return ItemStack.EMPTY;
 
-        int resultCount = Math.min(ammoStack.getCount(), copperCount);
+        // Vanilla consumes one item from each occupied crafting slot.
+        int resultCount = 1;
 
         ItemStack result = new ItemStack(SentryRegistry.UNFINISHED_AMMO.get(), resultCount);
         CompoundTag tag = new CompoundTag();

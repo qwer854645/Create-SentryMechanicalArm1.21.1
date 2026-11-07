@@ -55,7 +55,7 @@ public final class SentryGunProfiles {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void start(ServerStartedEvent event) { rebuild(event.getServer()); }
     @SubscribeEvent public static void stop(ServerStoppedEvent event) { server = Map.of(); }
-    @SubscribeEvent public static void sync(OnDatapackSyncEvent event) {
+    @SubscribeEvent(priority = EventPriority.LOWEST) public static void sync(OnDatapackSyncEvent event) {
         if (event.getPlayer() == null || server.isEmpty()) rebuild(event.getPlayerList().getServer());
         var packet = new SentryGunProfilesPacket(server);
         if (event.getPlayer() != null) PacketDistributor.sendToPlayer(event.getPlayer(),packet);

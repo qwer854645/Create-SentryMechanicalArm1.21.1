@@ -18,12 +18,36 @@ import org.joml.Vector4f;
 public final class ClientGeometrySmoke {
     private static int ticks;
     private static boolean done;
+    private static java.util.concurrent.CompletableFuture<Void> reload;
+    private static Object oldDisplay;
+    private static boolean reloadVerified;
+    private static int reloadFailures;
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         if (!Boolean.getBoolean("sentry.clientSmoke") || done) return;
         var mc=Minecraft.getInstance();
         if (mc.level==null || SentryGunProfiles.clientSnapshot().isEmpty()) return;
         if (++ticks<60) return;
-        done=true; int passed=0,failed=0,skipped=0; double maxError=0;
+        if (Boolean.getBoolean("sentry.clientReloadSmoke") && !reloadVerified) {
+            try {
+                var id=net.minecraft.resources.ResourceLocation.parse("tacz:glock_17");
+                var field=euphy.upo.sentrymechanicalarm.network.ClientPacketHandler.class.getDeclaredField("SENTRY_DISPLAYS");field.setAccessible(true);
+                var cache=(java.util.Map)field.get(null);
+                if (reload==null) {
+                    oldDisplay=TimelessAPI.getClientGunIndex(id).orElseThrow().getDefaultDisplay();
+                    cache.put(id,oldDisplay);
+                    reload=mc.reloadResourcePacks();
+                    return;
+                }
+                if (!reload.isDone()) return;
+                reload.join();
+                if (!cache.isEmpty()) throw new AssertionError("Sentry display cache survived resource reload");
+                if (TimelessAPI.getClientGunIndex(id).orElseThrow().getDefaultDisplay()==oldDisplay) throw new AssertionError("TaCZ display was not reloaded");
+                if (SentryGunProfiles.clientSnapshot().isEmpty()) throw new AssertionError("Server profiles cleared by client-only reload");
+                SentryMechanicalArm.LOGGER.info("RELOAD_CLIENT PASS actual resource reload clears sentry displays, refreshes TaCZ models and retains synchronized profiles");
+            } catch(Throwable e) {reloadFailures++;SentryMechanicalArm.LOGGER.error("RELOAD_CLIENT FAIL",e);}
+            reloadVerified=true;
+        }
+        done=true; int passed=0,failed=reloadFailures,skipped=0; double maxError=0;
         for (var entry:TimelessAPI.getAllClientGunIndex()) {
             var profile=SentryGunProfiles.get(entry.getKey());
             if (!profile.fromModel()) { skipped++; continue; }

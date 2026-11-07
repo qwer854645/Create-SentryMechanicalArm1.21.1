@@ -74,49 +74,24 @@ public class BeltDeployerCallbacksMixin {
 
     @Unique
     private static BeltProcessingBehaviour.ProcessingResult tryActivate(TransportedItemStack transported, TransportedItemStackHandlerBehaviour handler, DeployerBlockEntity deployer) {
-        if (deployer.getPlayer() == null) return BeltProcessingBehaviour.ProcessingResult.PASS;
+        if (deployer.getLevel() == null || deployer.getLevel().isClientSide || deployer.getPlayer() == null) return BeltProcessingBehaviour.ProcessingResult.PASS;
         ItemStack handStack = deployer.getPlayer().getMainHandItem();
         if (handStack.isEmpty()) return BeltProcessingBehaviour.ProcessingResult.PASS;
 
         ItemStack beltStack = transported.stack;
         long gameTime = deployer.getLevel().getGameTime();
 
-        if (handStack.getItem() == AllItems.COPPER_SHEET.get()) {
-            if (beltStack.getItem() != SentryRegistry.UNFINISHED_AMMO.get()) return BeltProcessingBehaviour.ProcessingResult.PASS;
-            if (beltStack.has(AllDataComponents.SEQUENCED_ASSEMBLY)) return BeltProcessingBehaviour.ProcessingResult.PASS;
-            if (UnfinishedAmmoItem.getCopperSheets(beltStack) >= UnfinishedAmmoItem.MAX_COPPER_SHEETS) return BeltProcessingBehaviour.ProcessingResult.PASS;
-
-            CompoundTag tag = ItemNBTHelper.getOrCreateTag(beltStack);
-            if (gameTime - tag.getLong("SMAPCooldown") < 30) return BeltProcessingBehaviour.ProcessingResult.HOLD;
-            tag.putLong("SMAPCooldown", gameTime);
-
-            int currentCopper = UnfinishedAmmoItem.getCopperSheets(beltStack);
-            UnfinishedAmmoItem.setCopperSheets(beltStack, currentCopper + 1);
-            handStack.shrink(1);
-
-            TransportedItemStack newTransported = transported.copy();
-            newTransported.stack = beltStack.copy();
-            handler.handleProcessingOnItem(transported, TransportedResult.convertTo(newTransported));
-
-            return BeltProcessingBehaviour.ProcessingResult.HOLD;
-        }
-
-        if (handStack.getItem() == Items.GUNPOWDER) {
-            if (beltStack.getItem() != SentryRegistry.UNFINISHED_AMMO.get()) return BeltProcessingBehaviour.ProcessingResult.PASS;
-            if (beltStack.has(AllDataComponents.SEQUENCED_ASSEMBLY)) return BeltProcessingBehaviour.ProcessingResult.PASS;
-            if (UnfinishedAmmoItem.hasGunpowder(beltStack)) return BeltProcessingBehaviour.ProcessingResult.PASS;
-
-            CompoundTag tag = ItemNBTHelper.getOrCreateTag(beltStack);
-            if (gameTime - tag.getLong("SMAPCooldown") < 120) return BeltProcessingBehaviour.ProcessingResult.HOLD;
-            tag.putLong("SMAPCooldown", gameTime);
-
-            UnfinishedAmmoItem.setGunpowderAdded(beltStack);
-            handStack.shrink(1);
-
-            TransportedItemStack newTransported = transported.copy();
-            newTransported.stack = beltStack.copy();
-            handler.handleProcessingOnItem(transported, TransportedResult.convertTo(newTransported));
-
+        if (handStack.is(AllItems.COPPER_SHEET.get()) || handStack.is(Items.GUNPOWDER)) {
+            var result = euphy.upo.sentrymechanicalarm.recipe.LegacyAmmoProcessing.apply(beltStack, handStack, gameTime);
+            if (result == null) return BeltProcessingBehaviour.ProcessingResult.HOLD;
+            TransportedItemStack output = transported.copy();
+            output.stack = result.processed();
+            if (result.remainder().isEmpty()) handler.handleProcessingOnItem(transported, TransportedResult.convertTo(output));
+            else {
+                TransportedItemStack remainder = transported.copy();
+                remainder.stack = result.remainder();
+                handler.handleProcessingOnItem(transported, TransportedResult.convertToAndLeaveHeld(java.util.List.of(output), remainder));
+            }
             return BeltProcessingBehaviour.ProcessingResult.HOLD;
         }
 

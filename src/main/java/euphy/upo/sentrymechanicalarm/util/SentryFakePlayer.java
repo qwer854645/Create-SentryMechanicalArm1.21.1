@@ -222,6 +222,18 @@ public class SentryFakePlayer {
         }
     }
 
+    /** TaCZ attachment properties and burst tasks belong to the old resource generation. */
+    public static void invalidateGunData() {
+        for (var arm : new java.util.ArrayList<>(FAKE_PLAYERS.keySet())) {
+            if (arm != null) remove(arm);
+        }
+        for (var player : CONTRAPTION_FAKE_PLAYERS.values()) {
+            player.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+            player.discard();
+        }
+        CONTRAPTION_FAKE_PLAYERS.clear();
+    }
+
     public static void sync(FakePlayer fp, SentryArmBlockEntity arm, float yaw, float pitch, ItemStack gunStack) {
         updatePose(fp,arm);
         yaw=fp.getYRot();pitch=fp.getXRot();

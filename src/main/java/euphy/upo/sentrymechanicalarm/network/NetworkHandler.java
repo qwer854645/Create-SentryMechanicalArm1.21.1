@@ -16,7 +16,7 @@ public class NetworkHandler {
 
     @SubscribeEvent
     public static void register(final RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("4");
+        PayloadRegistrar registrar = event.registrar("5");
         registrar.playToClient(SentryContraptionStatePacket.TYPE,SentryContraptionStatePacket.CODEC,
                 (payload,context)->context.enqueueWork(()->dispatchClientHandler("handleContraptionState",SentryContraptionStatePacket.class,payload)));
         registrar.playToClient(SentryGunProfilesPacket.TYPE,SentryGunProfilesPacket.CODEC,

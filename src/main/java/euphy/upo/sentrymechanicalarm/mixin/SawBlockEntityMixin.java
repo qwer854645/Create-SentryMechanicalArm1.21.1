@@ -1,6 +1,5 @@
 package euphy.upo.sentrymechanicalarm.mixin;
 
-import com.google.common.collect.Multimap;
 import com.simibubi.create.AllRecipeTypes;
 import com.simibubi.create.content.kinetics.saw.SawBlockEntity;
 import com.simibubi.create.content.processing.recipe.ProcessingInventory;
@@ -25,9 +24,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -73,19 +70,11 @@ public abstract class SawBlockEntityMixin {
 
     private List<RecipeHolder<? extends Recipe<?>>> getCuttingRecipesFromManager(SawBlockEntity self) {
         List<RecipeHolder<? extends Recipe<?>>> result = new ArrayList<>();
-        try {
-            RecipeManager recipeManager = self.getLevel().getServer().getRecipeManager();
-            RecipeType<?> cuttingType = AllRecipeTypes.CUTTING.getType();
-            Field byTypeField = RecipeManager.class.getDeclaredField("byType");
-            byTypeField.setAccessible(true);
-            Multimap<RecipeType<?>, RecipeHolder<?>> byType =
-                    (Multimap<RecipeType<?>, RecipeHolder<?>>) byTypeField.get(recipeManager);
-            Collection<RecipeHolder<?>> cuttingHolders = byType.get(cuttingType);
-            if (cuttingHolders != null) {
-                result.addAll(cuttingHolders);
-            }
-        } catch (Exception e) {
-            SentryMechanicalArm.LOGGER.error("SawBlockEntity NBT filter: failed to query RecipeManager", e);
+        if (self.getLevel() == null) return result;
+        RecipeManager recipeManager = self.getLevel().getRecipeManager();
+        RecipeType<?> cuttingType = AllRecipeTypes.CUTTING.getType();
+        for (RecipeHolder<?> holder : recipeManager.getRecipes()) {
+            if (holder.value().getType() == cuttingType) result.add(holder);
         }
         return result;
     }
@@ -105,7 +94,7 @@ public abstract class SawBlockEntityMixin {
         if (stack.getItem() == SentryRegistry.UNFINISHED_AMMO.get()) {
             CompoundTag tag = ItemNBTHelper.getTag(stack);
             if (tag != null && tag.contains("AmmoId")) {
-                return ResourceLocation.parse(tag.getString("AmmoId"));
+                return ResourceLocation.tryParse(tag.getString("AmmoId"));
             }
         }
         IAmmo ammo = IAmmo.getIAmmoOrNull(stack);

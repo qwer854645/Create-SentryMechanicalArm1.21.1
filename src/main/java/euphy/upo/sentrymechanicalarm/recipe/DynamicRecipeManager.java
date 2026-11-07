@@ -1,6 +1,5 @@
 package euphy.upo.sentrymechanicalarm.recipe;
 
-import com.google.common.collect.Multimap;
 import com.simibubi.create.AllItems;
 import com.simibubi.create.content.kinetics.press.PressingRecipe;
 import com.simibubi.create.content.kinetics.saw.CuttingRecipe;
@@ -24,33 +23,55 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
-import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.component.CustomData;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.crafting.DataComponentIngredient;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 
-import java.lang.reflect.Field;
 import java.util.*;
 
 @EventBusSubscriber(modid = SentryMechanicalArm.MODID)
 public class DynamicRecipeManager {
 
     private static Item taczAmmoItem;
+    // Track actual holders, so a data-pack replacement with the same id remains authoritative.
+    private static final Map<RecipeManager, Map<ResourceLocation, RecipeHolder<?>>> GENERATED = new WeakHashMap<>();
 
     @SubscribeEvent
     public static void onServerAboutToStart(ServerAboutToStartEvent event) {
-        RecipeManager recipeManager = event.getServer().getRecipeManager();
+        rebuild(event.getServer().getRecipeManager());
+    }
+
+    @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.HIGHEST)
+    public static void onDatapackSync(net.neoforged.neoforge.event.OnDatapackSyncEvent event) {
+        // Fired after TaCZ has initialized its recipes/tags and before vanilla recipe sync.
+        // A single-player login must not invalidate active shooters or regenerate recipes.
+        if (event.getPlayer() != null) return;
+        rebuild(event.getPlayerList().getServer().getRecipeManager());
+        euphy.upo.sentrymechanicalarm.util.SentryFakePlayer.invalidateGunData();
+    }
+
+    @SubscribeEvent
+    public static void onStop(net.neoforged.neoforge.event.server.ServerStoppedEvent event) {
+        GENERATED.clear();
+    }
+
+    public static void rebuild(RecipeManager recipeManager) {
+        Map<ResourceLocation, RecipeHolder<?>> previous = GENERATED.getOrDefault(recipeManager, Map.of());
+        List<RecipeHolder<?>> base = recipeManager.getRecipes().stream()
+                .filter(holder -> previous.get(holder.id()) != holder).toList();
 
         taczAmmoItem = BuiltInRegistries.ITEM.get(
                 ResourceLocation.fromNamespaceAndPath("tacz", "ammo"));
-        if (taczAmmoItem == null) {
+        if (taczAmmoItem == Items.AIR) {
             SentryMechanicalArm.LOGGER.error("Failed to find TacZ ammo item, aborting recipe injection");
             return;
         }
 
         if (!SMAServerConfig.ENABLE_DYNAMIC_RECIPES.get()) {
+            recipeManager.replaceRecipes(base);
+            GENERATED.remove(recipeManager);
             SentryMechanicalArm.LOGGER.info("Dynamic recipes disabled by config");
             return;
         }
@@ -61,37 +82,19 @@ public class DynamicRecipeManager {
         allNewRecipes.addAll(injectSequencedAssemblyRecipes(recipeManager));
         allNewRecipes.addAll(injectPressingRecipes(recipeManager));
 
-        if (!allNewRecipes.isEmpty()) {
-            injectRecipes(recipeManager, allNewRecipes);
+        LinkedHashMap<ResourceLocation, RecipeHolder<?>> combined = new LinkedHashMap<>();
+        base.forEach(holder -> combined.put(holder.id(), holder));
+        Map<ResourceLocation, RecipeHolder<?>> owned = new HashMap<>();
+        for (var holder : allNewRecipes) {
+            if (combined.putIfAbsent(holder.id(), holder) == null) owned.put(holder.id(), holder);
         }
-        verifyRecipes(recipeManager);
+        recipeManager.replaceRecipes(combined.values());
+        GENERATED.put(recipeManager, owned);
+        SentryMechanicalArm.LOGGER.info("Rebuilt {} dynamic ammo recipes ({} data-pack overrides)",
+                owned.size(), allNewRecipes.size() - owned.size());
     }
 
-    /**
-     * Build a collision-free, stable internal id for an ammo entry.
-     * <p>
-     * Ammo ids are ResourceLocations, i.e. (namespace, path) pairs with unique
-     * semantics. The old code flattened both separators "_" and "/" into a single
-     * "_" ( {@code namespace + "_" + path.replace("/", "_")} ), which is NOT an
-     * injective mapping: two different ids such as {@code a:b/c} and {@code a_b:c}
-     * both collapsed to "a_b_c". Gun packs that name their ammo after the caliber
-     * only (e.g. "9mm", "5.56x45") could therefore produce identical recipe ids,
-     * which blows up with a duplicate-recipe error when the world is loaded.
-     * <p>
-     * This encoder escapes "_" first and then maps "/" to "_", which IS injective,
-     * so every distinct ammo id always yields a distinct recipe path.
-     */
-    /**
-     * Builds a recipe id that is guaranteed to be unique.
-     * <p>
-     * Two different ammo entries can legitimately map to the same readable path
-     * (gun packs that name their ammo after the caliber only may end up with an
-     * identical namespace/path combination). Those entries are <b>different
-     * ammo</b>, so every one of them must keep its own recipe &mdash; we never
-     * drop any of them. The colliding id simply gets a numeric discriminator
-     * appended, which keeps all recipes alive and stops the recipe manager from
-     * throwing a duplicate-recipe error while loading the world.
-     */
+    /** Preserve existing ids; resolve legacy escaping collisions in sorted ammo-id order. */
     private static ResourceLocation uniqueRecipeId(String category, String safePath,
                                                    Set<ResourceLocation> used, int index) {
         String base = category + "/" + safePath;
@@ -113,12 +116,13 @@ public class DynamicRecipeManager {
     }
 
     private static String uniquePath(ResourceLocation ammoId) {
-        // namespace and path are kept as separate, escaped segments => always unique
+        // Retain legacy ids for in-progress assemblies; uniqueRecipeId handles collisions.
         return encodeIdPart(ammoId.getNamespace()) + "_" + encodeIdPart(ammoId.getPath());
     }
 
     public static List<RecipeHolder<?>> injectCuttingRecipes(RecipeManager recipeManager) {
-        var ammoEntries = TimelessAPI.getAllCommonAmmoIndex();
+        var ammoEntries = TimelessAPI.getAllCommonAmmoIndex().stream()
+                .sorted(Map.Entry.comparingByKey()).toList();
         if (ammoEntries.isEmpty()) return List.of();
 
         List<RecipeHolder<?>> newRecipes = new ArrayList<>();
@@ -150,7 +154,8 @@ public class DynamicRecipeManager {
     }
 
     public static List<RecipeHolder<?>> injectSequencedAssemblyRecipes(RecipeManager recipeManager) {
-        var ammoEntries = TimelessAPI.getAllCommonAmmoIndex();
+        var ammoEntries = TimelessAPI.getAllCommonAmmoIndex().stream()
+                .sorted(Map.Entry.comparingByKey()).toList();
         if (ammoEntries.isEmpty()) {
             SentryMechanicalArm.LOGGER.warn("No ammo entries found from TimelessAPI");
             return List.of();
@@ -168,11 +173,6 @@ public class DynamicRecipeManager {
             ResourceLocation recipeId = uniqueRecipeId(
                     "ammo_assembly", safePath, usedRecipeIds, recipeIndex++);
 
-            ItemStack inputUnfinished = new ItemStack(SentryRegistry.UNFINISHED_AMMO.get());
-            CompoundTag inputTag = new CompoundTag();
-            inputTag.putString("AmmoId", ammoId.toString());
-            inputUnfinished.set(DataComponents.CUSTOM_DATA, CustomData.of(inputTag));
-
             ItemStack outputAmmo = new ItemStack(taczAmmoItem, config.outputCount());
             CompoundTag outputTag = new CompoundTag();
             outputTag.putString("AmmoId", ammoId.toString());
@@ -180,7 +180,7 @@ public class DynamicRecipeManager {
 
             SequencedAssemblyRecipeBuilder builder =
                     new SequencedAssemblyRecipeBuilder(recipeId);
-            builder.require(Ingredient.of(inputUnfinished))
+            builder.require(new UnfinishedAmmoIngredient(ammoId, 0, false).toVanilla())
                     .transitionTo(SentryRegistry.UNFINISHED_AMMO.get())
                     .addOutput(outputAmmo, 1)
                     .loops(1);
@@ -198,7 +198,8 @@ public class DynamicRecipeManager {
     }
 
     public static List<RecipeHolder<?>> injectPressingRecipes(RecipeManager recipeManager) {
-        var ammoEntries = TimelessAPI.getAllCommonAmmoIndex();
+        var ammoEntries = TimelessAPI.getAllCommonAmmoIndex().stream()
+                .sorted(Map.Entry.comparingByKey()).toList();
         if (ammoEntries.isEmpty()) return List.of();
 
         List<RecipeHolder<?>> newRecipes = new ArrayList<>();
@@ -207,20 +208,17 @@ public class DynamicRecipeManager {
         for (var entry : ammoEntries) {
             ResourceLocation ammoId = entry.getKey();
             AmmoRecipeConfig.Config config = getOrCreateConfig(ammoId, recipeManager);
+            // The legacy belt path records copper sheets and one gunpowder only.
+            // It cannot account for iron, TNT or arbitrary pack materials.
+            if (!supportsLegacyPressing(config)) continue;
             String safePath = uniquePath(ammoId);
             ResourceLocation pressRecipeId = uniqueRecipeId(
                     "ammo_pressing", safePath, usedRecipeIds, recipeIndex++);
 
-            ItemStack inputComplete = new ItemStack(SentryRegistry.UNFINISHED_AMMO.get());
-            CompoundTag inputTag = new CompoundTag();
-            inputTag.putString("AmmoId", ammoId.toString());
             long materialSteps = config.assemblySteps().stream()
                     .map(Ingredient::getItems)
                     .filter(items -> items.length > 0 && items[0].getItem() != Items.GUNPOWDER)
                     .count();
-            inputTag.putInt("CopperSheets", (int) materialSteps);
-            inputTag.putBoolean("GunpowderAdded", true);
-            inputComplete.set(DataComponents.CUSTOM_DATA, CustomData.of(inputTag));
 
             ItemStack outputAmmo = new ItemStack(taczAmmoItem, config.outputCount());
             CompoundTag outputTag = new CompoundTag();
@@ -228,7 +226,7 @@ public class DynamicRecipeManager {
             outputAmmo.set(DataComponents.CUSTOM_DATA, CustomData.of(outputTag));
 
             PressingRecipe recipe = new StandardProcessingRecipe.Builder<>(PressingRecipe::new, pressRecipeId)
-                    .withItemIngredients(Ingredient.of(inputComplete))
+                    .withItemIngredients(new UnfinishedAmmoIngredient(ammoId, (int) materialSteps, true).toVanilla())
                     .withSingleItemOutput(outputAmmo)
                     .duration(100)
                     .build();
@@ -254,27 +252,29 @@ public class DynamicRecipeManager {
         return AmmoRecipeConfig.getCategoryDefault(ammoId);
     }
 
-    @SuppressWarnings("unchecked")
     private static GunSmithTableRecipe findTaCZRecipe(ResourceLocation ammoId, RecipeManager recipeManager) {
-        try {
-            Field byTypeField = RecipeManager.class.getDeclaredField("byType");
-            byTypeField.setAccessible(true);
-            Multimap<RecipeType<?>, RecipeHolder<?>> byType =
-                    (Multimap<RecipeType<?>, RecipeHolder<?>>) byTypeField.get(recipeManager);
-            for (var entry : byType.entries()) {
-                RecipeHolder<?> holder = entry.getValue();
-                if (!(holder.value() instanceof GunSmithTableRecipe recipe)) continue;
-                ItemStack output = recipe.getOutput();
-                if (output.getItem() != taczAmmoItem) continue;
-                IAmmo ia = IAmmo.getIAmmoOrNull(output);
-                if (ia != null && ammoId.equals(ia.getAmmoId(output))) {
-                    return recipe;
-                }
-            }
-        } catch (Exception e) {
-            SentryMechanicalArm.LOGGER.debug("TaCZ recipe scan failed for {}", ammoId, e);
+        return recipeManager.getRecipes().stream()
+                .sorted(Comparator.comparing(holder -> holder.id().toString()))
+                .map(RecipeHolder::value).filter(GunSmithTableRecipe.class::isInstance)
+                .map(GunSmithTableRecipe.class::cast)
+                .filter(recipe -> {
+                    ItemStack output = recipe.getOutput();
+                    IAmmo ammo = IAmmo.getIAmmoOrNull(output);
+                    return ammo != null && ammoId.equals(ammo.getAmmoId(output));
+                }).findFirst().orElse(null);
+    }
+
+    public static boolean supportsLegacyPressing(AmmoRecipeConfig.Config config) {
+        int sheets = 0, powder = 0;
+        for (Ingredient ingredient : config.assemblySteps()) {
+            ItemStack[] items = ingredient.getItems();
+            if (items.length != 1) return false;
+            ItemStack item = items[0];
+            if (ItemStack.isSameItemSameComponents(item, new ItemStack(AllItems.COPPER_SHEET.get()))) sheets++;
+            else if (ItemStack.isSameItemSameComponents(item, new ItemStack(Items.GUNPOWDER))) powder++;
+            else return false;
         }
-        return null;
+        return sheets > 0 && sheets <= euphy.upo.sentrymechanicalarm.content.UnfinishedAmmoItem.MAX_COPPER_SHEETS && powder == 1;
     }
 
     private record RawStep(ItemStack item, int count) {
@@ -290,7 +290,7 @@ public class DynamicRecipeManager {
                 Ingredient ingredient = input.getIngredient();
                 int count = input.getCount();
                 ItemStack[] items = ingredient.getItems();
-                if (items.length == 0) continue;
+                if (items.length == 0) return null;
 
                 ItemStack rawItem = items[0];
                 if (rawItem.getItem() == Items.AIR) continue;
@@ -456,70 +456,4 @@ public class DynamicRecipeManager {
         return result;
     }
 
-    private static void injectRecipes(RecipeManager recipeManager, List<RecipeHolder<?>> newRecipes) {
-        try {
-            Field byTypeField = RecipeManager.class.getDeclaredField("byType");
-            byTypeField.setAccessible(true);
-            @SuppressWarnings("unchecked")
-            Multimap<RecipeType<?>, RecipeHolder<?>> byType =
-                    (Multimap<RecipeType<?>, RecipeHolder<?>>) byTypeField.get(recipeManager);
-
-            LinkedHashMap<ResourceLocation, RecipeHolder<?>> deduped = new LinkedHashMap<>();
-            for (RecipeHolder<?> holder : byType.values()) {
-                deduped.put(holder.id(), holder);
-            }
-            Set<ResourceLocation> injectedIds = new LinkedHashSet<>();
-            int renamed = 0;
-            for (RecipeHolder<?> holder : newRecipes) {
-                ResourceLocation id = holder.id();
-                if (!injectedIds.add(id)) {
-                    // Never drop a recipe: give the duplicate a unique id instead.
-                    ResourceLocation unique;
-                    do {
-                        renamed++;
-                        unique = ResourceLocation.fromNamespaceAndPath(
-                                SentryMechanicalArm.MODID,
-                                id.getPath() + "/entry_" + renamed);
-                    } while (!injectedIds.add(unique));
-                    SentryMechanicalArm.LOGGER.warn(
-                            "DynamicRecipeManager: recipe id {} already present, kept as {}",
-                            id, unique);
-                    holder = new RecipeHolder<>(unique, holder.value());
-                    id = unique;
-                }
-                deduped.put(id, holder);
-            }
-            Collection<RecipeHolder<?>> allRecipes = deduped.values();
-            recipeManager.replaceRecipes(allRecipes);
-
-            SentryMechanicalArm.LOGGER.info(
-                    "DynamicRecipeManager: Successfully injected {} recipes", newRecipes.size());
-        } catch (Exception e) {
-            SentryMechanicalArm.LOGGER.error(
-                    "DynamicRecipeManager: Failed to inject recipes", e);
-        }
-    }
-
-    private static void verifyRecipes(RecipeManager recipeManager) {
-        int ourRecipes = 0;
-        try {
-            Field byTypeField = RecipeManager.class.getDeclaredField("byType");
-            byTypeField.setAccessible(true);
-            @SuppressWarnings("unchecked")
-            Multimap<RecipeType<?>, RecipeHolder<?>> byType =
-                    (Multimap<RecipeType<?>, RecipeHolder<?>>) byTypeField.get(recipeManager);
-            for (RecipeType<?> type : byType.keySet()) {
-                for (RecipeHolder<?> holder : byType.get(type)) {
-                    if (holder.id().getPath().startsWith("ammo_")) {
-                        ourRecipes++;
-                    }
-                }
-            }
-            SentryMechanicalArm.LOGGER.info(
-                    "DynamicRecipeManager: Found {} our recipes in RecipeManager", ourRecipes);
-        } catch (Exception e) {
-            SentryMechanicalArm.LOGGER.error(
-                    "DynamicRecipeManager: Failed to verify recipes", e);
-        }
-    }
 }
