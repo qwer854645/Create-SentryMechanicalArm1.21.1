@@ -73,6 +73,7 @@ neoForge {
         }
         register("server") {
             server()
+            programArgument("--nogui")
         }
         register("data") {
             data()
@@ -91,7 +92,7 @@ dependencies {
     implementation(libs.neoforge)
 
     // Create - slim jar without transitive deps to avoid missing Curios/CC/FTB/Architectury
-    implementation("maven.modrinth:create:6.0.10+mc1.21.1") {
+    implementation(libs.create) {
         isTransitive = false
     }
 
@@ -115,8 +116,8 @@ dependencies {
     // LuaJ - for script support, bundled via jarJar
     compileOnly("org.luaj:luaj-jse:3.0.1")
 
-    // TaCZ (Timeless and Classics Guns Zero) - NeoForge 1.21.1 version from Modrinth Maven
-    implementation("maven.modrinth:tacz-1.21.1:1.1.8-r2")
+    // Official TaCZ 1.2.0, NeoForge 1.21.1 (CurseForge file 9454361).
+    implementation(libs.tacz)
 
     // Sable Companion — multi-loader compatibility library, bundled via jarJar
     implementation("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:1.6.0")

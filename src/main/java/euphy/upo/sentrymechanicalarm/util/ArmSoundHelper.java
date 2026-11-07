@@ -5,6 +5,7 @@ import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.api.item.attachment.AttachmentType;
 import com.tacz.guns.client.resource.GunDisplayInstance;
 import com.tacz.guns.client.sound.GunSoundInstance;
+import com.tacz.guns.client.resource.pojo.display.SoundData;
 import com.tacz.guns.config.common.GunConfig;
 import com.tacz.guns.init.ModSounds;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
@@ -13,6 +14,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.item.ItemStack;
@@ -68,7 +70,7 @@ public class ArmSoundHelper {
         ArmorStand dummyEntity = getOrCreateDummyEntity(level, pos);
 
         boolean silenced = isSilenced(stack);
-        ResourceLocation soundId = silenced
+        SoundData soundId = silenced
                 ? display.getSounds(SoundManager.SILENCE_SOUND)
                 : display.getSounds(SoundManager.SHOOT_SOUND);
         if (soundId == null) return;
@@ -88,7 +90,7 @@ public class ArmSoundHelper {
     public static void playChargeSound(Level level, Vec3 pos, ItemStack stack, GunDisplayInstance display) {
         ArmorStand dummyEntity = getOrCreateDummyEntity(level, pos);
 
-        ResourceLocation soundId = display.getSounds("charge");
+        SoundData soundId = display.getSounds("charge");
         if (soundId == null) soundId = display.getSounds("warmup");
         if (soundId == null) soundId = display.getSounds("build");
         if (soundId == null) soundId = display.getSounds(SoundManager.BOLT_SOUND);
@@ -100,7 +102,7 @@ public class ArmSoundHelper {
     public static void playBoltSound(Level level, Vec3 pos, GunDisplayInstance display) {
         ArmorStand dummyEntity = getOrCreateDummyEntity(level, pos);
 
-        ResourceLocation soundId = display.getSounds(SoundManager.BOLT_SOUND);
+        SoundData soundId = display.getSounds(SoundManager.BOLT_SOUND);
         if (soundId == null) return;
 
         playDirectSound(dummyEntity, soundId, 1.0f, 1.0f, GunConfig.DEFAULT_GUN_OTHER_SOUND_DISTANCE.get());
@@ -109,7 +111,7 @@ public class ArmSoundHelper {
     public static void playReloadSound(Level level, Vec3 pos, GunDisplayInstance display, boolean noAmmo) {
         ArmorStand dummyEntity = getOrCreateDummyEntity(level, pos);
 
-        ResourceLocation soundId = noAmmo
+        SoundData soundId = noAmmo
                 ? display.getSounds(SoundManager.RELOAD_EMPTY_SOUND)
                 : display.getSounds(SoundManager.RELOAD_TACTICAL_SOUND);
         if (soundId == null) return;
@@ -117,20 +119,28 @@ public class ArmSoundHelper {
         playDirectSound(dummyEntity, soundId, 1.0f, 1.0f, GunConfig.DEFAULT_GUN_OTHER_SOUND_DISTANCE.get());
     }
 
-    private static void playDirectSound(Entity entity, ResourceLocation soundId, float volume, float pitch, int distance) {
+    private static void playDirectSound(Entity entity, SoundData sound, float volume, float pitch, int distance) {
         Minecraft mc = Minecraft.getInstance();
         boolean relative = entity instanceof LocalPlayer;
+        ResourceLocation soundId = sound.getSound();
+        boolean useTaczSound = mc.getResourceManager().getResource(
+                ResourceLocation.fromNamespaceAndPath(soundId.getNamespace(),
+                        "tacz_sounds/" + soundId.getPath() + ".ogg")).isPresent();
+        if (!useTaczSound && mc.getSoundManager().getSoundEvent(soundId) == null) return;
+        SoundEvent event = useTaczSound ? ModSounds.GUN.get()
+                : SoundEvent.createVariableRangeEvent(soundId);
 
         GunSoundInstance instance = new GunSoundInstance(
-                ModSounds.GUN.get(),
+                event,
                 SoundSource.PLAYERS,
-                volume,
-                pitch,
+                sound.resolveVolume(entity.level().random, volume),
+                sound.resolvePitch(entity.level().random, pitch),
                 entity,
                 distance,
                 soundId,
                 false,
-                relative
+                relative,
+                useTaczSound
         );
         mc.getSoundManager().play(instance);
     }
