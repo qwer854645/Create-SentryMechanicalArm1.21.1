@@ -3,7 +3,7 @@
   "block.sentrymechanicalarm.sentry_mechanical_arm": "Sentry Mechanical Arm",
   "block.sentrymechanicalarm.blaze_fire_control": "Blaze Fire Control",
   "sentry.tooltip.firepower": "The Mechanical Arm now possesses firepower",
-  "item.sentrymechanicalarm.sentry_blueprint":"Cardinal of the Seventh Chamber",
+  "item.sentrymechanicalarm.sentry_blueprint": "Cardinal of the Seventh Chamber",
   "sentry.tooltip.ammo": "Ammo Remaining:",
   "sentry.tooltip.gun": "Gun:",
   "sentry.tooltip.range": "Range:",
@@ -47,7 +47,7 @@
   "item.sentrymechanicalarm.fire_control_clipboard.tooltip.behaviour2": "Sentry Mechanical Arms controlled by this Fire Controller will only attack entities on the list.",
   "item.sentrymechanicalarm.fire_control_clipboard": "Cross-border Pursuit Permit",
   "item.sentrymechanicalarm.apple_pie": "Laterano Apple Pie",
-  "item.sentrymechanicalarm.unfinished_ammo":"Unfinished Ammo",
+  "item.sentrymechanicalarm.unfinished_ammo": "Unfinished Ammo",
   "message.sentrymechanicalarm.distance_too_far": "Distance too far! Max 6 blocks.",
   "overlay.sentrymechanicalarm.right_click_connect": "Right-Click to Connect",
   "overlay.sentrymechanicalarm.invalid_target_type": "Invalid Target Type",
@@ -59,10 +59,9 @@
   "overlay.sentrymechanicalarm.list_mode": "List Mode: ",
   "item.sentrymechanicalarm.seventh_chamber.desc_1": "Who says a wheelchair can't drift on steel frames.",
   "item.sentrymechanicalarm.seventh_chamber.desc_2": "2X2",
-  "item.sentrymechanicalarm.seventh_chamber":"Seventh Chamber",
+  "item.sentrymechanicalarm.seventh_chamber": "Seventh Chamber",
   "painting.sentrymechanicalarm.seventh_chamber.title": "Seventh Chamber",
   "painting.sentrymechanicalarm.seventh_chamber.author": "Laterano",
-
   "sentrymechanicalarm.ponder.tag.sentry": "Sentry Firepower from TacZ",
   "sentrymechanicalarm.ponder.tag.sentry.description": "Arm the Mechanical Arm with powerful weapons from TacZ",
   "sentrymechanicalarm.ponder.sentry_arm_intro.header": "Sentry Mechanical Arm",
@@ -100,9 +99,6 @@
   "sentrymechanicalarm.ponder.sentry_arm_move.text_2": "Turret rotation speed is proportional to movement speed.",
   "sentrymechanicalarm.ponder.sentry_arm_move.text_3": "Sentry Mechanical Arms will use ammunition from containers within the contraption.",
   "sentrymechanicalarm.ponder.sentry_arm_move.text_4": "Fire Controllers on moving contraptions remain functional.",
-
-
-
   "item.sentrymechanicalarm.fire_control_clipboard.mode": "Mode: ",
   "item.sentrymechanicalarm.fire_control_clipboard.whitelist": "Whitelist (Safe List)",
   "item.sentrymechanicalarm.fire_control_clipboard.whitelist_des_1": "  -Entities in the list are safe",
@@ -120,5 +116,13 @@
   "message.sentrymechanicalarm.can_mark": "[Middle-Click to Mark]",
   "message.sentrymechanicalarm.no_clipboard": "[No Clipboard in FC]",
   "message.sentrymechanicalarm.list_empty": "(empty)",
-  "message.sentrymechanicalarm.no_ammo": "NO AMMO"
+  "message.sentrymechanicalarm.no_ammo": "NO AMMO",
+  "sentry.supply.none": "Supply: no adjacent ammo depot",
+  "sentry.supply.no_box": "Supply: compatible mounted ammo box required",
+  "sentry.supply.full": "Supply: mounted ammo boxes full",
+  "sentry.supply.no_stock": "Supply: matching ammo unavailable",
+  "sentry.supply.special_only": "Supply: component variants preserved; standard ammo required",
+  "sentry.supply.supplied": "Supply: ammunition replenished",
+  "sentry.supply.creative": "Supply: creative ammo box",
+  "sentry.supply.depot_mounted": "Mounted depot supplies ammunition automatically; disassemble to open its native menu."
 }

@@ -51,6 +51,8 @@ public final class ClientGeometrySmoke {
         catch(Throwable e){failed++;SentryMechanicalArm.LOGGER.error("COG_CLIENT FAIL",e);}
         try{verifyActorRendererFrame();SentryMechanicalArm.LOGGER.info("COG_CLIENT PASS complete actor renderer preserves caller frame (4 renders)");}
         catch(Throwable e){failed++;SentryMechanicalArm.LOGGER.error("COG_CLIENT FAIL renderer frame",e);}
+        try{verifyDepotClient();SentryMechanicalArm.LOGGER.info("DEPOT_CLIENT PASS mounted ledger codec, supply state and translations");}
+        catch(Throwable e){failed++;SentryMechanicalArm.LOGGER.error("DEPOT_CLIENT FAIL",e);}
         SentryMechanicalArm.LOGGER.info("PHASE3_CLIENT RESULT passed={} failed={} skipped={} maxModelError={} receivedProfiles={}",
                 passed,failed,skipped,maxError,SentryGunProfiles.clientSnapshot().size());
         mc.stop();
@@ -121,5 +123,26 @@ public final class ClientGeometrySmoke {
             pose.popPose();
         }
         mc.renderBuffers().bufferSource().endBatch();
+    }
+    private static void verifyDepotClient(){
+        var level=Minecraft.getInstance().level;
+        var id=TimelessAPI.getCommonGunIndex(net.minecraft.resources.ResourceLocation.parse("tacz:ak47")).orElseThrow().getGunData().getAmmoId();
+        var ammo=com.tacz.guns.api.item.builder.AmmoItemBuilder.create().setId(id).setCount(1).build();
+        var special=ammo.copy();special.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,net.minecraft.network.chat.Component.literal("Client variant"));
+        var mounted=new euphy.upo.sentrymechanicalarm.compat.AmmoDepotMountedStorage(216,java.util.List.of(
+                new euphy.upo.sentrymechanicalarm.compat.AmmoDepotMountedStorage.Stock(0,ammo,(long)Integer.MAX_VALUE+71),
+                new euphy.upo.sentrymechanicalarm.compat.AmmoDepotMountedStorage.Stock(1,special,19)));
+        var ops=net.minecraft.resources.RegistryOps.create(net.minecraft.nbt.NbtOps.INSTANCE,level.registryAccess());
+        var codec=com.simibubi.create.api.contraption.storage.item.MountedItemStorage.CODEC;
+        var decoded=(euphy.upo.sentrymechanicalarm.compat.AmmoDepotMountedStorage)codec.parse(ops,codec.encodeStart(ops,mounted).getOrThrow()).getOrThrow();
+        if(decoded.count(0)!=(long)Integer.MAX_VALUE+71 || decoded.count(1)!=19 || !decoded.getStackInSlot(1).has(net.minecraft.core.component.DataComponents.CUSTOM_NAME))throw new AssertionError("Client depot codec lost stock");
+        for(var state:euphy.upo.sentrymechanicalarm.util.SentryAmmoSupply.State.values()){
+            if(!net.minecraft.client.resources.language.I18n.exists("sentry.supply."+state.name().toLowerCase(java.util.Locale.ROOT)))throw new AssertionError("Missing supply translation "+state);
+        }
+        var block=euphy.upo.sentrymechanicalarm.registry.SentryRegistry.SENTRY_ARM_BLOCK.get().defaultBlockState();
+        var arm=euphy.upo.sentrymechanicalarm.content.VirtualSentryArmBlockEntity.fromData(net.minecraft.core.BlockPos.ZERO,block,null,level);
+        arm.setSupplyState(euphy.upo.sentrymechanicalarm.util.SentryAmmoSupply.State.SPECIAL_ONLY);
+        var copy=euphy.upo.sentrymechanicalarm.content.VirtualSentryArmBlockEntity.fromData(net.minecraft.core.BlockPos.ZERO,block,arm.snapshot(),level);
+        if(copy.getSupplyState()!=arm.getSupplyState())throw new AssertionError("Supply state not synchronized");
     }
 }

@@ -23,6 +23,7 @@ public class SentryMechanicalArm
     public SentryMechanicalArm(IEventBus modEventBus, ModContainer modContainer)
     {
         SentryRegistry.register(modEventBus);
+        euphy.upo.sentrymechanicalarm.compat.SentryAmmoDepotCompat.register(modEventBus);
         SentryRecipeSerializers.register(modEventBus);
         SentryArmInteractionPointTypes.register(modEventBus);
         ModDataComponents.register(modEventBus);
@@ -37,6 +38,7 @@ public class SentryMechanicalArm
         event.enqueueWork(() -> {
             SentryRegistry.registerAllStressValues();
             SentryRegistry.registerMovementBehaviours();
+            euphy.upo.sentrymechanicalarm.compat.SentryAmmoDepotCompat.bind();
         });
     }
 

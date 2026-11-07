@@ -62,7 +62,15 @@ public final class TrainSentrySmoke {
         var ammoBox=new ItemStack(com.tacz.guns.init.ModItems.AMMO_BOX.get());
         var box=(com.tacz.guns.api.item.IAmmoBox)ammoBox.getItem();
         box.setAmmoId(ammoBox,com.tacz.guns.api.TimelessAPI.getCommonGunIndex(ResourceLocation.parse(ceiling?"tacz:m16a4":"tacz:ak47")).orElseThrow().getGunData().getAmmoId());
-        box.setAmmoCount(ammoBox,200);placed.addAmmoBox(ammoBox);
+        box.setAmmoCount(ammoBox,Boolean.getBoolean("sentry.trainDepot")?0:200);placed.addAmmoBox(ammoBox);
+        if(Boolean.getBoolean("sentry.trainDepot")){
+            var depotPos=base.above().east();
+            level.setBlock(depotPos,com.tacz.guns.init.ModBlocks.AMMO_STORAGE_DIAMOND.get().defaultBlockState(),3);
+            var depot=(com.tacz.guns.block.entity.AmmoStorageBlockEntity)level.getBlockEntity(depotPos);
+            var standard=com.tacz.guns.api.item.builder.AmmoItemBuilder.create().setId(box.getAmmoId(ammoBox)).setCount(2000).build();
+            depot.insertAmmo(standard,false);var special=standard.copyWithCount(37);
+            special.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,net.minecraft.network.chat.Component.literal("Preserved train variant"));depot.insertAmmo(special,false);
+        }
         var contraption=new CarriageContraption(Direction.SOUTH);
         check(contraption.assemble(level,base),"Carriage assembly rejected");
         check(contraption.getActors().stream().anyMatch(p->p.getKey().state().getBlock() instanceof SentryArmBlock),"Sentry not captured");
@@ -87,7 +95,8 @@ public final class TrainSentrySmoke {
         var entity=carriage.anyAvailableEntity();check(entity!=null,"Carriage entity not instantiated");
         var lane=new Lane();lane.name=name;lane.graph=graph;lane.train=train;lane.carriage=carriage;lane.entity=entity;lane.start=entity.position();lane.startYaw=entity.yaw;
         lane.ctx=entity.getContraption().getActors().stream().filter(p->p.getValue().state.getBlock() instanceof SentryArmBlock).findFirst().orElseThrow().getValue();
-        lane.arm=SentryMovementBehaviour.getOrCreate(lane.ctx);lane.initial=ammo(lane.arm);
+        lane.arm=SentryMovementBehaviour.getOrCreate(lane.ctx);lane.initial=laneAmmo(lane);
+        if(Boolean.getBoolean("sentry.trainDepot"))check(lane.initial==2068,"Mounted train depot missing");
         lane.targetPos=lane.arm.getProjectedWorldPos().add(10,ceiling?-2:1,0);
         lane.target=new Husk(EntityType.HUSK,level);lane.target.setPos(lane.targetPos);lane.target.setNoAi(true);lane.target.setNoGravity(true);lane.target.setPersistenceRequired();
         lane.target.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(1024);lane.target.setHealth(1024);
@@ -98,6 +107,7 @@ public final class TrainSentrySmoke {
         for(var stackBox:arm.attachedAmmoBoxes)if(stackBox.getItem() instanceof com.tacz.guns.api.item.IAmmoBox box)count+=box.getAmmoCount(stackBox);
         return count;
     }
+    static int laneAmmo(Lane lane){return ammo(lane.arm)+(Boolean.getBoolean("sentry.trainDepot")?(int)AmmoDepotSmoke.total(lane.entity.getContraption().getStorage().getAllItems()):0);}
     @SubscribeEvent public static void pre(ServerTickEvent.Pre event){
         if(!running)return;
         for(var lane:lanes){
@@ -120,9 +130,9 @@ public final class TrainSentrySmoke {
         }
         if(ticks<400)return;
         for(var lane:lanes){
-            SentryMechanicalArm.LOGGER.info("TRAIN METRICS {} moved={} shots={} hits={} ammo={} initial={} originError={} alive={} rpm={} yaw={} pitch={} target={} result={}",lane.name,lane.moved,lane.shots,lane.hits,ammo(lane.arm),lane.initial,lane.originError,lane.entity.isAlive(),lane.arm.getSpeed(),lane.entity.yaw,lane.entity.pitch,lane.arm.getSentryStatus(),lane.arm.getLastShootResult());
+            SentryMechanicalArm.LOGGER.info("TRAIN METRICS {} moved={} shots={} hits={} ammo={} initial={} originError={} alive={} rpm={} yaw={} pitch={} target={} result={}",lane.name,lane.moved,lane.shots,lane.hits,laneAmmo(lane),lane.initial,lane.originError,lane.entity.isAlive(),lane.arm.getSpeed(),lane.entity.yaw,lane.entity.pitch,lane.arm.getSentryStatus(),lane.arm.getLastShootResult());
             test(lane.name+" native train travels",()->check(lane.moved>2 && lane.entity.isAlive(),"Train did not travel"));
-            test(lane.name+" server autonomous fire conserves ammo",()->check(lane.shots>0 && lane.initial-ammo(lane.arm)==lane.shots,"No shots or ammo mismatch"));
+            test(lane.name+" server autonomous fire conserves ammo",()->check(lane.shots>0 && lane.initial-laneAmmo(lane)==lane.shots,"No shots or ammo mismatch"));
             test(lane.name+" moving muzzle matches real projectile",()->check(lane.shots>0 && lane.originError<1e-5,"Muzzle mismatch"));
             test(lane.name+" real damage",()->check(lane.hits>0,"No actual damage"));
             test(lane.name+" reversing still fires",()->check(lane.at200>lane.at100,"No fire in reverse phase"));
@@ -134,6 +144,16 @@ public final class TrainSentrySmoke {
                 var ctx=restored.getActors().stream().filter(p->p.getValue().state.getBlock() instanceof SentryArmBlock).findFirst().orElseThrow().getValue();
                 check(ammo(VirtualSentryArmBlockEntity.fromData(ctx.localPos,ctx.state,ctx.blockEntityData,level))==ammo(lane.arm),"Stale carriage ammo");
             });
+            if(Boolean.getBoolean("sentry.trainDepot")){
+                test(lane.name+" depot supplies beyond initial magazine",()->check(lane.shots>60,"Depot never refilled the empty box"));
+                test(lane.name+" depot variants survive carriage serialization",()->{
+                    var palette=new DimensionPalette();var saved=lane.train.write(palette,level.registryAccess());
+                    var copy=Train.read(saved,level.registryAccess(),java.util.Map.of(lane.graph.id,lane.graph),palette);
+                    var inv=copy.carriages.getFirst().storage.getAllItems();long special=0;
+                    for(int slot=0;slot<inv.getSlots();slot++)if(inv.getStackInSlot(slot).has(net.minecraft.core.component.DataComponents.CUSTOM_NAME))special+=inv.getStackInSlot(slot).getCount();
+                    check(special==37 && AmmoDepotSmoke.total(inv)==AmmoDepotSmoke.total(lane.entity.getContraption().getStorage().getAllItems()),"Depot NBT or variant lost");
+                });
+            }
             test(lane.name+" entity removal clears shooter",()->{var fp=SentryFakePlayer.get(lane.arm);lane.entity.discard();check(SentryFakePlayer.getArmFromPlayer(fp)==null && fp.getMainHandItem().isEmpty(),"Shooter retained");});
             lane.target.discard();Create.RAILWAYS.removeTrain(lane.train.id);Create.RAILWAYS.trackNetworks.remove(lane.graph.id);
         }

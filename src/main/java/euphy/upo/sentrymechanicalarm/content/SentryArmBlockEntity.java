@@ -117,6 +117,11 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
     private ShootResult lastShootResult = ShootResult.NOT_DRAW;
     public ShootResult getLastShootResult() { return lastShootResult; }
     private SentryStatus currentStatus = SentryStatus.IDLE;
+    private euphy.upo.sentrymechanicalarm.util.SentryAmmoSupply.State supplyState=euphy.upo.sentrymechanicalarm.util.SentryAmmoSupply.State.NONE;
+    public euphy.upo.sentrymechanicalarm.util.SentryAmmoSupply.State getSupplyState(){return supplyState;}
+    public void setSupplyState(euphy.upo.sentrymechanicalarm.util.SentryAmmoSupply.State state){
+        if(supplyState!=state){supplyState=state;setChanged();sendData();}
+    }
     public long lastShellEjectTime = Long.MIN_VALUE;
 
     public enum SentryStatus {
@@ -321,6 +326,8 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
     /** Shared TaCZ controller for placed blocks and Create actors. */
     public void tickSentryController() {
         if (level == null) return;
+        if(!level.isClientSide && level.getGameTime()%20==0)
+            euphy.upo.sentrymechanicalarm.util.SentryAmmoSupply.refillAdjacent(this);
 
         baseAngle.tickChaser();
         lowerArmAngle.tickChaser();
@@ -1475,6 +1482,8 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
             return superResult;
         }
         addSentryGunTooltip(tooltip, heldItem);
+        if(supplyState!=euphy.upo.sentrymechanicalarm.util.SentryAmmoSupply.State.NONE)
+            tooltip.add(Component.translatable("sentry.supply."+supplyState.name().toLowerCase(java.util.Locale.ROOT)).withStyle(ChatFormatting.GRAY));
         return true;
     }
 
@@ -1880,6 +1889,8 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
     @Override
     protected void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(compound, registries, clientPacket);
+        try{supplyState=euphy.upo.sentrymechanicalarm.util.SentryAmmoSupply.State.valueOf(compound.getString("SupplyState"));}
+        catch(IllegalArgumentException ignored){supplyState=euphy.upo.sentrymechanicalarm.util.SentryAmmoSupply.State.NONE;}
 
         heldItem = ItemStack.EMPTY;
         if (registries != null) {
@@ -1996,6 +2007,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
         }
         color.ifPresent(dyeColor -> NBTHelper.writeEnum(compound, "Dye", dyeColor));
         compound.putInt("SentryStatus", this.currentStatus.ordinal());
+        compound.putString("SupplyState",supplyState.name());
     }
 
     public IItemHandler getItemHandler() {
