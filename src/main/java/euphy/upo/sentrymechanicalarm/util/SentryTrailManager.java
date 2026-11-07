@@ -23,6 +23,7 @@ import java.util.List;
 public class SentryTrailManager {
 
     private static final List<Tracer> tracers = new ArrayList<>();
+    public static void clear() { tracers.clear(); }
 
     private static class Tracer {
         Vec3 startPos;

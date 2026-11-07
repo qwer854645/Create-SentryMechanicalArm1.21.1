@@ -112,6 +112,10 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
     private boolean isTestingRelease = false;
     private int releaseWatchTimer = 0;
     private boolean wasCharging = false;
+    private float sentryCharge;
+    private long lastChargeTick = Long.MIN_VALUE;
+    private ShootResult lastShootResult = ShootResult.NOT_DRAW;
+    public ShootResult getLastShootResult() { return lastShootResult; }
     private SentryStatus currentStatus = SentryStatus.IDLE;
     public long lastShellEjectTime = Long.MIN_VALUE;
 
@@ -195,6 +199,8 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
             shootDelayAccumulator = 0;
             triggerHoldTime = 0;
             wasCharging = false;
+            sentryCharge = 0;
+            lastChargeTick = Long.MIN_VALUE;
             isTestingRelease = false;
             lastScriptDataStr = "";
             lastAimingProgress = -1;
@@ -224,7 +230,8 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
         if (iGun.useInventoryAmmo(heldItem)) {
             currentAmmo = 0;
         }
-        if (currentAmmo > 0 || iGun.hasBulletInBarrel(heldItem)) return true;
+        if (currentAmmo > 0 || (gunData.getBolt() != com.tacz.guns.resource.pojo.data.gun.Bolt.OPEN_BOLT
+                && iGun.hasBulletInBarrel(heldItem))) return true;
 
         ResourceLocation requiredAmmoId = gunData.getAmmoId();
         for (ItemStack box : attachedAmmoBoxes) {
@@ -395,6 +402,8 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
     }
 
     private void sentryDeactivated() {
+        sentryCharge = 0;
+        lastChargeTick = Long.MIN_VALUE;
         float speed = 0.05f;
         lowerArmAngle.chase(135, speed, LerpedFloat.Chaser.EXP);
         upperArmAngle.chase(45, speed, LerpedFloat.Chaser.EXP);
@@ -567,16 +576,21 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
                 float currentUpperArm = upperArmAngle.getValue();
                 boolean isDeployed = currentUpperArm > 80f;
 
-                if (deviation < 1.0 && isDeployed) {
+                var pose = getGunPose();
+                boolean aligned = useLocalSpace ? deviation < 1.0
+                        : pose.aligned(currentTickBestPos,1.0);
+                if (aligned && isDeployed) {
                     if (useLocalSpace) {
                         Vec2 worldAngles = calculateTruthAngle(currentTickBestPos);
                         fireGun(worldAngles.x, worldAngles.y);
                     } else {
-                        fireGun(currentYaw, currentPitch);
+                        fireGun(pose.yaw(), pose.pitch());
                     }
                 }
             }
         } else {
+            sentryCharge = 0;
+            lastChargeTick = Long.MIN_VALUE;
             if (!this.level.isClientSide || this.syncedTargetId == -1) {
                 resetAimer();
             }
@@ -640,15 +654,13 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
         if (isInSableSubLevel()) {
             return getProjectedMuzzlePos();
         }
-        boolean isCeiling = this.isCeiling();
-        float yaw = isCeiling ? baseAngle.getValue() : 180 - baseAngle.getValue();
-        float pitch = isCeiling ? headAngle.getValue() : -headAngle.getValue();
-        double armLen = SentryFakePlayer.getGunArmLength(heldItem);
-        if (SentryFakePlayer.hasEntityBullet(heldItem)) {
-            Vec3 muzzleBase = SentryFakePlayer.getMuzzlePosition(this, yaw, pitch, 0);
-            return muzzleBase.add(0, 1.62, 0);
-        }
-        return SentryFakePlayer.getMuzzlePosition(this, yaw, pitch, armLen);
+        return getGunPose().position();
+    }
+
+    public euphy.upo.sentrymechanicalarm.util.SentryGunGeometry.Pose getGunPose() {
+        return euphy.upo.sentrymechanicalarm.util.SentryGunGeometry.pose(getBlockPos(),isCeiling(),baseAngle.getValue(),
+                lowerArmAngle.getValue(),upperArmAngle.getValue(),headAngle.getValue(),
+                euphy.upo.sentrymechanicalarm.util.SentryGunProfiles.get(heldItem));
     }
 
     public boolean isInSableSubLevel() {
@@ -1012,6 +1024,14 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
         long gameTick = this.level.getGameTime();
         ShooterDataHolder dataHolder = operator.getDataHolder();
 
+        var gunIndex = TimelessAPI.getCommonGunIndex(iGunFake.getGunId(fakeHeldItem));
+        FireMode mode = iGunFake.getFireMode(fakeHeldItem);
+        var charge = gunIndex.map(i -> i.getGunData().getChargeData(mode)).orElse(null);
+        if (charge != null && lastChargeTick != gameTick && (shootDelayAccumulator <= 0 || charge.isChargeDuringCooldown())) {
+            lastChargeTick = gameTick;
+            sentryCharge = Math.min(charge.getMaxCharge(),sentryCharge + Math.max(0,charge.getIncreasePerTick()));
+        }
+
         if (this.shootDelayAccumulator > 0) {
             this.shootDelayAccumulator -= 1.0f;
             this.triggerHoldTime = 0;
@@ -1019,47 +1039,36 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
             return;
         }
 
-        ResourceLocation gunIdRes = iGunFake.getGunId(fakeHeldItem);
-        Optional<CommonGunIndex> gunIndex = TimelessAPI.getCommonGunIndex(gunIdRes);
-        FireMode mode = iGunFake.getFireMode(fakeHeldItem);
+
         if (gunIndex.isPresent()) {
             applySentryAccuracyModifier(operator, iGunFake, fakeHeldItem, gunIndex.get().getGunData());
         }
         this.triggerHoldTime++;
-        boolean hasEntityBullet = SentryFakePlayer.hasEntityBullet(heldItem);
-
-        Vec3 originalPos = fakePlayer.position();
-        if (!hasEntityBullet) {
-            double armLen = SentryFakePlayer.getGunArmLength(heldItem);
-            Vec3 muzzlePos = SentryFakePlayer.getMuzzlePosition(this, targetYaw, targetPitch, armLen);
-            double fpY = muzzlePos.y - fakePlayer.getEyeHeight();
-            fakePlayer.setPos(muzzlePos.x, fpY, muzzlePos.z);
-            fakePlayer.xo = muzzlePos.x;
-            fakePlayer.yo = fpY;
-            fakePlayer.zo = muzzlePos.z;
-            fakePlayer.xOld = muzzlePos.x;
-            fakePlayer.yOld = fpY;
-            fakePlayer.zOld = muzzlePos.z;
+        float chargeThreshold = charge == null ? 0 : charge.getChargeType() == com.tacz.guns.resource.pojo.data.gun.ChargeType.HOLD
+                ? Math.min(charge.getFireThreshold(),charge.getMaxCharge()) : charge.getMaxCharge();
+        if (charge != null && sentryCharge < chargeThreshold) {
+            setStatus(SentryStatus.CHARGING);
+            if (!wasCharging) sendActionPacket(SentryShootPacket.ActionType.CHARGE);
+            wasCharging = true;
+            return;
         }
 
         ShootResult result = ShootResult.UNKNOWN_FAIL;
+        SentryFakePlayer.beginShot(fakePlayer);
         try {
-            result = operator.shoot(() -> targetPitch, () -> targetYaw);
+            java.util.function.Supplier<Float> pitchSupplier = () -> isInSableSubLevel() ? targetPitch : getGunPose().pitch();
+            java.util.function.Supplier<Float> yawSupplier = () -> isInSableSubLevel() ? targetYaw : getGunPose().yaw();
+            result = charge == null ? operator.shoot(pitchSupplier, yawSupplier)
+                    : operator.shoot(pitchSupplier, yawSupplier,
+                    com.tacz.guns.util.time.GunTime.nowMillis()-dataHolder.baseTimestamp,sentryCharge);
         } catch (Exception e) {
             LOGGER.error("Error executing operator.shoot", e);
         }
-
-        if (!hasEntityBullet) {
-            fakePlayer.setPos(originalPos.x, originalPos.y, originalPos.z);
-            fakePlayer.xo = originalPos.x;
-            fakePlayer.yo = originalPos.y;
-            fakePlayer.zo = originalPos.z;
-            fakePlayer.xOld = originalPos.x;
-            fakePlayer.yOld = originalPos.y;
-            fakePlayer.zOld = originalPos.z;
-        }
+        lastShootResult = result;
 
         boolean actuallyFired = SentryFakePlayer.checkAndClearFired(fakePlayer);
+        if (actuallyFired && charge != null) sentryCharge = charge.getChargeType() == com.tacz.guns.resource.pojo.data.gun.ChargeType.DELAY
+                ? 0 : Math.max(0,sentryCharge-charge.getDecreaseOnFire());
 
         if (actuallyFired && isCurrentTargetMarkedPos) {
             markedPosShotCounter++;
@@ -1229,21 +1238,15 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
             handleAdaptiveAutoStrategy(ctx);
             if (ctx.actuallyFired) {
                 if (ctx.gunIndex.isPresent()) {
-                    float rpm = ctx.gunIndex.get().getGunData().getRoundsPerMinute(FireMode.AUTO);
-                    if (rpm > 0) {
-                        this.shootDelayAccumulator = 1200f / rpm;
-                    } else {
-                        this.shootDelayAccumulator = 2.0f;
-                    }
+                    this.shootDelayAccumulator = Math.max(0,
+                            ctx.gunIndex.get().getGunData().getShootInterval(ctx.player,ctx.fireMode,ctx.fakeHeldItem)/50f - 1);
                 } else {
                     this.shootDelayAccumulator = 2.0f;
                 }
             }
         }
 
-        if (ctx.actuallyFired) {
-            sendShootPacket(ctx.player);
-        }
+        // Real projectile spawn events send effects, including delayed burst rounds.
     }
 
     private void handleManualActionStrategy(FireContext ctx) {
@@ -1266,7 +1269,8 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
     private void handleSemiAutoStrategy(FireContext ctx) {
         if (ctx.actuallyFired) {
             setStatus(SentryStatus.SHOOTING);
-            this.shootDelayAccumulator = 8.0f;
+            this.shootDelayAccumulator = ctx.gunIndex.map(i -> Math.max(0,
+                    i.getGunData().getShootInterval(ctx.player,ctx.fireMode,ctx.fakeHeldItem)/50f - 1)).orElse(2f);
         } else {
             setStatus(SentryStatus.IDLE);
             if (this.triggerHoldTime > 60) {
@@ -1333,8 +1337,9 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
     }
 
     private void sendShootPacket(FakePlayer fakePlayer) {
-        Vec3 lookVec = fakePlayer.getViewVector(1.0F);
-        Vec3 realStart = fakePlayer.getEyePosition();
+        var shot = SentryFakePlayer.lastShot(fakePlayer);
+        Vec3 lookVec = shot != null ? shot.direction() : getGunPose().forward();
+        Vec3 realStart = shot != null ? shot.origin() : getActualMuzzlePos();
         Vec3 traceEnd = realStart.add(lookVec.scale(100));
         BlockHitResult hitResult = this.level.clip(new ClipContext(
                 realStart, traceEnd,
@@ -1346,6 +1351,20 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
                 new SentryShootPacket(
                         this.worldPosition, -1, ItemNBTHelper.getOrCreateTag(heldItem), realStart, hitResult.getLocation(), SentryShootPacket.ActionType.SHOOT),
                 this.level, this.worldPosition);
+    }
+
+    public void onSentryBulletSpawn(FakePlayer player, boolean firstPellet) {
+        // TaCZ delayed cycles run before our next block tick. Commit before sync can
+        // overwrite the shooter's already-consumed ammunition with an older copy.
+        saveShooterGun(player.getMainHandItem());
+        for (int i=0;i<attachedAmmoBoxes.size();i++) {
+            ItemStack box = player.getInventory().getItem(9+i);
+            clearDepletedAmmoId(box);
+            if (!ItemStack.matches(box,attachedAmmoBoxes.get(i))) {
+                attachedAmmoBoxes.set(i,box.copy()); setChanged(); sendData();
+            }
+        }
+        if (firstPellet) sendShootPacket(player);
     }
 
     private boolean tryConsumeGenericAmmo(net.neoforged.neoforge.common.util.FakePlayer fakePlayer, net.minecraft.resources.ResourceLocation ammoId) {
@@ -1428,6 +1447,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
     }
 
     private boolean performInstantReload(net.neoforged.neoforge.common.util.FakePlayer fakePlayer, com.tacz.guns.api.item.IGun iGun, ItemStack gunStack) {
+        if (iGun.useInventoryAmmo(gunStack)) return false;
         ResourceLocation gunId = iGun.getGunId(gunStack);
         Optional<CommonGunIndex> gunIndexOpt = TimelessAPI.getCommonGunIndex(gunId);
         if (gunIndexOpt.isEmpty()) return false;

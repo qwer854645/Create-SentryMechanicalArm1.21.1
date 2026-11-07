@@ -41,10 +41,23 @@ public class SentryEventHandler {
     private static final String SENTRY_KILL_TAG = "SentryKillerPos";
 
     @SubscribeEvent
+    public static void onBulletSpawn(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent event) {
+        if (!event.getLevel().isClientSide && event.getEntity() instanceof com.tacz.guns.entity.EntityKineticBullet bullet
+                && bullet.getOwner() instanceof FakePlayer fp && SentryFakePlayer.getArmFromPlayer(fp) != null) {
+            boolean first = SentryFakePlayer.rememberShot(fp,bullet.position(),bullet.getDeltaMovement());
+            SentryFakePlayer.markFired(fp);
+            SentryFakePlayer.getArmFromPlayer(fp).onSentryBulletSpawn(fp,first);
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onGunFire(GunFireEvent event) {
         if (event.getShooter().level().isClientSide()) return;
         if (event.getShooter() instanceof FakePlayer fp && fp.getGameProfile().getName().startsWith("Sentry_")) {
-            SentryFakePlayer.markFired(fp);
+            var arm = SentryFakePlayer.getArmFromPlayer(fp);
+            if (arm != null && arm.getHeldItem().getItem() instanceof com.tacz.guns.api.item.IGun
+                    && Math.abs(arm.getSpeed()) == 0) { event.setCanceled(true); return; }
+            SentryFakePlayer.beginShot(fp);
         }
     }
 

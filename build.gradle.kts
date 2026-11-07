@@ -15,8 +15,11 @@ java {
 }
 
 // Optional integration smoke test; never packaged in a normal build.
-if (providers.gradleProperty("sentrySmoke").isPresent) {
+if (providers.gradleProperty("sentrySmoke").isPresent || providers.gradleProperty("sentryClientSmoke").isPresent) {
     sourceSets.main { java.srcDir("src/smoke/java") }
+}
+if (providers.gradleProperty("sentrySmoke").getOrElse("") == "phase3") {
+    sourceSets.main { resources.srcDir("src/smoke/resources") }
 }
 
 repositories {
@@ -75,12 +78,18 @@ neoForge {
 
         register("client") {
             client()
+            if (providers.gradleProperty("sentryClientSmoke").isPresent) {
+                systemProperty("sentry.clientSmoke", "true")
+                programArgument("--quickPlaySingleplayer")
+                programArgument("phase3-validation")
+            }
         }
         register("server") {
             server()
             programArgument("--nogui")
             if (providers.gradleProperty("sentrySmoke").isPresent) {
-                systemProperty("sentry.smoke", if (providers.gradleProperty("sentrySmoke").get() == "phase2") "phase2" else "true")
+                val suite = providers.gradleProperty("sentrySmoke").get()
+                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3")) suite else "true")
             }
         }
         register("data") {

@@ -2,7 +2,8 @@ param(
     [string]$JavaHome,
     [string]$ProxyUrl,
     [switch]$UseWindowsProxy,
-    [switch]$VerifyStaticSentry
+    [switch]$VerifyStaticSentry,
+    [switch]$VerifyGunGeometry
 )
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot -Parent
@@ -22,15 +23,18 @@ if ($ProxyUrl) {
     $gradleArgs += @("-Dhttps.proxyHost=$($proxy.Host)", "-Dhttps.proxyPort=$($proxy.Port)",
                     "-Dhttp.proxyHost=$($proxy.Host)", "-Dhttp.proxyPort=$($proxy.Port)")
 }
-if ($VerifyStaticSentry) {
+if ($VerifyStaticSentry -and $VerifyGunGeometry) { throw 'Choose one verification suite per run.' }
+if ($VerifyStaticSentry -or $VerifyGunGeometry) {
+    $suite = if ($VerifyGunGeometry) { 'phase3' } else { 'phase2' }
+    $marker = $suite.ToUpperInvariant()
     $logDir = Join-Path $repo 'verification'
     New-Item -ItemType Directory -Force $logDir | Out-Null
-    $log = Join-Path $logDir 'phase2.log'
-    & (Join-Path $repo 'gradlew.bat') @gradleArgs '-PsentrySmoke=phase2' clean runServer 2>&1 | Tee-Object -FilePath $log
+    $log = Join-Path $logDir ($suite + '.log')
+    & (Join-Path $repo 'gradlew.bat') @gradleArgs "-PsentrySmoke=$suite" clean runServer 2>&1 | Tee-Object -FilePath $log
     if ($LASTEXITCODE -ne 0) { throw "Server test failed: $LASTEXITCODE" }
     $result = Get-Content $log -Raw
-    if ($result -notmatch 'PHASE2 RESULT passed=[1-9][0-9]* failed=0' -or $result -match 'PHASE2 FAIL|PHASE2 tick failure|PHASE2 setup failed') {
-        throw "Static sentry regression failed; inspect $log"
+    if ($result -notmatch "$marker RESULT passed=[1-9][0-9]* failed=0" -or $result -match "$marker FAIL|$marker tick failure|$marker setup fail") {
+        throw "Sentry regression failed; inspect $log"
     }
 } else {
     & (Join-Path $repo 'gradlew.bat') @gradleArgs clean build

@@ -563,8 +563,8 @@ public class SentryMovementBehaviour implements MovementBehaviour {
 
         FakePlayer fp = SentryFakePlayer.getForContraption(serverLevel, context.contraption.entity.getUUID(), context.localPos);
 
-        if (!SentryFakePlayer.hasEntityBullet(gunStack)) {
-            double feetY = barrelGlobalPos.y - 1.62;
+        { // All TaCZ projectiles share the same spawn origin.
+            double feetY = barrelGlobalPos.y - fp.getEyeHeight();
             fp.setPos(barrelGlobalPos.x, feetY, barrelGlobalPos.z);
             fp.xo = barrelGlobalPos.x; fp.yo = feetY; fp.zo = barrelGlobalPos.z;
             fp.xOld = barrelGlobalPos.x; fp.yOld = feetY; fp.zOld = barrelGlobalPos.z;

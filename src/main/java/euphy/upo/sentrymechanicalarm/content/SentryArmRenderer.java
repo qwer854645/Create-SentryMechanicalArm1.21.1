@@ -134,17 +134,11 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
             if (item.getItem() instanceof IGun iGun) {
 
                 ResourceLocation gunId = iGun.getGunId(item);
-                msLocal.mulPose(Axis.XP.rotationDegrees(-90));
-                msLocal.translate(0, 0.18, 0);
-
-                if (gunId.getPath().contains("minigun")) {
-                    msLocal.mulPose(Axis.XP.rotationDegrees(-90));
-                    msLocal.translate(0, -0.7, 0.2);
-                }
- 
-
-                float armScale = 1.5f;
-                msLocal.scale(armScale, armScale, armScale);
+                Matrix4f gunMount = new Matrix4f(euphy.upo.sentrymechanicalarm.util.SentryGunGeometry.mount(
+                        inverted, baseAngle, lowerArmAngle+135, upperArmAngle+90, headAngle,
+                        euphy.upo.sentrymechanicalarm.util.SentryGunProfiles.get(item).minigunMount()));
+                msLocal.last().pose().set(gunMount);
+                msLocal.last().normal().set(new Matrix3f(gunMount).invert().transpose());
                 if (be.shouldEjectShell()) {
                     Optional<GunDisplayInstance> displayOpt = TimelessAPI.getGunDisplay(item);
                     displayOpt.ifPresent(display -> {
@@ -156,7 +150,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
                     be.setShellEjected();
                 }
                 ms.pushPose();
-                ms.last().pose().mul(msLocal.last().pose());
+                ms.mulPose(msLocal.last().pose());
                 try {
                     ItemDisplayContext displayContext = ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
                     Minecraft.getInstance().getItemRenderer().renderStatic(item, displayContext, light, overlay, ms, buffer, be.getLevel(), 0);
@@ -173,7 +167,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
   
                 float itemScale = isBlockItem ? 0.5F : 0.625F;
                 msLocal.scale(itemScale, itemScale, itemScale);
-                ms.last().pose().mul(msLocal.last().pose());
+                ms.mulPose(msLocal.last().pose());
                 try {
                     Minecraft.getInstance().getItemRenderer().renderStatic(item, ItemDisplayContext.FIXED, light, overlay, ms, buffer, be.getLevel(), 0);
                 } catch (Exception e) {
@@ -263,7 +257,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
 
         if (heldItem.getItem() instanceof IGun iGun) {
             ResourceLocation gunId = iGun.getGunId(heldItem);
-            if (gunId.getPath().contains("minigun")) {
+            if (euphy.upo.sentrymechanicalarm.util.SentryGunProfiles.get(gunId).minigunMount()) {
                 isMinigun = true;
             }
         }
@@ -545,7 +539,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
         ResourceLocation gunId = iGun.getGunId(stack);
 
  
-        if (gunId.getPath().contains("minigun")) {
+        if (euphy.upo.sentrymechanicalarm.util.SentryGunProfiles.get(gunId).minigunMount()) {
             Vector3f minigunLocalOffset = new Vector3f(0.2f, 0.65f, 0.55f);
             normalMatrix.transform(minigunLocalOffset);
             calculatedPos = calculatedPos.add(minigunLocalOffset.x(), minigunLocalOffset.y(), minigunLocalOffset.z());
@@ -785,7 +779,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
 
             gunStack.translate(0, yOffset, 0.3f);
 
-            if (gunId.getPath().contains("minigun")) {
+            if (euphy.upo.sentrymechanicalarm.util.SentryGunProfiles.get(gunId).minigunMount()) {
                 gunStack.mulPose(Axis.XP.rotationDegrees(-90));
                 gunStack.translate(0, -0.7, 0.1);
             }
@@ -865,7 +859,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
                                     Vector3f vel = new Vector3f(0.05f,0.02f,-0.01f);
                                     Matrix3f nm = new Matrix3f();
                                     shellMatrix.get3x3(nm);
-                                    if (((IGun) heldItem.getItem()).getGunId(heldItem).getPath().contains("minigun")) {
+                                    if (euphy.upo.sentrymechanicalarm.util.SentryGunProfiles.get(heldItem).minigunMount()) {
                                         Vector3f mg = new Vector3f(0.2f,0.65f,0.55f);
                                         nm.transform(mg);
                                         calculatedPos = calculatedPos.add(mg.x(),mg.y(),mg.z());
