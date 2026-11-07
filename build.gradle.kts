@@ -89,8 +89,18 @@ neoForge {
             programArgument("--nogui")
             if (providers.gradleProperty("sentrySmoke").isPresent) {
                 val suite = providers.gradleProperty("sentrySmoke").get()
-                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot")) suite else "true")
+                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart")) suite else "true")
                 if (providers.gradleProperty("trainDepotSmoke").isPresent) systemProperty("sentry.trainDepot","true")
+                if (suite == "restart") {
+                    systemProperty("sentry.restartPhase",providers.gradleProperty("restartPhase").getOrElse("prepare"))
+                    programArgument("--universe")
+                    programArgument(file("../restart-worlds").absolutePath)
+                    programArgument("--world")
+                    val validationWorld = providers.gradleProperty("restartWorld").getOrElse("restart-alpha8-validation")
+                    require(validationWorld.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,79}"))) { "Use a simple restart world name without paths" }
+                    programArgument(validationWorld)
+                    systemProperty("sentry.trainDepot","true")
+                }
             }
         }
         register("data") {

@@ -632,6 +632,14 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
         return AeronauticsHelper.isInSableSubLevel(level,getBlockPos());
     }
 
+    /** Ownership check without requesting a world chunk or renewing its tickets. */
+    public boolean isShooterActive(){
+        if(!(level instanceof ServerLevel server) || isRemoved())return false;
+        if(isInSableSubLevel())return level.isLoaded(getBlockPos()) && level.getBlockEntity(getBlockPos())==this;
+        var pos=getBlockPos();var chunk=server.getChunkSource().getChunkNow(pos.getX()>>4,pos.getZ()>>4);
+        return chunk!=null && chunk.getBlockEntity(pos)==this;
+    }
+
     public Vec3 getProjectedWorldPos() {
         return AeronauticsHelper.sableSubLevelToWorld(level,getBlockPos().getCenter());
     }

@@ -29,6 +29,14 @@ public class VirtualSentryArmBlockEntity extends SentryArmBlockEntity {
         return context!=null && (context.disabled || context.contraption.entity!=null && context.contraption.entity.isRemoved())?0:contraptionSpeed;
     }
     @Override public void tick(){} // Never tick Create's world kinetic network for a virtual actor.
+    @Override public boolean isShooterActive(){
+        if(context==null || context.disabled || context.contraption==null || context.contraption.entity==null || level==null)return false;
+        var entity=context.contraption.entity;
+        var pos=BlockPos.containing(entity.position());
+        if(level instanceof net.minecraft.server.level.ServerLevel server && !AeronauticsHelper.isInSableSubLevel(level,pos)
+                && server.getChunkSource().getChunkNow(pos.getX()>>4,pos.getZ()>>4)==null)return false;
+        return !entity.isRemoved() && level.getEntity(entity.getId())==entity;
+    }
     @Override public void setChanged(){}
     @Override public void sendData(){} // MovementBehaviour batches authoritative snapshots.
     @Override protected double getSentryRange(){return range;}

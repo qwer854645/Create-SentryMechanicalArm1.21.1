@@ -25,10 +25,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
 
+@net.neoforged.fml.common.EventBusSubscriber(modid="sentrymechanicalarm")
 public class SentryFakePlayer {
 
     private static final WeakHashMap<SentryArmBlockEntity, FakePlayer> FAKE_PLAYERS = new WeakHashMap<>();
-    private static final WeakHashMap<FakePlayer, SentryArmBlockEntity> REVERSE_MAP = new WeakHashMap<>();
+    private static final WeakHashMap<FakePlayer, java.lang.ref.WeakReference<SentryArmBlockEntity>> REVERSE_MAP = new WeakHashMap<>();
     private static final Map<String, RobustFakePlayer> CONTRAPTION_FAKE_PLAYERS = new HashMap<>();
     public record Shot(Vec3 origin, Vec3 direction) {}
     private static final Map<FakePlayer,Shot> LAST_SHOT = new WeakHashMap<>();
@@ -95,12 +96,28 @@ public class SentryFakePlayer {
             String name = "Sentry_" + arm.getBlockPos().getX() + "_" + arm.getBlockPos().getY() + "_" + arm.getBlockPos().getZ();
             return createRobustFakePlayer(serverLevel, name);
         });
-        REVERSE_MAP.put(fp, arm);
+        if(getArmFromPlayer(fp)!=arm)REVERSE_MAP.put(fp,new java.lang.ref.WeakReference<>(arm));
         return fp;
     }
 
     public static SentryArmBlockEntity getArmFromPlayer(FakePlayer fp) {
-        return REVERSE_MAP.get(fp);
+        var reference=REVERSE_MAP.get(fp);return reference==null?null:reference.get();
+    }
+
+    @net.neoforged.bus.api.SubscribeEvent
+    public static void cleanInactive(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){
+        if(event.getServer().getTickCount()%20!=0)return;
+        for(var arm:new java.util.ArrayList<>(FAKE_PLAYERS.keySet()))if(arm!=null && !arm.isShooterActive())remove(arm);
+        for(var player:new java.util.ArrayList<>(REVERSE_MAP.keySet()))if(player!=null && getArmFromPlayer(player)==null){
+            REVERSE_MAP.remove(player);player.setItemSlot(EquipmentSlot.MAINHAND,ItemStack.EMPTY);player.discard();FIRED_TRACKER.remove(player);LAST_SHOT.remove(player);
+        }
+    }
+
+    @net.neoforged.bus.api.SubscribeEvent
+    public static void clearServer(net.neoforged.neoforge.event.server.ServerStoppedEvent event){
+        for(var arm:new java.util.ArrayList<>(FAKE_PLAYERS.keySet()))if(arm!=null)remove(arm);
+        for(var player:CONTRAPTION_FAKE_PLAYERS.values()){player.setItemSlot(EquipmentSlot.MAINHAND,ItemStack.EMPTY);player.discard();}
+        CONTRAPTION_FAKE_PLAYERS.clear();REVERSE_MAP.clear();FAKE_PLAYERS.clear();FIRED_TRACKER.clear();LAST_SHOT.clear();
     }
 
     public static FakePlayer getForContraption(ServerLevel level, UUID contraptionUUID, BlockPos localPos) {

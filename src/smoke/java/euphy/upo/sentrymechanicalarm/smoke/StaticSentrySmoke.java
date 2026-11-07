@@ -55,6 +55,7 @@ public final class StaticSentrySmoke {
     private static final Map<BlockPos, net.minecraft.world.level.block.state.BlockState> fixtures = new LinkedHashMap<>();
 
     static final class ProbeArm extends SentryArmBlockEntity {
+        @Override public boolean isShooterActive(){return !isRemoved();} // Isolated test controller, not a placed block.
         float suppliedSpeed;
         ProbeArm(BlockPos pos) { super(pos, SentryRegistry.SENTRY_ARM_BLOCK.get().defaultBlockState()); }
         @Override public float getSpeed() { return suppliedSpeed; }

@@ -38,6 +38,7 @@ public final class GunGeometrySmoke {
     private static int ticks, passed, failed;
     private static boolean running;
     static final class Arm extends SentryArmBlockEntity {
+        @Override public boolean isShooterActive(){return !isRemoved();} // Isolated test controller, not a placed block.
         float suppliedSpeed=256;
         Arm(BlockPos p,boolean ceiling) { super(p,SentryRegistry.SENTRY_ARM_BLOCK.get().defaultBlockState().setValue(SentryArmBlock.CEILING,ceiling)); }
         @Override public float getSpeed() { return suppliedSpeed; }

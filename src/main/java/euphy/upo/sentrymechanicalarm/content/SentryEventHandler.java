@@ -55,6 +55,9 @@ public class SentryEventHandler {
         if (event.getShooter().level().isClientSide()) return;
         if (event.getShooter() instanceof FakePlayer fp && fp.getGameProfile().getName().startsWith("Sentry_")) {
             var arm = SentryFakePlayer.getArmFromPlayer(fp);
+            if(arm==null || !arm.isShooterActive()){
+                event.setCanceled(true);if(arm!=null)SentryFakePlayer.remove(arm);return;
+            }
             if (arm != null && arm.getHeldItem().getItem() instanceof com.tacz.guns.api.item.IGun
                     && Math.abs(arm.getSpeed()) == 0) { event.setCanceled(true); return; }
             if(arm!=null)SentryFakePlayer.updatePose(fp,arm);
