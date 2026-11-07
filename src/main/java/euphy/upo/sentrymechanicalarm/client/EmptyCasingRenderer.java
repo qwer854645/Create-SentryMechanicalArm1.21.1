@@ -15,11 +15,12 @@ import java.util.*;
 
 /** Reuse the pack's actual empty-shell mesh/UV; never substitute its complete bullet icon. */
 public final class EmptyCasingRenderer extends BlockEntityWithoutLevelRenderer {
+    private static final com.tacz.guns.client.model.SlotModel ICON_MODEL=new com.tacz.guns.client.model.SlotModel();
     private record Fit(double x,double y,double z,double scale) {}
     private static final Map<ClientAmmoIndex,Fit> fits=new WeakHashMap<>();
     private static final Set<ClientAmmoIndex> failed=Collections.newSetFromMap(new WeakHashMap<>());
     public EmptyCasingRenderer(){super(null,null);}
-    public static void clear(){fits.clear();failed.clear();}
+    public static void clear(){fits.clear();failed.clear();CasingAppearance.clear();}
     public static boolean hasPackShell(ResourceLocation id){
         var index=TimelessAPI.getClientAmmoIndex(id).orElse(null);
         return index!=null&&index.getShellModel()!=null&&index.getShellTextureLocation()!=null
@@ -53,6 +54,15 @@ public final class EmptyCasingRenderer extends BlockEntityWithoutLevelRenderer {
     }
     @Override public void renderByItem(ItemStack stack,ItemDisplayContext context,PoseStack pose,MultiBufferSource buffers,int light,int overlay){
         var id=EmptyCasingItem.ammoId(stack);var index=id==null?null:TimelessAPI.getClientAmmoIndex(id).orElse(null);
+        var icon=CasingAppearance.get(id);
+        if(icon!=null&&(context==ItemDisplayContext.GUI||!hasPackShell(id))){
+            pose.pushPose();
+            try{
+                pose.translate(.5,1.5,.5);pose.mulPose(Axis.ZN.rotationDegrees(180));
+                ICON_MODEL.renderToBuffer(pose,buffers.getBuffer(RenderType.entityCutoutNoCull(icon.texture())),light,overlay,-1);
+            }finally{pose.popPose();}
+            return;
+        }
         if(index!=null&&!failed.contains(index)){
             pose.pushPose();
             try {
