@@ -617,6 +617,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
         Matrix4f actorWorld = new Matrix4f(matrices.getWorld()).mul(ms.last().pose());
         ms.pushPose();
         try {
+            ms.pushPose(); // Body frame; the outer actor frame remains until finally.
             dev.engine_room.flywheel.lib.transform.PoseTransformStack msr = dev.engine_room.flywheel.lib.transform.TransformStack.of(ms);
             msr.center();
 
@@ -632,6 +633,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
                 ms.popPose();
             }
 
+            Matrix4f clawTipWorldMatrix = null;
             SuperByteBuffer lowerBodyBuffer = CachedBuffers.partial(SentryPartialModels.ARM_LOWER_BODY, blockState);
             SuperByteBuffer upperBodyBuffer = CachedBuffers.partial(SentryPartialModels.ARM_UPPER_BODY, blockState);
             SuperByteBuffer clawBaseBuffer = CachedBuffers.partial(SentryPartialModels.ARM_CLAW_BASE, blockState);
@@ -650,37 +652,33 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
                 if (inverted) msr.rotateZDegrees(180.0F);
                 applyDye(clawBaseBuffer, virtualBE.color, SentrySpriteShifts.ARM_TEXTURES);
                 clawBaseBuffer.light(light).transform(ms).renderInto(matrices.getViewProjection(), builder);
-                ms.popPose();
-            }
-
-            org.joml.Matrix4f clawTipWorldMatrix = null;
-            for (int flip : net.createmod.catnip.data.Iterate.positiveAndNegative) {
-                ms.pushPose();
-                transformClawHalf(msr, hasItem, isBlockItem, flip);
-                if (flip > 0) {
-                    clawTipWorldMatrix = new org.joml.Matrix4f(matrices.getWorld());
-                    clawTipWorldMatrix.mul(ms.last().pose());
+                if (inverted) msr.rotateZDegrees(180.0F);
+                for (int flip : net.createmod.catnip.data.Iterate.positiveAndNegative) {
+                    ms.pushPose();
+                    transformClawHalf(msr, hasItem, isBlockItem, flip);
+                    if (flip > 0) {
+                        clawTipWorldMatrix = new org.joml.Matrix4f(matrices.getWorld());
+                        clawTipWorldMatrix.mul(ms.last().pose());
+                    }
+                    PartialModel gripModel = (flip > 0) ? SentryPartialModels.ARM_CLAW_GRIP_LOWER : SentryPartialModels.ARM_CLAW_GRIP_UPPER;
+                    SuperByteBuffer gripBuffer = CachedBuffers.partial(gripModel, blockState);
+                    if (gripBuffer != null) {
+                        applyDye(gripBuffer, virtualBE.color, SentrySpriteShifts.ARM_TEXTURES);
+                        gripBuffer.light(light).transform(ms).renderInto(matrices.getViewProjection(), builder);
+                    }
+                    ms.popPose();
                 }
-                PartialModel gripModel = (flip > 0) ? SentryPartialModels.ARM_CLAW_GRIP_LOWER : SentryPartialModels.ARM_CLAW_GRIP_UPPER;
-                SuperByteBuffer gripBuffer = CachedBuffers.partial(gripModel, blockState);
-                if (gripBuffer != null) {
-                    applyDye(gripBuffer, virtualBE.color, SentrySpriteShifts.ARM_TEXTURES);
-                    gripBuffer.light(light).transform(ms).renderInto(matrices.getViewProjection(), builder);
-                }
-                ms.popPose();
+                ms.popPose(); // Arm joints.
             }
-            ms.popPose();
+            ms.popPose(); // Body center and ceiling frame.
 
             SuperByteBuffer cogBuffer = CachedBuffers.partial(SentryPartialModels.SENTRU_COG, blockState);
             if (cogBuffer != null) {
                 ms.pushPose();
-                msr.uncenter();
-                msr.center();
                 float speed = virtualBE.getSpeed();
                 float time = net.createmod.catnip.animation.AnimationTickHolder.getRenderTime();
                 float cogAngle = (time * speed * 3f / 10f) % 360;
-                ms.mulPose(com.mojang.math.Axis.YP.rotationDegrees(cogAngle));
-                msr.uncenter();
+                transformContraptionCog(ms,inverted,cogAngle);
                 applyDye(cogBuffer, virtualBE.color, SentrySpriteShifts.COG_TEXTURES);
                 cogBuffer.light(light).transform(ms).renderInto(matrices.getViewProjection(), builder);
                 ms.popPose();
@@ -721,6 +719,14 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
         } finally {
             ms.popPose();
         }
+    }
+
+    /** Rotate about the block center inside the caller's unmodified actor frame. */
+    public static void transformContraptionCog(PoseStack pose,boolean ceiling,float angle) {
+        pose.translate(.5,.5,.5);
+        if(ceiling)pose.mulPose(Axis.XP.rotationDegrees(180));
+        pose.mulPose(Axis.YP.rotationDegrees(angle));
+        pose.translate(-.5,-.5,-.5);
     }
 
     private static void renderHeldItem(MultiBufferSource buffer, VirtualRenderWorld renderWorld,

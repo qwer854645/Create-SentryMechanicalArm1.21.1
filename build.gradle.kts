@@ -89,7 +89,7 @@ neoForge {
             programArgument("--nogui")
             if (providers.gradleProperty("sentrySmoke").isPresent) {
                 val suite = providers.gradleProperty("sentrySmoke").get()
-                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat")) suite else "true")
+                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train")) suite else "true")
             }
         }
         register("data") {

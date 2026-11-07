@@ -5,6 +5,7 @@ param(
     [switch]$VerifyStaticSentry,
     [switch]$VerifyGunGeometry,
     [switch]$VerifyMovingSentry,
+    [switch]$VerifyTrainSentry,
     [string]$SableJar
 )
 $ErrorActionPreference = 'Stop'
@@ -25,10 +26,10 @@ if ($ProxyUrl) {
     $gradleArgs += @("-Dhttps.proxyHost=$($proxy.Host)", "-Dhttps.proxyPort=$($proxy.Port)",
                     "-Dhttp.proxyHost=$($proxy.Host)", "-Dhttp.proxyPort=$($proxy.Port)")
 }
-if (@($VerifyStaticSentry,$VerifyGunGeometry,$VerifyMovingSentry).Where({$_}).Count -gt 1) { throw 'Choose one verification suite per run.' }
+if (@($VerifyStaticSentry,$VerifyGunGeometry,$VerifyMovingSentry,$VerifyTrainSentry).Where({$_}).Count -gt 1) { throw 'Choose one verification suite per run.' }
 if ($SableJar) { $gradleArgs += "-PsableJar=$((Resolve-Path -LiteralPath $SableJar).Path)" }
-if ($VerifyStaticSentry -or $VerifyGunGeometry -or $VerifyMovingSentry) {
-    $suite = if ($VerifyMovingSentry) { 'compat' } elseif ($VerifyGunGeometry) { 'phase3' } else { 'phase2' }
+if ($VerifyStaticSentry -or $VerifyGunGeometry -or $VerifyMovingSentry -or $VerifyTrainSentry) {
+    $suite = if ($VerifyTrainSentry) { 'train' } elseif ($VerifyMovingSentry) { 'compat' } elseif ($VerifyGunGeometry) { 'phase3' } else { 'phase2' }
     $marker = $suite.ToUpperInvariant()
     $logDir = Join-Path $repo 'verification'
     New-Item -ItemType Directory -Force $logDir | Out-Null

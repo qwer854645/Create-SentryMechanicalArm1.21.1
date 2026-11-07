@@ -47,6 +47,10 @@ public final class ClientGeometrySmoke {
             verifyMovingMount();
             SentryMechanicalArm.LOGGER.info("COMPAT_CLIENT PASS Create render matrices agree with moving muzzle (floor, ceiling, minigun)");
         } catch(Throwable e){failed++;SentryMechanicalArm.LOGGER.error("COMPAT_CLIENT FAIL moving mount",e);}
+        try{verifyCog();SentryMechanicalArm.LOGGER.info("COG_CLIENT PASS center, ceiling, rotation and caller frame (24 poses)");}
+        catch(Throwable e){failed++;SentryMechanicalArm.LOGGER.error("COG_CLIENT FAIL",e);}
+        try{verifyActorRendererFrame();SentryMechanicalArm.LOGGER.info("COG_CLIENT PASS complete actor renderer preserves caller frame (4 renders)");}
+        catch(Throwable e){failed++;SentryMechanicalArm.LOGGER.error("COG_CLIENT FAIL renderer frame",e);}
         SentryMechanicalArm.LOGGER.info("PHASE3_CLIENT RESULT passed={} failed={} skipped={} maxModelError={} receivedProfiles={}",
                 passed,failed,skipped,maxError,SentryGunProfiles.clientSnapshot().size());
         mc.stop();
@@ -78,5 +82,44 @@ public final class ClientGeometrySmoke {
             // Create's CPU VecHelper uses Minecraft trig tables; rendering uses float quaternions.
             if(error>1e-3)throw new AssertionError("Create render position mismatch "+gun+" error="+error+" expected="+expected+" actual="+rendered.x+","+rendered.y+","+rendered.z);
         }
+    }
+    private static void verifyCog(){
+        for(boolean ceiling:new boolean[]{false,true})for(int angle:new int[]{0,30,90,150,270,359})for(int moving:new int[]{0,1}){
+            var pose=new PoseStack();
+            if(moving==1){pose.translate(12,20,-9);pose.mulPose(com.mojang.math.Axis.XP.rotationDegrees(17));pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(41));}
+            var caller=new org.joml.Matrix4f(pose.last().pose());
+            var expected=caller.transformPosition(new org.joml.Vector3f(.5f,.5f,.5f));
+            pose.pushPose();
+            euphy.upo.sentrymechanicalarm.content.SentryArmRenderer.transformContraptionCog(pose,ceiling,angle);
+            var actual=pose.last().pose().transformPosition(new org.joml.Vector3f(.5f,.5f,.5f));
+            if(actual.distance(expected)>1e-5)throw new AssertionError("Cog orbits its block center");
+            var axis=pose.last().pose().transformDirection(new org.joml.Vector3f(0,1,0));
+            var expectedAxis=caller.transformDirection(new org.joml.Vector3f(0,ceiling?-1:1,0));
+            if(axis.distance(expectedAxis)>1e-5)throw new AssertionError("Cog axis differs from mount");
+            pose.popPose();if(!pose.last().pose().equals(caller))throw new AssertionError("Caller frame changed");
+        }
+    }
+    private static void verifyActorRendererFrame() throws Exception {
+        var mc=Minecraft.getInstance();
+        if(euphy.upo.sentrymechanicalarm.registry.SentryPartialModels.SENTRU_COG.get()==null)throw new AssertionError("Partial models not ready");
+        var entity=new com.simibubi.create.content.contraptions.ControlledContraptionEntity(com.simibubi.create.AllEntityTypes.CONTROLLED_CONTRAPTION.get(),mc.level);
+        entity.setRotationAxis(net.minecraft.core.Direction.Axis.Y);entity.setAngle(21);
+        var matrices=new com.simibubi.create.content.contraptions.render.ContraptionMatrices();
+        var setup=matrices.getClass().getDeclaredMethod("setup",PoseStack.class,com.simibubi.create.content.contraptions.AbstractContraptionEntity.class);setup.setAccessible(true);setup.invoke(matrices,new PoseStack(),entity);
+        var world=new com.simibubi.create.foundation.virtualWorld.VirtualRenderWorld(mc.level,-64,384,net.minecraft.core.BlockPos.ZERO,()->{});
+        for(boolean ceiling:new boolean[]{false,true})for(boolean gun:new boolean[]{false,true}){
+            var state=euphy.upo.sentrymechanicalarm.registry.SentryRegistry.SENTRY_ARM_BLOCK.get().defaultBlockState().setValue(euphy.upo.sentrymechanicalarm.content.SentryArmBlock.CEILING,ceiling);
+            var contraption=new com.simibubi.create.content.contraptions.bearing.BearingContraption(false,net.minecraft.core.Direction.UP);
+            var info=new net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate.StructureBlockInfo(net.minecraft.core.BlockPos.ZERO,state,new net.minecraft.nbt.CompoundTag());
+            var ctx=new com.simibubi.create.content.contraptions.behaviour.MovementContext(mc.level,info,contraption);
+            var arm=euphy.upo.sentrymechanicalarm.content.SentryMovementBehaviour.getOrCreate(ctx);arm.setContraptionSpeed(128);arm.upperArmAngle.setValue(90);
+            if(gun)arm.setHeldItem(com.tacz.guns.api.item.builder.GunItemBuilder.create().setId(net.minecraft.resources.ResourceLocation.parse("tacz:ak47")).build());
+            var pose=matrices.getModel();pose.pushPose();pose.translate(3,4,5);
+            var before=new org.joml.Matrix4f(pose.last().pose());
+            euphy.upo.sentrymechanicalarm.content.SentryArmRenderer.renderInContraption(ctx,world,matrices,mc.renderBuffers().bufferSource());
+            if(!pose.last().pose().equals(before))throw new AssertionError("Actor renderer popped or changed caller pose");
+            pose.popPose();
+        }
+        mc.renderBuffers().bufferSource().endBatch();
     }
 }
