@@ -106,7 +106,7 @@ public final class SentryGunProfiles {
         server = Map.copyOf(loaded);
         SentryMechanicalArm.LOGGER.info("Sentry muzzle profiles: {} guns, {} from model JSON",loaded.size(),loaded.values().stream().filter(Profile::fromModel).count());
     }
-    private static JsonObject asset(List<PackResources> packs, ResourceLocation id, String prefix) throws Exception {
+    public static JsonObject asset(List<PackResources> packs, ResourceLocation id, String prefix) throws Exception {
         if (id == null) return null;
         ResourceLocation file = ResourceLocation.fromNamespaceAndPath(id.getNamespace(),prefix+id.getPath()+".json");
         for (int i=packs.size()-1;i>=0;i--) {

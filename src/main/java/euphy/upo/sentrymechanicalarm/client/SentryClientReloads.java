@@ -15,6 +15,7 @@ public final class SentryClientReloads {
     public static void register(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener((ResourceManagerReloadListener) resources -> {
             ClientPacketHandler.clearCaches();
+            EmptyCasingRenderer.clear();
             SentryTrailManager.clear();
         });
     }

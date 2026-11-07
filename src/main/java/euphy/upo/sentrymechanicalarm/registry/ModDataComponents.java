@@ -16,6 +16,9 @@ public class ModDataComponents {
 
     public static final DeferredRegister<DataComponentType<?>> DATA_COMPONENT_TYPES =
             DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, SentryMechanicalArm.MODID);
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<net.minecraft.resources.ResourceLocation>> CASING_AMMO =
+            register("casing_ammo", builder -> builder.persistent(net.minecraft.resources.ResourceLocation.CODEC)
+                    .networkSynchronized(net.minecraft.resources.ResourceLocation.STREAM_CODEC));
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<CompoundTag>> FIRE_CONTROL_DATA =
             register("fire_control_data", builder -> builder

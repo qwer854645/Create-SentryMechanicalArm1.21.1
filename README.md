@@ -1,5 +1,9 @@
 # Create: Sentry Mechanical Arm（非官方移植）
 
+当前修复开发版本：**1.4.0-alpha.11**。固定验证环境：Minecraft 1.21.1 / NeoForge 21.1.228 / Create 6.0.10 / TaCZ 1.2.0 / Java 21。
+
+版本历史见 [CHANGELOG.md](CHANGELOG.md)，自动枪包弹壳第一阶段见 [docs/CASINGS_PHASE1.md](docs/CASINGS_PHASE1.md)。此前十个版本已按已保存源码快照建立本地 Git 归档标签；这是非官方修复开发分支。
+
 一个 Minecraft NeoForge 模组，让 Create 动力臂能够装备 [TaCZ](https://github.com/tacz-dev/tacz)（Timeless and Classics: Zero）枪械，作为自动化防御炮塔使用。
 
 ## 功能特性
@@ -19,10 +23,10 @@
 
 | 模组 | 要求 |
 |-----------|----------|
-| [NeoForge](https://neoforged.net) 21.1.93+ | ✅ 必需 |
-| [Create](https://modrinth.com/mod/create) 6.0.10+ | ✅ 必需 |
-| [TaCZ](https://modrinth.com/mod/tacz) 1.1.8+ | ✅ 必需 |
-| [Sable Companion](https://github.com/ryanhcode/sable-companion) 1.6.0+ | 仅运行时（Sable 飞船需要） |
+| [NeoForge](https://neoforged.net) 21.1.228 | ✅ 必需 |
+| [Create](https://modrinth.com/mod/create) 6.0.10（固定验证） | ✅ 必需 |
+| [TaCZ](https://modrinth.com/mod/tacz) 1.2.0（官方） | ✅ 必需 |
+| [Sable Companion](https://github.com/ryanhcode/sable-companion) 1.6.0 | 已内嵌；实际 Sable 为可选依赖 |
 
 ## 操作键位
 

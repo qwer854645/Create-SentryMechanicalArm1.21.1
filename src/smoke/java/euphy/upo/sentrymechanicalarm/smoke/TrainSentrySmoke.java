@@ -158,6 +158,6 @@ public final class TrainSentrySmoke {
             lane.target.discard();Create.RAILWAYS.removeTrain(lane.train.id);Create.RAILWAYS.trackNetworks.remove(lane.graph.id);
         }
         running=false;for(long k:forced){var c=new net.minecraft.world.level.ChunkPos(k);level.setChunkForced(c.x,c.z,false);}
-        SentryMechanicalArm.LOGGER.info("TRAIN RESULT passed={} failed={}",passed,failed);level.getServer().halt(false);
+        SentryMechanicalArm.LOGGER.info("TRAIN RESULT passed={} failed={}",passed,failed);CasingIntegrationSmoke.finish();level.getServer().halt(false);
     }
 }

@@ -204,6 +204,6 @@ public final class AmmoDepotSmoke {
         }
         for(var p:blocks)level.removeBlock(p,false);
         running=false;for(long k:forced){var c=new net.minecraft.world.level.ChunkPos(k);level.setChunkForced(c.x,c.z,false);}
-        SentryMechanicalArm.LOGGER.info("DEPOT RESULT passed={} failed={}",passed,failed);level.getServer().halt(false);
+        SentryMechanicalArm.LOGGER.info("DEPOT RESULT passed={} failed={}",passed,failed);CasingIntegrationSmoke.finish();level.getServer().halt(false);
     }
 }

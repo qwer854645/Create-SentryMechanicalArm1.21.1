@@ -13,6 +13,6 @@ import java.util.Map;
 @EventBusSubscriber(modid=SentryMechanicalArm.MODID,value=Dist.CLIENT)
 public final class SentryClientCaches {
     @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) {
-        SentryGunProfiles.receive(Map.of()); ClientPacketHandler.clearCaches(); SentryTrailManager.clear();
+        EmptyCasingRenderer.clear(); SentryGunProfiles.receive(Map.of()); ClientPacketHandler.clearCaches(); SentryTrailManager.clear();
     }
 }

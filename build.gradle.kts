@@ -80,6 +80,7 @@ neoForge {
             client()
             if (providers.gradleProperty("sentryClientSmoke").isPresent) {
                 systemProperty("sentry.clientSmoke", "true")
+                if (providers.gradleProperty("casingClientSmoke").isPresent) systemProperty("sentry.casingClientSmoke", "true")
                 if (providers.gradleProperty("sentryClientReloadSmoke").isPresent) systemProperty("sentry.clientReloadSmoke", "true")
                 programArgument("--quickPlaySingleplayer")
                 programArgument("phase3-validation")
@@ -90,6 +91,16 @@ neoForge {
             programArgument("--nogui")
             if (providers.gradleProperty("sentrySmoke").isPresent) {
                 val suite = providers.gradleProperty("sentrySmoke").get()
+                if (providers.gradleProperty("casingIntegrationSmoke").isPresent) systemProperty("sentry.casingIntegrationSmoke", "true")
+                if (providers.gradleProperty("casingSmoke").isPresent) {
+                    systemProperty("sentry.casingSmoke", "true")
+                    programArgument("--universe")
+                    programArgument(file("../casing-worlds").absolutePath)
+                    programArgument("--world")
+                    val casingWorld = providers.gradleProperty("casingWorld").getOrElse("alpha11-"+System.currentTimeMillis())
+                    require(casingWorld.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,79}")))
+                    programArgument(casingWorld)
+                }
                 if (providers.gradleProperty("ammoCraftingDisabledSmoke").isPresent) {
                     systemProperty("sentry.ammoCraftingDisabledSmoke", "true")
                     programArgument("--universe")

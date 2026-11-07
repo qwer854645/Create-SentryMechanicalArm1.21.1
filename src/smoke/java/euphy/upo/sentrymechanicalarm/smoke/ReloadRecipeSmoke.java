@@ -154,6 +154,7 @@ public final class ReloadRecipeSmoke {
             write("pack.mcmeta","{\"pack\":{\"pack_format\":48,\"description\":\"isolated reload validation\"}}");
             write("data/sentrymechanicalarm/recipe/"+cutId.getPath()+".json","{\"type\":\"minecraft:crafting_shapeless\",\"ingredients\":[{\"item\":\"minecraft:dirt\"}],\"result\":{\"id\":\"minecraft:diamond\"}}");
             write("data/"+smithId.getNamespace()+"/recipe/"+smithId.getPath()+".json","{\"type\":\"tacz:gun_smith_table_crafting\",\"materials\":[{\"item\":{\"item\":\"minecraft:iron_ingot\"},\"count\":2},{\"item\":{\"item\":\"minecraft:gunpowder\"},\"count\":1}],\"result\":{\"type\":\"ammo\",\"group\":\"pd_cartridges\",\"id\":\"tacz:9mm\",\"count\":7}}");
+            write("data/tacz/sentry_casings/9mm.json","{\"enabled\":false}");
             write("data/tacz/sentry_muzzles/glock_17.json","{\"muzzle\":[0.1,0.2,-1.234],\"forward\":[0,0,-1]}");
             arm=new SentryArmBlockEntity(new BlockPos(20,200,20),SentryRegistry.SENTRY_ARM_BLOCK.get().defaultBlockState());arm.setLevel(server.overworld());arm.setHeldItem(GunItemBuilder.create().setId(GUN).setAmmoCount(11).build());oldPlayer=SentryFakePlayer.get(arm);SentryFakePlayer.sync(oldPlayer,arm,0,0,arm.getHeldItem());check(!oldPlayer.getMainHandItem().isEmpty(),"shooter uninitialized");
         });
@@ -174,6 +175,7 @@ public final class ReloadRecipeSmoke {
             test("data-pack recipe wins generated id",()->check(server.getRecipeManager().byKey(cutId).orElseThrow().value() instanceof ShapelessRecipe,"override overwritten"));
             test("TaCZ initialized materials drive regenerated assembly",()->{var r=(SequencedAssemblyRecipe)server.getRecipeManager().byKey(assemblyId).orElseThrow().value();check(r.getResultItem(server.registryAccess()).getCount()==7,"old output count");check(r.getSequence().size()==4,"old material steps");check(server.getRecipeManager().byKey(ResourceLocation.parse("sentrymechanicalarm:ammo_pressing/tacz_9mm")).isEmpty(),"iron bypass pressing retained");});
             test("reloaded sequence completes with new materials and count",()->assemble(server.getRecipeManager().byKey(assemblyId).orElseThrow()));
+            test("casing override reload disables discovered shell",()->check(!SentryCasingProfiles.enabled(AMMO),"casing override ignored"));
             test("server muzzle reload replaces old profile",()->check(Math.abs(SentryGunProfiles.get(GUN).muzzle().z+1.234)<1e-6,"old muzzle cache"));
             test("old shooter invalidated with ammo intact",()->{check(oldPlayer.getMainHandItem().isEmpty()&&SentryFakePlayer.getArmFromPlayer(oldPlayer)==null,"old shooter retained");check(IGun.getIGunOrNull(arm.getHeldItem()).getCurrentAmmoCount(arm.getHeldItem())==11,"ammo changed on reload");var fp=SentryFakePlayer.get(arm);check(fp!=oldPlayer,"old shooter reused");SentryFakePlayer.remove(arm);});
             packCount=(int)generated();reload(true);stage=2;
@@ -185,6 +187,7 @@ public final class ReloadRecipeSmoke {
             SMAServerConfig.ENABLE_DYNAMIC_RECIPES.set(true);reload(false);stage=4;
         }else if(stage==4){
             test("pack removal restores original recipes and muzzle",()->{check(generated()==baseCount,"base recipes not restored");check(!(server.getRecipeManager().byKey(cutId).orElseThrow().value() instanceof ShapelessRecipe),"removed override retained");check(Math.abs(SentryGunProfiles.get(GUN).muzzle().z+1.234)>1e-4,"removed muzzle retained");});
+            test("removed casing override restores discovery",()->check(SentryCasingProfiles.enabled(AMMO),"stale casing override"));
             finish();
         }
     }

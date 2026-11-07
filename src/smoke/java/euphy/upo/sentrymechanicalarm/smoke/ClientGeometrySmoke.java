@@ -47,7 +47,8 @@ public final class ClientGeometrySmoke {
             } catch(Throwable e) {reloadFailures++;SentryMechanicalArm.LOGGER.error("RELOAD_CLIENT FAIL",e);}
             reloadVerified=true;
         }
-        done=true; int passed=0,failed=reloadFailures,skipped=0; double maxError=0;
+        if(Boolean.getBoolean("sentry.casingClientSmoke") && !CasingClientSmoke.preview()) return;
+        done=true; int passed=0,failed=reloadFailures+CasingClientSmoke.failures,skipped=0; double maxError=0;
         for (var entry:TimelessAPI.getAllClientGunIndex()) {
             var profile=SentryGunProfiles.get(entry.getKey());
             if (!profile.fromModel()) { skipped++; continue; }

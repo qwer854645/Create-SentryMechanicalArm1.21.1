@@ -248,6 +248,7 @@ public final class GunGeometrySmoke {
         for(long key:forced) { var chunk=new net.minecraft.world.level.ChunkPos(key); level.setChunkForced(chunk.x,chunk.z,false); }
         forced.clear(); cases.clear();
         SentryMechanicalArm.LOGGER.info("PHASE3 RESULT passed={} failed={}",passed,failed);
+        if(Boolean.getBoolean("sentry.casingSmoke")) CasingSmoke.finish();
         level.getServer().halt(false);
     }
 }

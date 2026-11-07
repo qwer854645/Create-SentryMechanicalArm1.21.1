@@ -6,6 +6,9 @@ public class SMAServerConfig {
 
     public static final ModConfigSpec SPEC;
     public static final ModConfigSpec.BooleanValue ENABLE_AMMO_CRAFTING;
+    public static final ModConfigSpec.BooleanValue ENABLE_CASINGS, PLAYER_CASINGS, SENTRY_CASINGS;
+    public static final ModConfigSpec.DoubleValue CASING_CHANCE;
+    public static final ModConfigSpec.IntValue CASING_ENTITY_LIMIT, CASING_LIFETIME;
 
     public static final ModConfigSpec.BooleanValue ENABLE_DYNAMIC_RECIPES;
     public static final ModConfigSpec.BooleanValue AUTO_MATCH_FROM_TACZ;
@@ -20,6 +23,17 @@ public class SMAServerConfig {
 
     static {
         var builder = new ModConfigSpec.Builder();
+        builder.push("casings");
+        ENABLE_CASINGS = builder.comment("Drop recoverable casings after successful finite-ammo shots. Independent of ammo crafting.")
+                .define("enabled", true);
+        PLAYER_CASINGS = builder.define("players", true);
+        SENTRY_CASINGS = builder.define("sentries", true);
+        CASING_CHANCE = builder.defineInRange("dropChance", 1.0, 0.0, 1.0);
+        CASING_ENTITY_LIMIT = builder.comment("Maximum casing item entities in one chunk; excess drops are skipped.")
+                .defineInRange("maxEntitiesPerChunk", 64, 0, 1024);
+        CASING_LIFETIME = builder.comment("Casing item lifetime in game ticks.")
+                .defineInRange("lifetimeTicks", 1200, 20, 12000);
+        builder.pop();
 
         builder.push("ammo_crafting");
         ENABLE_AMMO_CRAFTING = builder

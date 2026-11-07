@@ -1,0 +1,88 @@
+package euphy.upo.sentrymechanicalarm.util;
+
+import com.tacz.guns.api.TimelessAPI;
+import com.tacz.guns.api.event.common.GunFireEvent;
+import com.tacz.guns.api.event.common.GunFirePostEvent;
+import com.tacz.guns.api.item.*;
+import euphy.upo.sentrymechanicalarm.SMAServerConfig;
+import euphy.upo.sentrymechanicalarm.SentryMechanicalArm;
+import euphy.upo.sentrymechanicalarm.content.EmptyCasingItem;
+import euphy.upo.sentrymechanicalarm.registry.SentryRegistry;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.*;
+import net.neoforged.bus.api.*;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.neoforge.common.util.FakePlayer;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import java.util.*;
+
+/** Pre/post pairs prove real ammunition was consumed, including native delayed bursts. */
+@EventBusSubscriber(modid=SentryMechanicalArm.MODID)
+public final class SentryCasingDrops {
+    private record Before(ItemStack gun,ResourceLocation ammo,long count) {}
+    private static final Map<LivingEntity,Before> pending=new WeakHashMap<>();
+    private record ChunkKey(ResourceLocation dimension,long chunk) {}
+    private static final Map<ChunkKey,Integer> budgets=new HashMap<>();
+    public static void clear(){pending.clear();budgets.clear();}
+    @SubscribeEvent(priority=EventPriority.LOWEST) public static void tick(ServerTickEvent.Post event){clear();}
+    private static boolean shooterAllowed(LivingEntity shooter, ResourceLocation ammo) {
+        if(!SMAServerConfig.ENABLE_CASINGS.get()||!SentryCasingProfiles.enabled(ammo))return false;
+        if(shooter instanceof FakePlayer fp){
+            var arm=SentryFakePlayer.getArmFromPlayer(fp);
+            if(arm==null||!arm.isShooterActive()||!SMAServerConfig.SENTRY_CASINGS.get())return false;
+            // Infinite boxes can feed finite magazines; do not mint recoverable material from them.
+            for(var box:arm.attachedAmmoBoxes)if(box.getItem() instanceof IAmmoBox b && b.isCreative(box)
+                    &&(b.isAllTypeCreative(box)||ammo.equals(b.getAmmoId(box))))return false;
+        }else if(!(shooter instanceof Player player)||player.isCreative()||player.isSpectator()||!SMAServerConfig.PLAYER_CASINGS.get())return false;
+        if(shooter instanceof Player player)for(var stack:player.getInventory().items)
+            if(stack.getItem() instanceof IAmmoBox box&&box.isCreative(stack)&&(box.isAllTypeCreative(stack)||ammo.equals(box.getAmmoId(stack))))return false;
+        return true;
+    }
+    private static long ammunition(LivingEntity shooter,ItemStack gun,ResourceLocation ammo) {
+        IGun api=IGun.getIGunOrNull(gun);if(api==null)return 0;
+        long total=Math.max(0,api.getCurrentAmmoCount(gun))+(api.hasBulletInBarrel(gun)?1:0);
+        if(shooter instanceof Player player)for(var stack:player.getInventory().items){
+            if(stack==gun)continue;
+            if(stack.getItem() instanceof IAmmo a&&ammo.equals(a.getAmmoId(stack)))total+=stack.getCount();
+            else if(stack.getItem() instanceof IAmmoBox box&&!box.isCreative(stack)&&ammo.equals(box.getAmmoId(stack)))total+=Math.max(0,box.getAmmoCount(stack));
+        }
+        return total;
+    }
+    @SubscribeEvent(priority=EventPriority.LOWEST) public static void before(GunFireEvent event) {
+        if(event.getLogicalSide()!=LogicalSide.SERVER)return;
+        var shooter=event.getShooter();pending.remove(shooter);
+        var gun=event.getGunItemStack();var api=IGun.getIGunOrNull(gun);if(api==null)return;
+        var index=TimelessAPI.getCommonGunIndex(api.getGunId(gun));if(index.isEmpty())return;
+        var ammo=index.get().getGunData().getAmmoId();if(!shooterAllowed(shooter,ammo))return;
+        pending.put(shooter,new Before(gun,ammo,ammunition(shooter,gun,ammo)));
+    }
+    @SubscribeEvent public static void after(GunFirePostEvent event) {
+        if(event.getLogicalSide()!=LogicalSide.SERVER)return;
+        var shooter=event.getShooter();var before=pending.remove(shooter);
+        if(before==null||before.gun()!=event.getGunItemStack()||!(shooter.level() instanceof ServerLevel level)
+                ||!shooterAllowed(shooter,before.ammo())||before.count()<=ammunition(shooter,before.gun(),before.ammo()))return;
+        if(level.random.nextDouble()>=SMAServerConfig.CASING_CHANCE.get())return;
+        Vec3 forward=shooter.getLookAngle().normalize();Vec3 origin=shooter.getEyePosition();
+        if(shooter instanceof FakePlayer fp){var pose=SentryFakePlayer.getArmFromPlayer(fp).getGunPose();origin=pose.position();forward=pose.forward();}
+        Vec3 right=forward.cross(new Vec3(0,1,0));if(right.lengthSqr()<1e-8)right=new Vec3(1,0,0);else right=right.normalize();
+        Vec3 position=origin.add(right.scale(.15)).subtract(forward.scale(.1));
+        if(!SentryGunGeometry.finite(position)||!level.hasChunkAt(net.minecraft.core.BlockPos.containing(position)))return;
+        int cx=net.minecraft.util.Mth.floor(position.x)>>4,cz=net.minecraft.util.Mth.floor(position.z)>>4;
+        var chunkBox=new AABB(cx*16,level.getMinBuildHeight(),cz*16,cx*16+16,level.getMaxBuildHeight(),cz*16+16);
+        int cap=SMAServerConfig.CASING_ENTITY_LIMIT.get();
+        var key=new ChunkKey(level.dimension().location(),net.minecraft.world.level.ChunkPos.asLong(cx,cz));
+        int occupied=budgets.computeIfAbsent(key,k->level.getEntitiesOfClass(ItemEntity.class,chunkBox,
+                e->e.getItem().is(SentryRegistry.EMPTY_CASING.get())).size());
+        if(occupied>=cap)return;
+        var item=new ItemEntity(level,position.x,position.y,position.z,EmptyCasingItem.create(before.ammo(),1));
+        item.setDeltaMovement(right.scale(.18+level.random.nextDouble()*.08).add(0,.1+level.random.nextDouble()*.04,0));
+        item.setPickUpDelay(10);item.lifespan=SMAServerConfig.CASING_LIFETIME.get();
+        if(level.addFreshEntity(item))budgets.put(key,occupied+1);
+    }
+}

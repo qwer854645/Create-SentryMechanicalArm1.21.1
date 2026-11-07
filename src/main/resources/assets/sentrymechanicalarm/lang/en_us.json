@@ -124,5 +124,8 @@
   "sentry.supply.special_only": "Supply: component variants preserved; standard ammo required",
   "sentry.supply.supplied": "Supply: ammunition replenished",
   "sentry.supply.creative": "Supply: creative ammo box",
-  "sentry.supply.depot_mounted": "Mounted depot supplies ammunition automatically; disassemble to open its native menu."
+  "sentry.supply.depot_mounted": "Mounted depot supplies ammunition automatically; disassemble to open its native menu.",
+  "item.sentrymechanicalarm.empty_casing": "Empty Casing",
+  "item.sentrymechanicalarm.empty_casing.named": "%s Casing",
+  "item.sentrymechanicalarm.empty_casing.description": "Recovered casing. Reloading recipes are not yet available."
 }
