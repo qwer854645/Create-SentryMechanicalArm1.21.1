@@ -36,7 +36,7 @@ public final class CasingAppearance {
             else if(opaque)bottom=y;else break;
         }
         if(top<0)throw new IllegalArgumentException("Empty ammo icon");
-        top+=Math.min(bottom-top,(int)Math.round((bottom-top+1)*.30));
+        top+=Math.min(bottom-top,(int)Math.round((bottom-top+1)*.35));
         int left=w,right=-1;
         for(int y=top;y<=bottom;y++)for(int x=0;x<w;x++)if((source.getPixelRGBA(x,y)>>>24)>=32){left=Math.min(left,x);right=Math.max(right,x);}
         if(right<left)throw new IllegalArgumentException("Empty cropped ammo icon");

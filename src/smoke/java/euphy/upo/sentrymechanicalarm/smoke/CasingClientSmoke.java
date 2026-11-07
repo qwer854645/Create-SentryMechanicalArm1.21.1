@@ -30,7 +30,7 @@ public final class CasingClientSmoke {
                         int pixel=cropped.getPixelRGBA(x,y);if((pixel>>>24)==0)continue;
                         if(pixel!=0xff3399cc)throw new AssertionError("crop retained projectile/label or recolored source");kept++;
                     }
-                    if(kept!=60)throw new AssertionError("case body pixels lost: "+kept);
+                    if(kept!=54)throw new AssertionError("case body pixels lost: "+kept);
                 }
                 SentryMechanicalArm.LOGGER.info("CASING_CLIENT PASS crop removes projectile and label, retains exact body pixels");
             }catch(Throwable e){failures++;SentryMechanicalArm.LOGGER.error("CASING_CLIENT FAIL crop",e);}
