@@ -30,17 +30,22 @@ public record SentryLinkPacket(BlockPos posA, BlockPos posB) implements CustomPa
 
     public static void handle(SentryLinkPacket packet, ServerPlayer player) {
         Level level = player.level();
+        if (player.isSpectator() || !level.isLoaded(packet.posA()) || !level.isLoaded(packet.posB())
+                || !player.canInteractWithBlock(packet.posB(), 1.0)
+                || !level.mayInteract(player, packet.posA()) || !level.mayInteract(player, packet.posB())) return;
         if (packet.posA().distSqr(packet.posB()) > 100) return;
 
         if (level.getBlockEntity(packet.posA()) instanceof SentryArmBlockEntity sentry) {
-            if (packet.posA().distSqr(packet.posB()) <= 36.0) {
+            if (packet.posA().distSqr(packet.posB()) <= 36.0
+                    && level.getBlockEntity(packet.posB()) instanceof euphy.upo.sentrymechanicalarm.content.BlazeFireControlBlockEntity) {
                 sentry.setConnectedFireControl(packet.posB());
                 level.playSound(null, packet.posA(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 1.0f, 1.0f);
             } else {
                 player.displayClientMessage(Component.translatable("message.sentrymechanicalarm.distance_too_far"), true);
             }
         } else if (level.getBlockEntity(packet.posB()) instanceof SentryArmBlockEntity sentry) {
-            if (packet.posB().distSqr(packet.posA()) <= 36.0) {
+            if (packet.posB().distSqr(packet.posA()) <= 36.0
+                    && level.getBlockEntity(packet.posA()) instanceof euphy.upo.sentrymechanicalarm.content.BlazeFireControlBlockEntity) {
                 sentry.setConnectedFireControl(packet.posA());
                 level.playSound(null, packet.posB(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 1.0f, 1.0f);
             } else {

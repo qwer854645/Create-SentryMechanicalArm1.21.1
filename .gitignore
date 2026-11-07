@@ -2,6 +2,7 @@
 run/
 .gradle/
 build/
+verification/
 .idea/
 *.iml
 

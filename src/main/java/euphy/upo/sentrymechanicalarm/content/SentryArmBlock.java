@@ -78,19 +78,21 @@ public class SentryArmBlock extends KineticBlock implements IBE<SentryArmBlockEn
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
 
-        if (!isMoving && state.getBlock() != newState.getBlock()) {
+        if (!level.isClientSide && !isMoving && state.getBlock() != newState.getBlock()) {
             SentryArmBlockEntity sentry = this.getBlockEntity(level, pos);
             if (sentry != null) {
 
                 ItemStack gun = sentry.getHeldItem();
                 if (!gun.isEmpty()) {
-                    Block.popResource(level, pos, gun);
+                    Block.popResource(level, pos, gun.copy());
                 }
                 for (ItemStack box : sentry.attachedAmmoBoxes) {
                     if (!box.isEmpty()) {
-                        Block.popResource(level, pos, box);
+                        Block.popResource(level, pos, box.copy());
                     }
                 }
+                sentry.attachedAmmoBoxes.clear();
+                sentry.setHeldItem(ItemStack.EMPTY);
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);

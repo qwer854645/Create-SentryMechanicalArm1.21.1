@@ -80,7 +80,7 @@ neoForge {
             server()
             programArgument("--nogui")
             if (providers.gradleProperty("sentrySmoke").isPresent) {
-                systemProperty("sentry.smoke", "true")
+                systemProperty("sentry.smoke", if (providers.gradleProperty("sentrySmoke").get() == "phase2") "phase2" else "true")
             }
         }
         register("data") {

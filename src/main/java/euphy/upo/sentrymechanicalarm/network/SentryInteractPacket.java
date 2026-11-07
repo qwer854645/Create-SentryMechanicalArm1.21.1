@@ -38,9 +38,12 @@ public record SentryInteractPacket(BlockPos pos, InteractionHand hand, boolean i
 
     public static void handle(SentryInteractPacket msg, ServerPlayer player) {
         Level level = player.level();
+        if (player.isSpectator() || !level.isLoaded(msg.pos())
+                || !player.canInteractWithBlock(msg.pos(), 1.0)
+                || !level.mayInteract(player, msg.pos()) || msg.isAttack()) return;
         BlockEntity be = level.getBlockEntity(msg.pos);
         if (be instanceof SentryArmBlockEntity sentry) {
-            ItemStack held = player.getMainHandItem();
+            ItemStack held = player.getItemInHand(msg.hand());
             ItemStack armHeld = sentry.getHeldItem();
 
             if (armHeld.isEmpty() && held.getItem() instanceof IGun) {

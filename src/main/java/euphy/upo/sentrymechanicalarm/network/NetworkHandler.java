@@ -97,7 +97,7 @@ public class NetworkHandler {
     public static void sendToNearby(Object packet, Level level, BlockPos pos) {
         if (level.isClientSide) return;
         if (!(packet instanceof net.minecraft.network.protocol.common.custom.CustomPacketPayload payload)) return;
-        for (ServerPlayer player : ((ServerLevel) level).getServer().getPlayerList().getPlayers()) {
+        for (ServerPlayer player : ((ServerLevel) level).players()) {
             if (player.distanceToSqr(pos.getX(), pos.getY(), pos.getZ()) < 64 * 64) {
                 PacketDistributor.sendToPlayer(player, payload);
             }

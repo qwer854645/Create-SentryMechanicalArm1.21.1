@@ -190,6 +190,17 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
     }
 
     public void setHeldItem(ItemStack stack) {
+        if (level != null && !level.isClientSide) {
+            SentryFakePlayer.remove(this);
+            shootDelayAccumulator = 0;
+            triggerHoldTime = 0;
+            wasCharging = false;
+            isTestingRelease = false;
+            lastScriptDataStr = "";
+            lastAimingProgress = -1;
+            currentStatus = SentryStatus.IDLE;
+            updateFromFireControl();
+        }
         this.heldItem = stack;
         this.setChanged();
         this.sendData();
@@ -213,20 +224,22 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
         if (iGun.useInventoryAmmo(heldItem)) {
             currentAmmo = 0;
         }
-        if (currentAmmo > 0) return true;
+        if (currentAmmo > 0 || iGun.hasBulletInBarrel(heldItem)) return true;
 
         ResourceLocation requiredAmmoId = gunData.getAmmoId();
         for (ItemStack box : attachedAmmoBoxes) {
             if (box.isEmpty() || !(box.getItem() instanceof IAmmoBox iBox)) continue;
-            if (iBox.isAllTypeCreative(box) || iBox.isCreative(box)) return true;
+            if (iBox.isAllTypeCreative(box)) return true;
             ResourceLocation boxAmmoId = iBox.getAmmoId(box);
-            if (requiredAmmoId != null && requiredAmmoId.equals(boxAmmoId) && iBox.getAmmoCount(box) > 0)
+            if (requiredAmmoId != null && requiredAmmoId.equals(boxAmmoId)
+                    && (iBox.isCreative(box) || iBox.getAmmoCount(box) > 0))
                 return true;
         }
         return false;
     }
 
     public boolean addAmmoBox(ItemStack stack) {
+        if (!canAcceptAmmoBox(stack)) return false;
         for (int i = 0; i < attachedAmmoBoxes.size(); i++) {
             if (attachedAmmoBoxes.get(i).isEmpty()) {
                 ItemStack copy = stack.copy();
@@ -238,6 +251,25 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
             }
         }
         return false;
+    }
+
+    private boolean canAcceptAmmoBox(ItemStack stack) {
+        if (stack.isEmpty() || !(stack.getItem() instanceof IAmmoBox box)
+                || !(getHeldItem().getItem() instanceof IGun)) return false;
+        return box.isAmmoBoxOfGun(getHeldItem(), stack) || box.getAmmoCount(stack) == 0;
+    }
+
+    private static void clearDepletedAmmoId(ItemStack stack) {
+        if (stack.getItem() instanceof IAmmoBox box && !box.isCreative(stack)
+                && !box.isAllTypeCreative(stack) && box.getAmmoCount(stack) <= 0) {
+            box.setAmmoId(stack, com.tacz.guns.api.DefaultAssets.EMPTY_AMMO_ID);
+        }
+    }
+
+    @Override
+    public void remove() {
+        SentryFakePlayer.remove(this);
+        super.remove();
     }
 
     public ItemStack removeLastAmmoBox() {
@@ -326,6 +358,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
 
                 for (int i = 0; i < attachedAmmoBoxes.size(); i++) {
                     ItemStack playerStack = fakePlayer.getInventory().getItem(9 + i);
+                    clearDepletedAmmoId(playerStack);
                     ItemStack currentBox = attachedAmmoBoxes.get(i);
 
                     if (playerStack.isEmpty() && !currentBox.isEmpty()) {
@@ -339,17 +372,11 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
                     }
                 }
 
-            } catch (Exception ignored) {
+            } catch (Exception error) {
+                LOGGER.debug("Failed to tick sentry shooter at {}", worldPosition, error);
             }
 
-            ItemStack fakeHeld = fakePlayer.getMainHandItem();
-            if (fakeHeld.getItem() == currentHeld.getItem() && ItemNBTHelper.hasTag(fakeHeld)) {
-                if (!java.util.Objects.equals(ItemNBTHelper.getTag(currentHeld), ItemNBTHelper.getTag(fakeHeld))) {
-                    ItemNBTHelper.setTag(currentHeld, ItemNBTHelper.getTag(fakeHeld).copy());
-                    this.setChanged();
-                    this.sendData();
-                }
-            }
+            saveShooterGun(fakePlayer.getMainHandItem());
 
         }
 
@@ -373,6 +400,15 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
         upperArmAngle.chase(45, speed, LerpedFloat.Chaser.EXP);
         headAngle.chase(0, speed, LerpedFloat.Chaser.EXP);
         baseAngle.chase(baseAngle.getValue(), 0, LerpedFloat.Chaser.EXP);
+    }
+
+    private void saveShooterGun(ItemStack fakeHeld) {
+        if (!fakeHeld.isEmpty() && fakeHeld.getItem() == heldItem.getItem()
+                && !ItemStack.matches(heldItem, fakeHeld)) {
+            heldItem = fakeHeld.copy();
+            setChanged();
+            sendData();
+        }
     }
 
     private double getSentryRange() {
@@ -679,6 +715,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
 
                     if (this.connectedFireControlPos.distSqr(this.worldPosition) > 36.0) {
                         this.disconnectFireControl();
+                        be = null;
                     } else {
                         if (!fc.inventory.getStackInSlot(0).isEmpty()) {
                             isStrictControlMode = true;
@@ -688,6 +725,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
                     }
                 } else {
                     this.disconnectFireControl();
+                    be = null;
                 }
             }
         }
@@ -977,9 +1015,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
         if (this.shootDelayAccumulator > 0) {
             this.shootDelayAccumulator -= 1.0f;
             this.triggerHoldTime = 0;
-            if (fakeHeldItem.getItem() == heldItem.getItem() && ItemNBTHelper.hasTag(fakeHeldItem)) {
-                ItemNBTHelper.setTag(heldItem, ItemNBTHelper.getTag(fakeHeldItem).copy());
-            }
+            saveShooterGun(fakeHeldItem);
             return;
         }
 
@@ -1075,9 +1111,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
             this.wasCharging = false;
         }
 
-        if (fakeHeldItem.getItem() == heldItem.getItem() && ItemNBTHelper.hasTag(fakeHeldItem)) {
-            ItemNBTHelper.setTag(heldItem, ItemNBTHelper.getTag(fakeHeldItem).copy());
-        }
+        saveShooterGun(fakeHeldItem);
     }
 
 
@@ -1332,6 +1366,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
 
                     if (iBox.getAmmoCount(stack) > 0) {
                         iBox.setAmmoCount(stack, iBox.getAmmoCount(stack) - 1);
+                        clearDepletedAmmoId(stack);
                         return true;
                     }
                 }
@@ -1422,6 +1457,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
                     int toTake = Math.min(boxCount, neededAmount - totalReloaded);
 
                     iBox.setAmmoCount(stack, boxCount - toTake);
+                    clearDepletedAmmoId(stack);
                     totalReloaded += toTake;
 
                     if (totalReloaded >= neededAmount) break;
@@ -1474,15 +1510,19 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
     }
 
     private void popAmmoBox() {
+        boolean changed = false;
         for (int i = 0; i < attachedAmmoBoxes.size(); i++) {
             ItemStack stack = attachedAmmoBoxes.get(i);
             if (!stack.isEmpty()) {
                 Block.popResource(this.level, this.worldPosition, stack);
                 attachedAmmoBoxes.set(i, ItemStack.EMPTY);
+                changed = true;
             }
         }
-        this.setChanged();
-        this.sendData();
+        if (changed) {
+            this.setChanged();
+            this.sendData();
+        }
     }
 
     @Override
@@ -1889,7 +1929,13 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
     }
 
     public void setConnectedFireControl(BlockPos pos) {
+        if (pos == null) { disconnectFireControl(); return; }
+        if (level != null && !level.isClientSide
+                && (!level.isLoaded(pos) || worldPosition.distSqr(pos) > 36
+                || !(level.getBlockEntity(pos) instanceof BlazeFireControlBlockEntity))) return;
+        BlockPos previous = connectedFireControlPos;
         this.connectedFireControlPos = pos;
+        updateFromFireControl();
         if (level != null && !level.isClientSide && AeronauticsHelper.isInSableSubLevel(level, pos)) {
             Vec3 projected = AeronauticsHelper.sableSubLevelToWorld(level, Vec3.atCenterOf(pos));
             this.projectedFireControlPos = BlockPos.containing(projected);
@@ -1898,6 +1944,10 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
         }
         this.setChanged();
         this.syncTargetBlock();
+        if (level != null && !level.isClientSide && previous != null && !previous.equals(pos)
+                && level.isLoaded(previous) && level.getBlockEntity(previous) instanceof BlazeFireControlBlockEntity old) {
+            old.notifyConnectedSentries(false);
+        }
         if (level != null && !level.isClientSide && level.getBlockEntity(pos) instanceof BlazeFireControlBlockEntity fc) {
             fc.notifyConnectedSentries(false);
         }
@@ -2078,7 +2128,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
 
             @Override
             public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-                if (!(stack.getItem() instanceof IAmmoBox iBox)) {
+                if (slot < 0 || slot >= getSlots() || !canAcceptAmmoBox(stack)) {
                     return stack;
                 }
                 if (!attachedAmmoBoxes.get(slot).isEmpty()) {
@@ -2086,9 +2136,6 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
                 }
                 ItemStack gun = getHeldItem();
                 if (gun.isEmpty() || !(gun.getItem() instanceof IGun)) {
-                    return stack;
-                }
-                if (!iBox.isAmmoBoxOfGun(gun, stack)) {
                     return stack;
                 }
                 if (!simulate) {
@@ -2134,7 +2181,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
 
             @Override
             public boolean isItemValid(int slot, ItemStack stack) {
-                return stack.getItem() instanceof IAmmoBox;
+                return slot >= 0 && slot < getSlots() && canAcceptAmmoBox(stack);
             }
 
             public void setStackInSlot(int slot, ItemStack stack) {

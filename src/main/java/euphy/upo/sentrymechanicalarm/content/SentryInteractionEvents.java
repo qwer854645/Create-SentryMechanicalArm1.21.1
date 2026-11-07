@@ -45,9 +45,10 @@ public class SentryInteractionEvents {
         if (sentry == null) return;
 
         if (player.isCrouching()) {
-            ItemStack removed = sentry.removeLastAmmoBox();
-            if (!removed.isEmpty()) {
+            boolean hasBox = sentry.attachedAmmoBoxes.stream().anyMatch(s -> !s.isEmpty());
+            if (hasBox) {
                 if (!level.isClientSide) {
+                    ItemStack removed = sentry.removeLastAmmoBox();
                     Block.popResource(level, pos, removed);
                     level.playSound(null, pos, SoundEvents.IRON_TRAPDOOR_OPEN, SoundSource.BLOCKS, 1.0f, 1.5f);
                 }
@@ -61,6 +62,11 @@ public class SentryInteractionEvents {
         boolean hasWater = !isDye && stack.getItem() == Items.WATER_BUCKET;
 
         if (isDye || hasWater) {
+            if (level.isClientSide) {
+                event.setCanceled(true);
+                event.setCancellationResult(InteractionResult.SUCCESS);
+                return;
+            }
             DyeColor colorToApply = isDye ? DyeColor.getColor(stack) : null;
             if (sentry.applyColor(colorToApply)) {
                 int newColorId = (colorToApply == null) ? 0 : (colorToApply.getId() + 1);
@@ -84,6 +90,11 @@ public class SentryInteractionEvents {
                     if (!level.isClientSide) {
                         player.displayClientMessage(Component.translatable("sentry.tooltip.ammobox_3").withStyle(net.minecraft.ChatFormatting.RED), true);
                     }
+                    event.setCanceled(true);
+                    event.setCancellationResult(InteractionResult.SUCCESS);
+                    return;
+                }
+                if (level.isClientSide) {
                     event.setCanceled(true);
                     event.setCancellationResult(InteractionResult.SUCCESS);
                     return;
