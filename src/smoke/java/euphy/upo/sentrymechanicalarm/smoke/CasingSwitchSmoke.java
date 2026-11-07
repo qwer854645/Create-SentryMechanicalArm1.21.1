@@ -35,8 +35,22 @@ public final class CasingSwitchSmoke {
         if(!"casingconfig".equals(System.getProperty("sentry.smoke")))return;
         running=true;level=e.getServer().overworld();
         var id=ResourceLocation.parse("sentrymechanicalarm:empty_casing");boolean enabled=SMAStartupConfig.ENABLE_CASINGS.get();
+        test("casing names follow localized ammo nouns and preserve formatting",()->{
+            check("§a9mm 手枪弹壳".equals(SentryCasingNames.fromAmmoName("§a9mm 手枪弹")),"Chinese pistol name");
+            check("§e5.56x45mm 步枪弹壳§r".equals(SentryCasingNames.fromAmmoName("§e5.56x45mm 步枪弹§r")),"Chinese rifle colors");
+            check("§a9mm Casing".equals(SentryCasingNames.fromAmmoName("§a9mm Bullet")),"English name");
+            check("12 Gauge Casings".equals(SentryCasingNames.fromAmmoName("12 Gauge Shells")),"English plural");
+            check(SentryCasingNames.fromAmmoName("Custom Magic Charge")==null,"unknown names should use translated fallback");
+        });
         test("startup option controls real item registry",()->check(net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(id)==enabled,"wrong registry membership"));
-        test("creative tab builds safely with current registration",()->{var tab=SentryRegistry.SENTRY_TAB.get();tab.buildContents(new CreativeModeTab.ItemDisplayParameters(net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS,true,level.registryAccess()));check(tab.getDisplayItems().stream().anyMatch(x->x.getItem() instanceof EmptyCasingItem)==enabled,"creative content mismatch");});
+        test("creative tab builds safely with current registration",()->{var tab=SentryRegistry.SENTRY_TAB.get();tab.buildContents(new CreativeModeTab.ItemDisplayParameters(net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS,true,level.registryAccess()));check(tab.getDisplayItems().stream().anyMatch(x->x.getItem() instanceof EmptyCasingItem)==false,"creative content mismatch");});
+        test("dedicated casing tab follows startup registration and contains only casings",()->{
+            var tabId=ResourceLocation.parse("sentrymechanicalarm:casings");
+            check(net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB.containsKey(tabId)==enabled,"tab registration mismatch");
+            if(enabled){var tab=SentryRegistry.CASINGS_TAB.get();tab.buildContents(new CreativeModeTab.ItemDisplayParameters(net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS,true,level.registryAccess()));
+                check(tab.getDisplayItems().size()==com.tacz.guns.api.TimelessAPI.getAllCommonAmmoIndex().size()+1,"missing casing variants");
+                check(tab.getDisplayItems().stream().allMatch(x->x.getItem() instanceof EmptyCasingItem),"non-casing entry");}
+        });
         test("factory safely handles missing item",()->check(EmptyCasingItem.create(ResourceLocation.parse("tacz:9mm"),1).isEmpty()!=enabled,"unsafe factory"));
         if(!enabled){test("disabled shot hooks remain safe",()->{var entity=new Husk(EntityType.HUSK,level);entity.setItemSlot(EquipmentSlot.MAINHAND,gun());pair(entity,true);check(drops==0,"disabled casing drop");});test("disabled discovery skips casing profiles",()->check(SentryCasingProfiles.snapshot().isEmpty(),"profiles loaded while disabled"));finish();return;}
         SMAServerConfig.CASING_CHANCE.set(1.0);SMAServerConfig.CASING_ENTITY_LIMIT.set(1024);

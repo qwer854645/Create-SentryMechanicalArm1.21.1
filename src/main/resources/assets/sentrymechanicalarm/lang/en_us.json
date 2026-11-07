@@ -1,4 +1,5 @@
 {
+  "itemGroup.sentrymechanicalarm.casings": "TAC | Casings",
   "itemGroup.sentrymechanicalarm": "Create: Sentry Mechanical Arm",
   "block.sentrymechanicalarm.sentry_mechanical_arm": "Sentry Mechanical Arm",
   "block.sentrymechanicalarm.blaze_fire_control": "Blaze Fire Control",
@@ -125,7 +126,7 @@
   "sentry.supply.supplied": "Supply: ammunition replenished",
   "sentry.supply.creative": "Supply: creative ammo box",
   "sentry.supply.depot_mounted": "Mounted depot supplies ammunition automatically; disassemble to open its native menu.",
-  "item.sentrymechanicalarm.empty_casing": "Empty Casing",
+  "item.sentrymechanicalarm.empty_casing": "Casing",
   "item.sentrymechanicalarm.empty_casing.named": "%s Casing",
   "item.sentrymechanicalarm.empty_casing.description": "Recovered casing. Reloading recipes are not yet available."
 }

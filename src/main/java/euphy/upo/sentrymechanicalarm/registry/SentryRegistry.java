@@ -90,16 +90,24 @@ public class SentryRegistry {
                         output.accept(new net.minecraft.world.item.ItemStack(BLAZE_FIRE_CONTROL_ITEM.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(FIRE_CONTROL_CLIPBOARD.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(UNFINISHED_AMMO.get(), 1));
-                        if(EMPTY_CASING.isBound()){
-                        output.accept(new net.minecraft.world.item.ItemStack(EMPTY_CASING.get()));
-                        com.tacz.guns.api.TimelessAPI.getAllCommonAmmoIndex().stream()
-                                .sorted(java.util.Map.Entry.comparingByKey())
-                                .forEach(entry -> output.accept(EmptyCasingItem.create(entry.getKey(), 1)));
-                        }
                         output.accept(new net.minecraft.world.item.ItemStack(APPLE_PIE.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(SENTRY_SCOPE.get(), 1));
                     })
                     .build());
+
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> CASINGS_TAB =
+            euphy.upo.sentrymechanicalarm.SMAStartupConfig.ENABLE_CASINGS.get()
+            ? CREATIVE_TABS.register("casings", () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup." + MODID + ".casings"))
+                    .icon(() -> new net.minecraft.world.item.ItemStack(EMPTY_CASING.get()))
+                    .withTabsAfter(SENTRY_TAB.getId())
+                    .displayItems((parameters, output) -> {
+                        output.accept(new net.minecraft.world.item.ItemStack(EMPTY_CASING.get()));
+                        com.tacz.guns.api.TimelessAPI.getAllCommonAmmoIndex().stream()
+                                .sorted(java.util.Map.Entry.comparingByKey())
+                                .forEach(entry -> output.accept(EmptyCasingItem.create(entry.getKey(), 1)));
+                    }).build())
+            : DeferredHolder.create(Registries.CREATIVE_MODE_TAB, ResourceLocation.fromNamespaceAndPath(MODID,"casings"));
 
     public static void register(IEventBus eventBus) {
         BLOCKS.register(eventBus);

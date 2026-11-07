@@ -1,4 +1,5 @@
 {
+  "itemGroup.sentrymechanicalarm.casings": "TAC | 弹壳",
   "itemGroup.sentrymechanicalarm": "机械动力：哨戒动力臂",
   "block.sentrymechanicalarm.sentry_mechanical_arm": "哨戒动力臂",
   "block.sentrymechanicalarm.blaze_fire_control": "拉特兰火控台",
@@ -122,7 +123,7 @@
   "sentry.supply.supplied": "补给：已补充弹药",
   "sentry.supply.creative": "补给：无限弹药盒",
   "sentry.supply.depot_mounted": "移动中的弹药库自动供弹；拆卸后可打开原生界面。",
-  "item.sentrymechanicalarm.empty_casing": "空弹壳",
+  "item.sentrymechanicalarm.empty_casing": "弹壳",
   "item.sentrymechanicalarm.empty_casing.named": "%s 弹壳",
   "item.sentrymechanicalarm.empty_casing.description": "回收的弹壳，再装填配方将在后续阶段加入。"
 }

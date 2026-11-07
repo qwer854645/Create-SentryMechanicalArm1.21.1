@@ -28,7 +28,9 @@ public final class EmptyCasingItem extends Item {
                     return name==null||name.isBlank()?Component.literal(id.toString()):Component.translatable(name);
                 })
                 .orElseGet(() -> Component.literal(id.toString()));
-        return Component.translatable("item.sentrymechanicalarm.empty_casing.named", ammoName);
+        // Resolve with the current language, so gunpack translations and inline colors carry over.
+        String casing=euphy.upo.sentrymechanicalarm.util.SentryCasingNames.fromAmmoName(ammoName.getString());
+        return casing==null?Component.translatable("item.sentrymechanicalarm.empty_casing.named", ammoName):Component.literal(casing);
     }
     @Override public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         var id = ammoId(stack);
