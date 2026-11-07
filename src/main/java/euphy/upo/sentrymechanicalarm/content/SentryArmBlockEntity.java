@@ -545,8 +545,11 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
 
         if (currentTickBestPos != null) {
             if (!this.level.isClientSide || this.syncedTargetId == -1) {
-                Vec2 angles = calculateAngleBetween(worldToSubLevel(getActualMuzzlePos()),worldToSubLevel(currentTickBestPos));
-                aimAtAngle(angles.x,angles.y);
+                Vec2 angles = euphy.upo.sentrymechanicalarm.util.SentryGunGeometry.aim(
+                        worldToSubLevel(currentTickBestPos).subtract(getLocalGunPose().position()),isCeiling(),
+                        lowerArmAngle.getValue(),upperArmAngle.getValue(),headAngle.getValue(),
+                        euphy.upo.sentrymechanicalarm.util.SentryGunProfiles.get(heldItem));
+                aimAtJoints(angles.x,angles.y);
             }
             if (!this.level.isClientSide) {
                 var pose = getGunPose();
@@ -562,14 +565,9 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
         }
     }
 
-    private void aimAtAngle(float targetYaw, float targetPitch) {
-        if (isCeiling()) {
-            targetPitch = -targetPitch ;
-            targetYaw = -targetYaw + 180;
-        }
-
+    private void aimAtJoints(float targetBase, float targetHead) {
         float currentYaw = baseAngle.getValue();
-        float desiredYaw = -targetYaw + 180;
+        float desiredYaw = targetBase;
         float yawDiff = desiredYaw - currentYaw;
         while (yawDiff < -180) yawDiff += 360;
         while (yawDiff > 180) yawDiff -= 360;
@@ -591,7 +589,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
         }
 
         float currentPitch = headAngle.getValue();
-        float desiredPitch = net.minecraft.util.Mth.clamp(-targetPitch, -90, 90);
+        float desiredPitch = net.minecraft.util.Mth.clamp(targetHead, -90, 90);
         float pitchDiff = desiredPitch - currentPitch;
         float absPitchDiff = Math.abs(pitchDiff);
 
@@ -1160,8 +1158,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
             handleAdaptiveAutoStrategy(ctx);
             if (ctx.actuallyFired) {
                 if (ctx.gunIndex.isPresent()) {
-                    this.shootDelayAccumulator = Math.max(0,
-                            ctx.gunIndex.get().getGunData().getShootInterval(ctx.player,ctx.fireMode,ctx.fakeHeldItem)/50f - 1);
+                    this.shootDelayAccumulator = nativeShootDelay(ctx);
                 } else {
                     this.shootDelayAccumulator = 2.0f;
                 }
@@ -1191,8 +1188,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
     private void handleSemiAutoStrategy(FireContext ctx) {
         if (ctx.actuallyFired) {
             setStatus(SentryStatus.SHOOTING);
-            this.shootDelayAccumulator = ctx.gunIndex.map(i -> Math.max(0,
-                    i.getGunData().getShootInterval(ctx.player,ctx.fireMode,ctx.fakeHeldItem)/50f - 1)).orElse(2f);
+            this.shootDelayAccumulator = nativeShootDelay(ctx);
         } else {
             setStatus(SentryStatus.IDLE);
             if (this.triggerHoldTime > 60) {
@@ -1202,6 +1198,13 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
                 this.shootDelayAccumulator = 0f;
             }
         }
+    }
+
+    /** Read the native remaining cooldown, including script-adjusted shootTimestamp. */
+    private float nativeShootDelay(FireContext ctx) {
+        var draw = new com.tacz.guns.entity.shooter.LivingEntityDrawGun(ctx.player,ctx.dataHolder);
+        var shoot = new com.tacz.guns.entity.shooter.LivingEntityShoot(ctx.player,ctx.dataHolder,draw);
+        return Math.max(0,shoot.getShootCoolDown()/50f-1);
     }
 
     private void handleAdaptiveAutoStrategy(FireContext ctx) {

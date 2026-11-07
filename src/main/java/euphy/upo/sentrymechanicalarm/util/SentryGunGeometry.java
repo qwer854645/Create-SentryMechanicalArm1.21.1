@@ -19,6 +19,30 @@ public final class SentryGunGeometry {
         }
     }
     public static boolean finite(Vec3 v) { return Double.isFinite(v.x) && Double.isFinite(v.y) && Double.isFinite(v.z); }
+    /** Solve actual joint angles, including the pack's hand/muzzle rest-frame rotation. */
+    public static net.minecraft.world.phys.Vec2 aim(Vec3 direction, boolean ceiling, float lower, float upper,
+                                                  float currentHead, SentryGunProfiles.Profile profile) {
+        Vec3 target=direction.normalize();
+        if(ceiling)target=new Vec3(target.x,-target.y,-target.z);
+        Vec3 source=profile.forward();
+        if(profile.minigunMount())source=new Vec3(source.x,source.z,-source.y);
+        double offset=lower+upper-225;
+        double radius=Math.hypot(source.y,source.z);
+        double phase=Math.atan2(source.y,-source.z);
+        double elevation=Math.asin(Mth.clamp(radius<1e-10?0:target.y/radius,-1,1));
+        double bestScore=-Double.MAX_VALUE,bestBase=0,bestHead=currentHead;
+        for(double raw: new double[]{elevation-phase,Math.PI-elevation-phase})for(int turn=-1;turn<=1;turn++) {
+            double head=radius<1e-10?currentHead:Mth.clamp(Math.toDegrees(raw)+turn*360-offset,-90,90);
+            double angle=Math.toRadians(offset+head);
+            double y=source.y*Math.cos(angle)-source.z*Math.sin(angle);
+            double z=source.y*Math.sin(angle)+source.z*Math.cos(angle);
+            double base=Math.atan2(target.x,target.z)-Math.atan2(source.x,z);
+            Vec3 predicted=new Vec3(source.x*Math.cos(base)+z*Math.sin(base),y,-source.x*Math.sin(base)+z*Math.cos(base));
+            double score=predicted.dot(target);
+            if(score>bestScore+1e-12 || (Math.abs(score-bestScore)<1e-12 && Math.abs(head-currentHead)<Math.abs(bestHead-currentHead))){bestScore=score;bestBase=Math.toDegrees(base);bestHead=head;}
+        }
+        return new net.minecraft.world.phys.Vec2((float)bestBase,(float)bestHead);
+    }
     public static Matrix4d mount(boolean ceiling, float base, float lower, float upper, float head, boolean minigun) {
         Matrix4d m = new Matrix4d().translate(.5,.5,.5);
         if (ceiling) m.rotateX(Math.PI);

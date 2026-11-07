@@ -40,7 +40,7 @@ public final class CasingClientSmoke {
         }
         if(!captured&&frames>=8&&mc.getOverlay()==null){
             try(var screenshot=net.minecraft.client.Screenshot.takeScreenshot(mc.getMainRenderTarget())){
-                var file=java.nio.file.Path.of("../../evidence/alpha11-casing-preview.png");java.nio.file.Files.createDirectories(file.getParent());screenshot.writeToFile(file);
+                var file=java.nio.file.Path.of("../../evidence/"+(Boolean.getBoolean("sentry.gunpackClientSmoke")?"gunpacks-casing-preview.png":"alpha11-casing-preview.png"));java.nio.file.Files.createDirectories(file.getParent());screenshot.writeToFile(file);
                 SentryMechanicalArm.LOGGER.info("CASING_CLIENT RESULT failed={} screenshot={}",failures,file.toAbsolutePath());
             }catch(Exception e){failures++;SentryMechanicalArm.LOGGER.error("CASING_CLIENT FAIL screenshot",e);}
             captured=true;mc.setScreen(null);

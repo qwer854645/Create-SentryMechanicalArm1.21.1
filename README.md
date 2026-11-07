@@ -1,6 +1,8 @@
 # Create: Sentry Mechanical Arm（非官方移植）
 
-当前修复开发版本：**1.4.0-alpha.11**。固定验证环境：Minecraft 1.21.1 / NeoForge 21.1.228 / Create 6.0.10 / TaCZ 1.2.0 / Java 21。
+当前修复开发版本：**1.4.0-alpha.12**。固定验证环境：Minecraft 1.21.1 / NeoForge 21.1.228 / Create 6.0.10 / TaCZ 1.2.0 / Java 21。
+
+两份第三方枪包的实测与限制见 [docs/GUNPACK_COMPATIBILITY.md](docs/GUNPACK_COMPATIBILITY.md)。
 
 版本历史见 [CHANGELOG.md](CHANGELOG.md)，自动枪包弹壳第一阶段见 [docs/CASINGS_PHASE1.md](docs/CASINGS_PHASE1.md)。此前十个版本已按已保存源码快照建立本地 Git 归档标签；这是非官方修复开发分支。
 

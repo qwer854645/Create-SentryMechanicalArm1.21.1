@@ -81,6 +81,7 @@ neoForge {
             if (providers.gradleProperty("sentryClientSmoke").isPresent) {
                 systemProperty("sentry.clientSmoke", "true")
                 if (providers.gradleProperty("casingClientSmoke").isPresent) systemProperty("sentry.casingClientSmoke", "true")
+                if (providers.gradleProperty("gunpackClientSmoke").isPresent) systemProperty("sentry.gunpackClientSmoke", "true")
                 if (providers.gradleProperty("sentryClientReloadSmoke").isPresent) systemProperty("sentry.clientReloadSmoke", "true")
                 programArgument("--quickPlaySingleplayer")
                 programArgument("phase3-validation")
@@ -108,8 +109,14 @@ neoForge {
                     programArgument("--world")
                     programArgument("disabled-alpha10")
                 }
-                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart", "reload")) suite else "true")
+                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart", "reload", "gunpacks")) suite else "true")
                 if (providers.gradleProperty("trainDepotSmoke").isPresent) systemProperty("sentry.trainDepot","true")
+                if (suite == "gunpacks") {
+                    programArgument("--universe")
+                    programArgument(file("../gunpack-worlds").absolutePath)
+                    programArgument("--world")
+                    programArgument("ars-applied-"+System.currentTimeMillis())
+                }
                 if (suite == "reload") {
                     programArgument("--universe")
                     programArgument(file("../reload-worlds").absolutePath)
