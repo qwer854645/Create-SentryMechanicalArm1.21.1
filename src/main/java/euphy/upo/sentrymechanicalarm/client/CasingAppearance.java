@@ -28,25 +28,18 @@ public final class CasingAppearance {
         }catch(Exception e){missing.add(ammo);return null;}
     }
     public static NativeImage crop(NativeImage source){
-        int w=source.getWidth(),h=source.getHeight(),left=w,right=-1,top=h,bottom=-1;
-        for(int y=0;y<h;y++)for(int x=0;x<w;x++)if((source.getPixelRGBA(x,y)>>>24)>=32){left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y);}
-        if(right<left)throw new IllegalArgumentException("Empty ammo icon");
-        // Slot art commonly has a separate wide caliber caption below the cartridges.
-        // Cut at the first pronounced widening of the silhouette, if there is one.
-        int previous=0,caption=-1;
-        for(int y=top;y<=bottom;y++){
-            int rowLeft=w,rowRight=-1,ink=0;
-            for(int x=0;x<w;x++)if((source.getPixelRGBA(x,y)>>>24)>=32){rowLeft=Math.min(rowLeft,x);rowRight=Math.max(rowRight,x);ink++;}
-            int span=Math.max(0,rowRight-rowLeft+1);
-            if(y>=top+4&&previous>0&&ink>=previous*1.4&&span>=(right-left+1)*.65){caption=y;break;}
-            if(ink>0)previous=ink;
+        int w=source.getWidth(),h=source.getHeight(),top=-1,bottom=-1;
+        // Original simple crop: retain the first continuous artwork band intact.
+        for(int y=0;y<h;y++){
+            boolean opaque=false;for(int x=0;x<w;x++)if((source.getPixelRGBA(x,y)>>>24)>=32){opaque=true;break;}
+            if(top<0){if(opaque){top=y;bottom=y;}}
+            else if(opaque)bottom=y;else break;
         }
-        if(caption>top+3)bottom=caption-1;
-        while(bottom>top){boolean ink=false;for(int x=0;x<w;x++)if((source.getPixelRGBA(x,bottom)>>>24)>=32){ink=true;break;}if(ink)break;bottom--;}
+        if(top<0)throw new IllegalArgumentException("Empty ammo icon");
         top+=Math.min(bottom-top,(int)Math.round((bottom-top+1)*.30));
-        left=w;right=-1;
+        int left=w,right=-1;
         for(int y=top;y<=bottom;y++)for(int x=0;x<w;x++)if((source.getPixelRGBA(x,y)>>>24)>=32){left=Math.min(left,x);right=Math.max(right,x);}
-        if(right<left)throw new IllegalArgumentException("Empty cropped icon");
+        if(right<left)throw new IllegalArgumentException("Empty cropped ammo icon");
         int width=right-left+1,height=bottom-top+1;
         // Transparent square canvas; nearest-neighbor copying preserves every source color.
         int size=Math.max(width,height)+4;
