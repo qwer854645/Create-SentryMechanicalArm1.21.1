@@ -30,20 +30,8 @@ public record SentryClientShootPacket(int contraptionId, BlockPos localPos, floa
         return TYPE;
     }
 
-    public static void handle(SentryClientShootPacket msg, ServerPlayer player) {
-        Entity entity = player.level().getEntity(msg.contraptionId());
-        if (entity instanceof AbstractContraptionEntity ace) {
-            Contraption contraption = ace.getContraption();
-            if (contraption != null) {
-                for (var actor : contraption.getActors()) {
-                    if (actor.getKey().pos().equals(msg.localPos())) {
-                        SentryMovementBehaviour.handleClientShootPacket(
-                                actor.getValue(), ace, msg.yaw(), msg.pitch(), msg.distance()
-                        );
-                        break;
-                    }
-                }
-            }
-        }
+    public static void handle(SentryClientShootPacket msg,ServerPlayer player) {
+        // Retained as an inert payload for explicit rejection of old/malicious clients.
     }
+
 }

@@ -41,6 +41,20 @@ import java.util.Map;
 import java.util.Optional;
 
 public class ClientPacketHandler {
+    public static void handleContraptionState(SentryContraptionStatePacket packet) {
+        var level=net.minecraft.client.Minecraft.getInstance().level;
+        if (level==null || !(level.getEntity(packet.entityId()) instanceof com.simibubi.create.content.contraptions.AbstractContraptionEntity ace)
+                || ace.getContraption()==null) return;
+        for (var pair:ace.getContraption().getActors()) {
+            var ctx=pair.getValue();
+            if (ctx==null || !ctx.localPos.equals(packet.localPos()) || !(ctx.state.getBlock() instanceof euphy.upo.sentrymechanicalarm.content.SentryArmBlock)) continue;
+            var arm=euphy.upo.sentrymechanicalarm.content.SentryMovementBehaviour.getOrCreate(ctx);
+            arm.acceptNetworkState(packet.state());
+            ctx.blockEntityData=packet.state().copy();
+            return;
+        }
+    }
+
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private static final Map<ResourceLocation, GunDisplayInstance> SENTRY_DISPLAYS = new HashMap<>();
@@ -90,7 +104,7 @@ public class ClientPacketHandler {
         if (gunStack.isEmpty() || !(gunStack.getItem() instanceof IGun iGun)) return;
 
         Level level = mc.level;
-        Vec3 center = sentry.getBlockPos().getCenter();
+        Vec3 center = msg.realStart();
 
         Optional<GunDisplayInstance> displayOpt = TimelessAPI.getGunDisplay(gunStack);
         if (displayOpt.isEmpty()) return;
@@ -120,6 +134,17 @@ public class ClientPacketHandler {
         Minecraft mc = Minecraft.getInstance();
         Level level = mc.level;
         if (level == null) return;
+        if(msg.actionType()!=SentryShootPacket.ActionType.SHOOT){
+            TimelessAPI.getGunDisplay(msg.gunStack()).ifPresent(display->{
+                switch(msg.actionType()){
+                    case CHARGE -> {triggerSentryAnimation(msg.gunStack(),"bolt");ArmSoundHelper.playChargeSound(level,msg.realStart(),msg.gunStack(),display);}
+                    case BOLT -> ArmSoundHelper.playBoltSound(level,msg.realStart(),display);
+                    case RELOAD_EMPTY -> ArmSoundHelper.playReloadSound(level,msg.realStart(),display,true);
+                    case RELOAD_TACTICAL -> ArmSoundHelper.playReloadSound(level,msg.realStart(),display,false);
+                    default -> {}
+                }
+            });return;
+        }
 
         Entity entity = level.getEntity(msg.contraptionId());
         if (entity instanceof AbstractContraptionEntity ace) {
@@ -129,7 +154,6 @@ public class ClientPacketHandler {
                     if (actor.getKey().pos().equals(msg.localPos())) {
                         MovementContext context = actor.getValue();
                         SentryArmBlockEntity be = null;
-                        LOGGER.info("[ContraptionShellPacket] processing pos=({}) tempData={} blockData={}", context.localPos, context.temporaryData != null ? context.temporaryData.getClass().getSimpleName() : "null", context.blockEntityData != null ? "present" : "null");
                         if (context.temporaryData instanceof SentryArmBlockEntity s) {
                             be = s;
                         } else if (context.blockEntityData != null) {

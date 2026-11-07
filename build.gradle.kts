@@ -89,7 +89,7 @@ neoForge {
             programArgument("--nogui")
             if (providers.gradleProperty("sentrySmoke").isPresent) {
                 val suite = providers.gradleProperty("sentrySmoke").get()
-                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3")) suite else "true")
+                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat")) suite else "true")
             }
         }
         register("data") {
@@ -105,6 +105,8 @@ neoForge {
 }
 
 dependencies {
+    // Optional local Sable runtime for integration verification; not bundled or required.
+    if (providers.gradleProperty("sableJar").isPresent) runtimeOnly(files(providers.gradleProperty("sableJar").get()))
     // NeoForge
     implementation(libs.neoforge)
 

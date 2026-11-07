@@ -145,12 +145,7 @@ public class FireControlMovementBehaviour implements MovementBehaviour {
             MovementBehaviour behaviour = MovementBehaviour.REGISTRY.get(ctx.state.getBlock());
 
             if (behaviour instanceof SentryMovementBehaviour) {
-                ctx.data.remove("SentryTargetId");
-                ctx.data.putBoolean("SentryHasTarget", false);
-
-                ctx.data.putInt("_TargetId", -1);
-                ctx.data.putInt("_ScanCooldown", 0);
-                ctx.data.putInt("IdleScanTimer", 0);
+                if(ctx.temporaryData instanceof VirtualSentryArmBlockEntity arm)arm.updateFromFireControl();
             }
         }
     }

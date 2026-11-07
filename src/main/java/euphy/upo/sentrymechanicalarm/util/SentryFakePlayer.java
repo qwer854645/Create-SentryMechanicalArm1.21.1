@@ -206,27 +206,28 @@ public class SentryFakePlayer {
     }
 
     public static void sync(FakePlayer fp, SentryArmBlockEntity arm, float yaw, float pitch, ItemStack gunStack) {
-        boolean isVirtual = arm instanceof VirtualSentryArmBlockEntity;
-
-        if (!isVirtual) {
-            Vec3 worldPos;
-            if (arm.isInSableSubLevel()) {
-                Vec3 muzzleWorld = arm.getProjectedMuzzlePos();
-                worldPos = new Vec3(muzzleWorld.x, muzzleWorld.y - 1.62, muzzleWorld.z);
-            } else {
-                var pose = arm.getGunPose();
-                worldPos = pose.position().subtract(0,fp.getEyeHeight(),0);
-                yaw = pose.yaw(); pitch = pose.pitch();
-            }
-            fp.setPos(worldPos.x, worldPos.y, worldPos.z);
-            fp.xo = worldPos.x; fp.yo = worldPos.y; fp.zo = worldPos.z;
-            fp.xOld = worldPos.x; fp.yOld = worldPos.y; fp.zOld = worldPos.z;
-        }
+        updatePose(fp,arm);
+        yaw=fp.getYRot();pitch=fp.getXRot();
 
         fp.setYRot(yaw);
         fp.setXRot(pitch);
         fp.yHeadRot = yaw;
         fp.yBodyRot = yaw;
+
+        syncEquipment(fp,arm,gunStack);
+    }
+
+    /** Refresh only geometry during delayed bursts, never overwrite already-consumed ammo. */
+    public static void updatePose(FakePlayer fp,SentryArmBlockEntity arm) {
+        var pose = arm.getGunPose();
+        Vec3 feet = pose.position().subtract(0,fp.getEyeHeight(),0);
+        fp.setPos(feet.x,feet.y,feet.z);
+        fp.xo=fp.xOld=feet.x; fp.yo=fp.yOld=feet.y; fp.zo=fp.zOld=feet.z;
+        fp.setYRot(pose.yaw());fp.setXRot(pose.pitch());
+        fp.yHeadRot=pose.yaw();fp.yBodyRot=pose.yaw();
+    }
+
+    private static void syncEquipment(FakePlayer fp,SentryArmBlockEntity arm,ItemStack gunStack) {
 
         fp.setHealth(fp.getMaxHealth());
         fp.deathTime = 0;

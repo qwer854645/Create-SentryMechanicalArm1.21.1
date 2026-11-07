@@ -57,6 +57,7 @@ public class SentryEventHandler {
             var arm = SentryFakePlayer.getArmFromPlayer(fp);
             if (arm != null && arm.getHeldItem().getItem() instanceof com.tacz.guns.api.item.IGun
                     && Math.abs(arm.getSpeed()) == 0) { event.setCanceled(true); return; }
+            if(arm!=null)SentryFakePlayer.updatePose(fp,arm);
             SentryFakePlayer.beginShot(fp);
         }
     }
@@ -70,7 +71,7 @@ public class SentryEventHandler {
 
         if (attacker instanceof FakePlayer fp) {
             SentryArmBlockEntity arm = SentryFakePlayer.getArmFromPlayer(fp);
-            if (arm != null) {
+            if (arm != null && !(arm instanceof VirtualSentryArmBlockEntity)) {
                 killedEntity.getPersistentData().putLong(SENTRY_KILL_TAG, arm.getBlockPos().asLong());
             }
         }
