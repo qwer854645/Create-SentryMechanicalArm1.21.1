@@ -20,11 +20,17 @@ public final class CasingClientSmoke {
     static boolean preview(){
         var mc=Minecraft.getInstance();
         if(!started){
-            started=true;int nativeModels=0;
+            started=true;int nativeModels=0,missingTextures=0;
             var renderer=new EmptyCasingRenderer();
             for(var entry:TimelessAPI.getAllClientAmmoIndex().stream().sorted(Map.Entry.comparingByKey()).toList()){
                 var casing=EmptyCasingItem.create(entry.getKey(),1);samples.add(casing);
                 try {
+                    var texture=entry.getValue().getShellTextureLocation();
+                    if(texture!=null&&mc.getResourceManager().getResource(texture).isEmpty()){
+                        missingTextures++;
+                        if(EmptyCasingRenderer.hasPackShell(entry.getKey()))throw new AssertionError("missing texture accepted as native shell");
+                        SentryMechanicalArm.LOGGER.info("CASING_CLIENT FALLBACK missing texture ammo={} texture={}",entry.getKey(),texture);
+                    }
                     if(EmptyCasingRenderer.hasPackShell(entry.getKey()))nativeModels++;
                     for(var context:List.of(ItemDisplayContext.GUI,ItemDisplayContext.GROUND,ItemDisplayContext.FIRST_PERSON_RIGHT_HAND,ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)){
                         var pose=new PoseStack();pose.translate(.1,.2,.3);var before=new org.joml.Matrix4f(pose.last().pose());
@@ -35,7 +41,7 @@ public final class CasingClientSmoke {
             }
             samples.add(EmptyCasingItem.create(ResourceLocation.parse("removed_pack:ammo"),1));
             if(nativeModels<15){failures++;SentryMechanicalArm.LOGGER.error("CASING_CLIENT FAIL insufficient real pack shell models {}",nativeModels);}
-            SentryMechanicalArm.LOGGER.info("CASING_CLIENT models={} samples={} failed={}",nativeModels,samples.size(),failures);
+            SentryMechanicalArm.LOGGER.info("CASING_CLIENT models={} samples={} missingTextures={} failed={}",nativeModels,samples.size(),missingTextures,failures);
             mc.setScreen(new Preview());return false;
         }
         if(!captured&&frames>=8&&mc.getOverlay()==null){

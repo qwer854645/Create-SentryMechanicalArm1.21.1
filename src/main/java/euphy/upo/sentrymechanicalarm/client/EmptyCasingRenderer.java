@@ -22,7 +22,8 @@ public final class EmptyCasingRenderer extends BlockEntityWithoutLevelRenderer {
     public static void clear(){fits.clear();failed.clear();}
     public static boolean hasPackShell(ResourceLocation id){
         var index=TimelessAPI.getClientAmmoIndex(id).orElse(null);
-        return index!=null&&index.getShellModel()!=null&&index.getShellTextureLocation()!=null;
+        return index!=null&&index.getShellModel()!=null&&index.getShellTextureLocation()!=null
+                &&Minecraft.getInstance().getResourceManager().getResource(index.getShellTextureLocation()).isPresent();
     }
     private static Fit fit(ResourceLocation ammo,ClientAmmoIndex index){
         return fits.computeIfAbsent(index,key->{
@@ -56,7 +57,7 @@ public final class EmptyCasingRenderer extends BlockEntityWithoutLevelRenderer {
             pose.pushPose();
             try {
                 var model=index.getShellModel();var texture=index.getShellTextureLocation();
-                if(model!=null&&texture!=null){
+                if(model!=null&&texture!=null&&hasPackShell(id)){
                     var fit=fit(id,index);pose.translate(.5,.5,.5);
                     if(context==ItemDisplayContext.GUI){pose.mulPose(Axis.YP.rotationDegrees(-35));pose.mulPose(Axis.XP.rotationDegrees(25));}
                     pose.scale((float)-fit.scale(),(float)-fit.scale(),(float)fit.scale());

@@ -109,8 +109,17 @@ neoForge {
                     programArgument("--world")
                     programArgument("disabled-alpha10")
                 }
-                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart", "reload", "gunpacks")) suite else "true")
+                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart", "reload", "gunpacks", "randompacks")) suite else "true")
                 if (providers.gradleProperty("trainDepotSmoke").isPresent) systemProperty("sentry.trainDepot","true")
+                if (suite == "randompacks") {
+                    val namespace=providers.gradleProperty("randomNamespace").get()
+                    require(namespace.matches(Regex("[a-z0-9_]+")))
+                    systemProperty("sentry.randomNamespace",namespace)
+                    programArgument("--universe")
+                    programArgument(file("../randompack-worlds").absolutePath)
+                    programArgument("--world")
+                    programArgument(namespace+"-"+System.currentTimeMillis())
+                }
                 if (suite == "gunpacks") {
                     programArgument("--universe")
                     programArgument(file("../gunpack-worlds").absolutePath)
