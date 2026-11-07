@@ -90,6 +90,13 @@ neoForge {
             programArgument("--nogui")
             if (providers.gradleProperty("sentrySmoke").isPresent) {
                 val suite = providers.gradleProperty("sentrySmoke").get()
+                if (providers.gradleProperty("ammoCraftingDisabledSmoke").isPresent) {
+                    systemProperty("sentry.ammoCraftingDisabledSmoke", "true")
+                    programArgument("--universe")
+                    programArgument(file("../crafting-worlds").absolutePath)
+                    programArgument("--world")
+                    programArgument("disabled-alpha10")
+                }
                 systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart", "reload")) suite else "true")
                 if (providers.gradleProperty("trainDepotSmoke").isPresent) systemProperty("sentry.trainDepot","true")
                 if (suite == "reload") {

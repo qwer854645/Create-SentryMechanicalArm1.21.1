@@ -25,6 +25,10 @@ public class PressingRecipeMixin {
         ItemStack[] recipeItems = ingredients.get(0).getItems();
         if (recipeItems.length == 0) return;
         if (!(recipeItems[0].getItem() instanceof UnfinishedAmmoItem)) return;
+        if (!euphy.upo.sentrymechanicalarm.SMAServerConfig.ENABLE_AMMO_CRAFTING.get()) {
+            cir.setReturnValue(false);
+            return;
+        }
 
         ResourceLocation recipeAmmoId = UnfinishedAmmoItem.getAmmoId(recipeItems[0]);
         if (recipeAmmoId == null) return;

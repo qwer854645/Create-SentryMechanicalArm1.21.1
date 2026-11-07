@@ -26,6 +26,7 @@ public class AmmoTemplateRecipe extends CustomRecipe {
 
     @Override
     public boolean matches(CraftingInput input, Level level) {
+        if (!euphy.upo.sentrymechanicalarm.SMAServerConfig.ENABLE_AMMO_CRAFTING.get()) return false;
         boolean hasAmmo = false;
         boolean hasCopperSheet = false;
 
@@ -48,6 +49,7 @@ public class AmmoTemplateRecipe extends CustomRecipe {
 
     @Override
     public ItemStack assemble(CraftingInput input, HolderLookup.Provider registries) {
+        if (!euphy.upo.sentrymechanicalarm.SMAServerConfig.ENABLE_AMMO_CRAFTING.get()) return ItemStack.EMPTY;
         ItemStack ammoStack = ItemStack.EMPTY;
         int copperCount = 0;
 

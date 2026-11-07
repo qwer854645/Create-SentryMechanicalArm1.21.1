@@ -123,6 +123,31 @@ public final class ReloadRecipeSmoke {
             int count=0;for(var holder:server.getRecipeManager().getRecipes())if(holder.id().getNamespace().equals("sentrymechanicalarm")&&holder.id().getPath().startsWith("ammo_assembly/")){assemble(holder);count++;}
             check(count==TimelessAPI.getAllCommonAmmoIndex().size(),"not all ammo sequences processed");
         });
+        test("master crafting switch gates templates, materials, cached recipes and in-progress assembly",()->{
+            var holder=server.getRecipeManager().byKey(assemblyId).orElseThrow();
+            var sequence=(SequencedAssemblyRecipe)holder.value();
+            var inventory=new net.neoforged.neoforge.items.ItemStackHandler(2);
+            inventory.setStackInSlot(0,template(1));inventory.setStackInSlot(1,sequence.getSequence().getFirst().getRecipe().getIngredients().get(1).getItems()[0].copy());
+            var first=SequencedAssemblyRecipe.getRecipe(server.overworld(),new net.neoforged.neoforge.items.wrapper.RecipeWrapper(inventory),com.simibubi.create.AllRecipeTypes.DEPLOYING.getType(),com.simibubi.create.content.kinetics.deployer.DeployerApplicationRecipe.class).orElseThrow().value();
+            var progress=first.rollResults(server.overworld().random).getFirst();
+            var input=CraftingInput.of(2,1,List.of(AmmoItemBuilder.create().setId(AMMO).build(),new ItemStack(AllItems.COPPER_SHEET.get())));
+            var recipe=new AmmoTemplateRecipe(CraftingBookCategory.MISC);
+            var material=new ItemStack(AllItems.COPPER_SHEET.get(),4);
+            try {
+                SMAServerConfig.ENABLE_AMMO_CRAFTING.set(false);
+                SMAServerConfig.ENABLE_AMMO_CRAFTING.clearCache(); // Test the next-world value without restarting the fixture.
+                check(!recipe.matches(input,server.overworld())&&recipe.assemble(input,server.registryAccess()).isEmpty(),"template still craftable");
+                check(LegacyAmmoProcessing.apply(template(3),material,200)==null&&material.getCount()==4,"legacy processing consumed materials");
+                check(!sequence.getIngredient().test(template(1)),"cached ingredient still enabled");
+                check(SequencedAssemblyRecipe.getRecipe(server.overworld(),progress,com.simibubi.create.AllRecipeTypes.DEPLOYING.getType(),com.simibubi.create.content.kinetics.deployer.DeployerApplicationRecipe.class).isEmpty(),"in-progress assembly still enabled");
+                for(var h:server.getRecipeManager().getRecipes())if(h.id().getPath().startsWith("ammo_pressing/")&&h.id().getNamespace().equals("sentrymechanicalarm")){
+                    var press=(com.simibubi.create.content.kinetics.press.PressingRecipe)h.value();check(!press.matches(new SingleRecipeInput(press.getIngredients().getFirst().getItems()[0]),server.overworld()),"cached pressing still enabled");
+                }
+                DynamicRecipeManager.rebuild(server.getRecipeManager());check(generated()==0,"master off retained auto recipes");
+                check(server.getRecipeManager().getRecipes().stream().anyMatch(h->h.value() instanceof GunSmithTableRecipe),"TaCZ recipes removed");
+            } finally {SMAServerConfig.ENABLE_AMMO_CRAFTING.set(true);SMAServerConfig.ENABLE_AMMO_CRAFTING.clearCache();DynamicRecipeManager.rebuild(server.getRecipeManager());}
+            check(generated()==baseCount&&recipe.matches(input,server.overworld()),"master re-enable failed");
+        });
         test("prepare real resource pack and cached shooter",()->{
             smithId=server.getRecipeManager().getRecipes().stream().filter(h->h.value() instanceof GunSmithTableRecipe r && IAmmo.getIAmmoOrNull(r.getOutput())!=null&&AMMO.equals(IAmmo.getIAmmoOrNull(r.getOutput()).getAmmoId(r.getOutput()))).map(RecipeHolder::id).sorted().findFirst().orElseThrow();
             pack=server.getWorldPath(LevelResource.DATAPACK_DIR).resolve("sentry-reload-smoke");

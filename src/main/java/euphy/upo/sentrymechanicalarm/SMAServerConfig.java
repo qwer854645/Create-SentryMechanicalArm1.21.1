@@ -5,6 +5,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class SMAServerConfig {
 
     public static final ModConfigSpec SPEC;
+    public static final ModConfigSpec.BooleanValue ENABLE_AMMO_CRAFTING;
 
     public static final ModConfigSpec.BooleanValue ENABLE_DYNAMIC_RECIPES;
     public static final ModConfigSpec.BooleanValue AUTO_MATCH_FROM_TACZ;
@@ -19,6 +20,15 @@ public class SMAServerConfig {
 
     static {
         var builder = new ModConfigSpec.Builder();
+
+        builder.push("ammo_crafting");
+        ENABLE_AMMO_CRAFTING = builder
+                .comment("Enable this mod's bullet manufacturing: templates, cutting, sequenced assembly and legacy material processing.",
+                        "Does not disable TaCZ's own recipes, sentry shooting, reloading or ammo-box/depot supply.",
+                        "Restart the world/server after changing this option.")
+                .worldRestart()
+                .define("enableAmmoCrafting", true);
+        builder.pop();
 
         builder.push("dynamic_recipes");
         ENABLE_DYNAMIC_RECIPES = builder

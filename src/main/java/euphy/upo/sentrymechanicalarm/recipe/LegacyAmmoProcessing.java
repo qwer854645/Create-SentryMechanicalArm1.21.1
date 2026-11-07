@@ -13,6 +13,7 @@ public final class LegacyAmmoProcessing {
     public record Result(ItemStack processed, ItemStack remainder) {}
 
     public static Result apply(ItemStack input, ItemStack material, long time) {
+        if (!euphy.upo.sentrymechanicalarm.SMAServerConfig.ENABLE_AMMO_CRAFTING.get()) return null;
         if (input.isEmpty() || material.isEmpty() || input.getItem() != SentryRegistry.UNFINISHED_AMMO.get()
                 || input.has(AllDataComponents.SEQUENCED_ASSEMBLY) || UnfinishedAmmoItem.getAmmoId(input) == null) return null;
         boolean copper = material.is(AllItems.COPPER_SHEET.get());

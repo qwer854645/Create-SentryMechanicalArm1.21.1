@@ -57,7 +57,8 @@ public class DeployerHandlerMixin {
 
                 ItemStack stack = transported.stack;
 
-                if (stack.getItem() == AllItems.COPPER_SHEET.get()) {
+                if (euphy.upo.sentrymechanicalarm.SMAServerConfig.ENABLE_AMMO_CRAFTING.get()
+                        && stack.getItem() == AllItems.COPPER_SHEET.get()) {
                     foundValidTarget.set(true);
                 }
 
@@ -117,7 +118,8 @@ public class DeployerHandlerMixin {
 
             ItemStack stackOnBelt = transported.stack;
 
-            if (stackOnBelt.getItem() == AllItems.COPPER_SHEET.get()) {
+            if (euphy.upo.sentrymechanicalarm.SMAServerConfig.ENABLE_AMMO_CRAFTING.get()
+                    && stackOnBelt.getItem() == AllItems.COPPER_SHEET.get()) {
                 ResourceLocation ammoId = ammoItem.getAmmoId(handStack);
                 if (ammoId != null) {
                     int copperCount = stackOnBelt.getCount();

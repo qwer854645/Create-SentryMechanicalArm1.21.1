@@ -69,7 +69,7 @@ public class DynamicRecipeManager {
             return;
         }
 
-        if (!SMAServerConfig.ENABLE_DYNAMIC_RECIPES.get()) {
+        if (!SMAServerConfig.ENABLE_AMMO_CRAFTING.get() || !SMAServerConfig.ENABLE_DYNAMIC_RECIPES.get()) {
             recipeManager.replaceRecipes(base);
             GENERATED.remove(recipeManager);
             SentryMechanicalArm.LOGGER.info("Dynamic recipes disabled by config");

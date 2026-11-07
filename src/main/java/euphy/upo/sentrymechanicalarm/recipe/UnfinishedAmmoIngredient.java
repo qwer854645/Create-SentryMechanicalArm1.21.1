@@ -24,7 +24,8 @@ public record UnfinishedAmmoIngredient(ResourceLocation ammoId, int sheets, bool
     ).apply(instance, UnfinishedAmmoIngredient::new));
 
     @Override public boolean test(ItemStack stack) {
-        return !stack.isEmpty() && stack.is(SentryRegistry.UNFINISHED_AMMO.get())
+        return euphy.upo.sentrymechanicalarm.SMAServerConfig.ENABLE_AMMO_CRAFTING.get()
+                && !stack.isEmpty() && stack.is(SentryRegistry.UNFINISHED_AMMO.get())
                 && ammoId.equals(UnfinishedAmmoItem.getAmmoId(stack))
                 && UnfinishedAmmoItem.getCopperSheets(stack) >= sheets
                 && (!powder || UnfinishedAmmoItem.hasGunpowder(stack));

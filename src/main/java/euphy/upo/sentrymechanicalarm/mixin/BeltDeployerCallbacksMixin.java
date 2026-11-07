@@ -57,6 +57,7 @@ public class BeltDeployerCallbacksMixin {
         boolean isGunpowder = handStack.getItem() == Items.GUNPOWDER;
 
         if (beltStack.getItem() == SentryRegistry.UNFINISHED_AMMO.get()) {
+            if (!euphy.upo.sentrymechanicalarm.SMAServerConfig.ENABLE_AMMO_CRAFTING.get()) return false;
             if (beltStack.has(AllDataComponents.SEQUENCED_ASSEMBLY)) return false;
 
             if (isCopper && UnfinishedAmmoItem.getCopperSheets(beltStack) >= UnfinishedAmmoItem.MAX_COPPER_SHEETS) return false;
@@ -82,6 +83,7 @@ public class BeltDeployerCallbacksMixin {
         long gameTime = deployer.getLevel().getGameTime();
 
         if (handStack.is(AllItems.COPPER_SHEET.get()) || handStack.is(Items.GUNPOWDER)) {
+            if (!euphy.upo.sentrymechanicalarm.SMAServerConfig.ENABLE_AMMO_CRAFTING.get()) return BeltProcessingBehaviour.ProcessingResult.PASS;
             var result = euphy.upo.sentrymechanicalarm.recipe.LegacyAmmoProcessing.apply(beltStack, handStack, gameTime);
             if (result == null) return BeltProcessingBehaviour.ProcessingResult.HOLD;
             TransportedItemStack output = transported.copy();

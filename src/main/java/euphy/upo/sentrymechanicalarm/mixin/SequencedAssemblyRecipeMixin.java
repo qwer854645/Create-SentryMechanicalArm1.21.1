@@ -15,6 +15,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(SequencedAssemblyRecipe.class)
 public class SequencedAssemblyRecipeMixin {
 
+    @Inject(method = "appliesTo", at = @At("HEAD"), cancellable = true)
+    private void sentry$disableAmmoAssembly(ResourceLocation id, ItemStack input, CallbackInfoReturnable<Boolean> cir) {
+        if (!euphy.upo.sentrymechanicalarm.SMAServerConfig.ENABLE_AMMO_CRAFTING.get()
+                && id.getNamespace().equals(SentryMechanicalArm.MODID) && id.getPath().startsWith("ammo_assembly/")) {
+            cir.setReturnValue(false);
+        }
+    }
+
     @Inject(method = "appliesTo", at = @At("RETURN"), cancellable = true)
     private void sentry$filterByAmmoId(ResourceLocation id, ItemStack input, CallbackInfoReturnable<Boolean> cir) {
         if (!cir.getReturnValue()) return;
