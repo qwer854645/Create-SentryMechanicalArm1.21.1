@@ -57,10 +57,15 @@ public final class ReloadingCosts {
         if (!powder) return Optional.empty();
         var steps = new ArrayList<Ingredient>();
         boolean savesMaterial = false;
+        var primerCopper = BigDecimal.ONE.divide(BigDecimal.valueOf(PrimerAllocation.CUPS_PER_NUGGET));
         for (var entry : totals.entrySet()) {
-            BigDecimal count = entry.getValue().divide(BigDecimal.valueOf(rounds), 0, RoundingMode.CEILING);
-            if (count.signum() <= 0 || count.compareTo(BigDecimal.valueOf(MAX_STEPS - steps.size())) > 0) return Optional.empty();
-            savesMaterial |= count.multiply(BigDecimal.valueOf(rounds)).compareTo(originalTotals.get(entry.getKey())) < 0;
+            BigDecimal allocated = entry.getValue();
+            boolean copper = entry.getKey() == AllItems.COPPER_NUGGET.get();
+            if (copper) allocated = allocated.subtract(primerCopper.multiply(BigDecimal.valueOf(rounds))).max(BigDecimal.ZERO);
+            BigDecimal count = allocated.divide(BigDecimal.valueOf(rounds), 0, RoundingMode.CEILING);
+            if (count.compareTo(BigDecimal.valueOf(MAX_STEPS - steps.size())) > 0) return Optional.empty();
+            BigDecimal actual = copper ? count.add(primerCopper) : count;
+            savesMaterial |= actual.multiply(BigDecimal.valueOf(rounds)).compareTo(originalTotals.get(entry.getKey())) < 0;
             for (int i = 0; i < count.intValueExact(); i++) steps.add(Ingredient.of(entry.getKey()));
         }
         // Minimum one-item charges cannot economically represent every cheap native recipe.

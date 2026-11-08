@@ -121,5 +121,9 @@
   "item.sentrymechanicalarm.empty_casing.description": "回收的弹壳，可用于再装填。",
   "item.sentrymechanicalarm.reloading_casing.description": "再装填中的弹壳。单独放入合成栏可取回弹壳，不退还材料。",
   "item.sentrymechanicalarm.casing.ammo_id": "弹药 ID：%s",
-  "item.sentrymechanicalarm.small_gunpowder": "少量火药"
+  "item.sentrymechanicalarm.small_gunpowder": "少量火药",
+  "item.sentrymechanicalarm.primer": "通用底火",
+  "item.sentrymechanicalarm.primer.description": "底火壳由机械手加入一份少量火药制成，用于各口径再装填。",
+  "item.sentrymechanicalarm.primer_cup": "底火壳",
+  "item.sentrymechanicalarm.primer_cup.description": "一粒铜粒可冲压成八个底火壳。由机械手加入少量火药，制成通用底火。"
 }

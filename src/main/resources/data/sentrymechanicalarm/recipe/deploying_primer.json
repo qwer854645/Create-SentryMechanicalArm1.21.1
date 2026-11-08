@@ -1,0 +1,17 @@
+{
+  "type": "create:deploying",
+  "ingredients": [
+    {
+      "item": "sentrymechanicalarm:primer_cup"
+    },
+    {
+      "item": "sentrymechanicalarm:small_gunpowder"
+    }
+  ],
+  "results": [
+    {
+      "id": "sentrymechanicalarm:primer",
+      "count": 1
+    }
+  ]
+}

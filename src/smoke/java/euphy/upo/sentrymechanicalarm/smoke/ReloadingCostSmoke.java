@@ -87,7 +87,7 @@ final class ReloadingCostSmoke {
                 var changed = ReloadingRecipes.find(level.getRecipeManager(), ammo).orElseThrow();
                 check(!changed.id().equals(old.id()) && level.getRecipeManager().byKey(old.id()).isEmpty(), "old cost ID retained");
                 var seq = (SequencedAssemblyRecipe) changed.value();
-                check(seq.getSequence().size() == 5, "quarter-metal 5.56 cost should be 1 nugget + 3 powder + pressing");
+                check(seq.getSequence().size() == 5, "quarter-metal 5.56 cost should be 1 primer + 2 powder + 1 nugget + pressing");
                 check(original("tacz:9mm").getOutput().getCount() == 50, "native crafting was changed");
             } finally {
                 SMAServerConfig.RELOADING_METAL_FACTOR.set(previous);

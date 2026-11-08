@@ -1,0 +1,14 @@
+{
+  "type": "create:pressing",
+  "ingredients": [
+    {
+      "item": "create:copper_nugget"
+    }
+  ],
+  "results": [
+    {
+      "id": "sentrymechanicalarm:primer_cup",
+      "count": 8
+    }
+  ]
+}

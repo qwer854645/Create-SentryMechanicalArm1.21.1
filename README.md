@@ -1,6 +1,6 @@
 # Create: Sentry Mechanical Arm（非官方移植）
 
-当前修复开发版本：**1.4.0-alpha.23**。固定验证环境：Minecraft 1.21.1 / NeoForge 21.1.228 / Create 6.0.10 / TaCZ 1.2.0 / Java 21。
+当前修复开发版本：**1.4.0-alpha.24**。固定验证环境：Minecraft 1.21.1 / NeoForge 21.1.228 / Create 6.0.10 / TaCZ 1.2.0 / Java 21。
 
 两份第三方枪包的实测与限制见 [docs/GUNPACK_COMPATIBILITY.md](docs/GUNPACK_COMPATIBILITY.md)。
 
@@ -19,7 +19,7 @@
 - **弹药管理** — 为哨戒臂附加弹药箱实现自动补给，弹药可用时即时装填。
 - **物理结构兼容** — 完整支持 **Sable**（Create: Aeronautics）飞船座舱姿态、子世界坐标变换。
 - **静态 + Contraption 双状态** — 支持普通方块放置和 Create 动态结构（传送带/矿车/飞船）安装。
-- **弹壳回收与再装填** — 按枪包数据识别可回收弹壳，使用 Create 序列组装单发再装填，并支持 JEI 按口径查询。使用金属粒与少量火药控制单发成本；旧模板与铜板制造链已移除，详见 [成本规则](docs/CASING_COSTS.md) 和 [弹壳与 JEI](docs/CASING_JEI.md)。
+- **弹壳回收与再装填** — 按枪包数据识别可回收弹壳，使用 Create 序列组装单发再装填，并支持 JEI 按口径查询。共用底火零件线供给各口径单枚装配，使用金属粒与少量火药控制成本，详见 [底火生产](docs/PRIMERS.md)；旧模板与铜板制造链已移除，详见 [成本规则](docs/CASING_COSTS.md) 和 [弹壳与 JEI](docs/CASING_JEI.md)。
 
 ## 前置模组
 

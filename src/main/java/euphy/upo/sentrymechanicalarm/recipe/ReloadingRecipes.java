@@ -77,6 +77,6 @@ public final class ReloadingRecipes {
     }
     private static Plan fromRecipe(GunSmithTableRecipe recipe){
         return ReloadingCosts.derive(recipe, SMAServerConfig.RELOADING_METAL_FACTOR.get())
-                .map(steps -> new Plan(steps, recipe.getOutput().copyWithCount(1))).orElse(null);
+                .map(steps -> new Plan(PrimerAllocation.fromAutomaticCost(steps), recipe.getOutput().copyWithCount(1))).orElse(null);
     }
 }

@@ -1,5 +1,7 @@
 # alpha.23：单枚再装填的金属粒与少量火药
 
+> alpha.24 新增底火壳与通用底火生产，预留底火铜和火药后计算剩余原料；现行流程见 [PRIMERS.md](PRIMERS.md)。下文属于 alpha.23 版本说明。
+
 环境：Minecraft 1.21.1 / NeoForge 21.1.228 / Create 6.0.10 / 官方 TaCZ 1.2.0 / Java 21；客户端检查使用 JEI 19.21.0.247。
 
 ## 加工流程
