@@ -16,7 +16,7 @@ public class SMAServerConfig {
         ENABLE_CASINGS = builder.comment("Legacy runtime drop gate. Registration master is casings.enabled in config/sentrymechanicalarm-startup.toml.")
                 .define("enabled", true);
         PLAYER_CASINGS = builder.comment("Allow real players to drop casings after finite-ammo TaCZ shots.").define("players", true);
-        PLAYER_CASINGS_TO_INVENTORY=builder.comment("Insert real-player casing drops into their inventory instead of ejecting. Full-inventory remainder follows vanilla /give: drop at the player, no pickup delay, owned by that player.").define("playersToInventory",false);
+        PLAYER_CASINGS_TO_INVENTORY=builder.comment("Insert real-player casing drops into their inventory instead of ejecting. Full-inventory remainder follows vanilla /give: drop at the player, no pickup delay, owned by that player.").define("playersToInventory",true);
         SENTRY_CASINGS = builder.comment("Allow sentry arms, including moving mounts, to drop casings.").define("sentries", true);
         OTHER_CASINGS = builder.comment("Allow other living entities to drop casings after TaCZ events prove actual ammo consumption.", "Does not grant mobs guns or shooting AI. Unrelated FakePlayers remain excluded.").define("others", false);
         CASING_CHANCE = builder.defineInRange("dropChance", 1.0, 0.0, 1.0);

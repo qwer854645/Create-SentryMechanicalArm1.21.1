@@ -30,10 +30,10 @@
 ```toml
 [casings]
 players = true
-playersToInventory = false
+playersToInventory = true
 ```
 
-playersToInventory=false 默认沿用地面抛壳。设为 true 后，按物品正常堆叠规则插入玩家背包；部分放入时，剩余部分使用原版 /give 的溢出行为：由玩家位置掉落、无拾取延迟、指定该玩家为拾取目标，不静默丢弃。
+alpha.36 起 playersToInventory 默认为 true，设为 false 可恢复地面抛壳。开启后，按物品正常堆叠规则插入玩家背包；部分放入时，剩余部分使用原版 /give 的溢出行为：由玩家位置掉落、无拾取延迟、指定该玩家为拾取目标，不静默丢弃。
 
 成功放入背包不创建真实掉落实体。背包溢出使用原生 /give 式物品实体，不再套用弹壳地面数量过滤或自定义寿命，避免背包满时额外吞掉物品。正常抛壳模式和机械臂的地面余量仍使用原抛壳限制。
 
