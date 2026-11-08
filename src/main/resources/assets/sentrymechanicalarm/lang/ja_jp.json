@@ -89,15 +89,17 @@
   "message.sentrymechanicalarm.blacklist": "ブラックリスト (攻撃リスト)",
   "message.sentrymechanicalarm.blacklist_des": "リスト上のエンティティに対してのみ射撃します",
   "message.sentrymechanicalarm.can_mark": "[左クリックでマーク]",
-  "item.sentrymechanicalarm.small_gunpowder": "少量の火薬",
+  "item.sentrymechanicalarm.small_gunpowder": "少量の火薬（旧版）",
   "item.sentrymechanicalarm.primer": "汎用雷管",
-  "item.sentrymechanicalarm.primer.description": "雷管カップに少量の火薬1個を組み込み、各口径の再装填に使用します。",
+  "item.sentrymechanicalarm.primer.description": "雷管カップに注液器で流動火薬を 10 mB 充填して作ります。",
   "item.sentrymechanicalarm.primer_cup": "雷管カップ",
-  "item.sentrymechanicalarm.primer_cup.description": "銅塊1個をプレスして8個製作。デプロイヤーで少量の火薬を組み込み、汎用雷管を作ります。",
+  "item.sentrymechanicalarm.primer_cup.description": "銅塊一個から雷管カップを八個プレスし、注液器で流動火薬を充填します。",
   "item.sentrymechanicalarm.casing_mold": "薬莢金型",
   "item.sentrymechanicalarm.casing_mold.description": "右クリックで口径を選択。デプロイヤーで金属塊を加工します。金型は消費しません。",
   "item.sentrymechanicalarm.casing_mold.selected": "選択：%s",
   "screen.sentrymechanicalarm.casing_mold": "薬莢口径の選択",
   "screen.sentrymechanicalarm.casing_mold.search": "名前または口径IDで検索",
-  "screen.sentrymechanicalarm.casing_mold.empty": "利用可能な薬莢製作レシピがありません"
+  "screen.sentrymechanicalarm.casing_mold.empty": "利用可能な薬莢製作レシピがありません",
+  "fluid_type.sentrymechanicalarm.propellant": "流動火薬",
+  "fluid.sentrymechanicalarm.propellant": "流動火薬"
 }

@@ -1,5 +1,7 @@
 # alpha.23：单枚再装填的金属粒与少量火药
 
+> alpha.29 已改为无水流体与比例装药，取消六档并省略微量金属；现行规则见 [FLUID_PROPELLANT.md](FLUID_PROPELLANT.md)。本文件保留历史说明。
+
 > alpha.28 已更新装药分档、特殊配料和旧格式来源读取；现行规则见 [POWDER_BANDS.md](POWDER_BANDS.md)。
 
 > alpha.24 新增底火壳与通用底火生产，预留底火铜和火药后计算剩余原料；现行流程见 [PRIMERS.md](PRIMERS.md)。下文属于 alpha.23 版本说明。

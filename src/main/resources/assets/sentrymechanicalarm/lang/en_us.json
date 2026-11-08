@@ -124,15 +124,17 @@
   "item.sentrymechanicalarm.empty_casing.description": "Recovered casing for reloading.",
   "item.sentrymechanicalarm.reloading_casing.description": "Partially reloaded casing. Craft alone to recover the casing without refunding materials.",
   "item.sentrymechanicalarm.casing.ammo_id": "Ammo ID: %s",
-  "item.sentrymechanicalarm.small_gunpowder": "Small Gunpowder Portion",
+  "item.sentrymechanicalarm.small_gunpowder": "Small Gunpowder Portion (Legacy)",
   "item.sentrymechanicalarm.primer": "Universal Primer",
-  "item.sentrymechanicalarm.primer.description": "A primer cup charged with one small gunpowder portion. Used in caliber-specific reloading.",
+  "item.sentrymechanicalarm.primer.description": "Fill a primer cup with 10 mB of fluid propellant using a spout for ammunition reloading.",
   "item.sentrymechanicalarm.primer_cup": "Primer Cup",
-  "item.sentrymechanicalarm.primer_cup.description": "Press one copper nugget into eight cups. Apply a small gunpowder portion to make a universal primer.",
+  "item.sentrymechanicalarm.primer_cup.description": "Press one copper nugget into eight primer cups, then fill each with fluid propellant using a spout.",
   "item.sentrymechanicalarm.casing_mold": "Casing Mold",
   "item.sentrymechanicalarm.casing_mold.description": "Use to select a supported caliber. A deployer uses the mold on nuggets without consuming it.",
   "item.sentrymechanicalarm.casing_mold.selected": "Selected: %s",
   "screen.sentrymechanicalarm.casing_mold": "Select Casing Caliber",
   "screen.sentrymechanicalarm.casing_mold.search": "Search name or caliber ID",
-  "screen.sentrymechanicalarm.casing_mold.empty": "No casing forming recipes available"
+  "screen.sentrymechanicalarm.casing_mold.empty": "No casing forming recipes available",
+  "fluid_type.sentrymechanicalarm.propellant": "Fluid Propellant",
+  "fluid.sentrymechanicalarm.propellant": "Fluid Propellant"
 }

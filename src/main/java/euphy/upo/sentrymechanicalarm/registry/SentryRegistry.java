@@ -104,7 +104,7 @@ public class SentryRegistry {
                         output.accept(new net.minecraft.world.item.ItemStack(FIRE_CONTROL_CLIPBOARD.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(APPLE_PIE.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(SENTRY_SCOPE.get(), 1));
-                        output.accept(new net.minecraft.world.item.ItemStack(SMALL_GUNPOWDER.get(), 1));
+                        // Legacy powder remains registered for existing saves; normal production uses fluid.
                         output.accept(new net.minecraft.world.item.ItemStack(PRIMER_CUP.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(PRIMER.get(), 1));
                         if(CASING_MOLD.isBound())output.accept(new net.minecraft.world.item.ItemStack(CASING_MOLD.get()));

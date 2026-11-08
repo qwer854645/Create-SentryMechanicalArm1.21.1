@@ -35,6 +35,8 @@ public final class CasingJeiPlugin implements IModPlugin {
     public static IJeiRuntime runtime(){return runtime;}
     public static void refresh(){
         if(runtime==null)return;var manager=runtime.getIngredientManager();
+        var legacy=manager.getAllIngredients(VanillaTypes.ITEM_STACK).stream().filter(s->s.is(SentryRegistry.SMALL_GUNPOWDER.get())).toList();
+        if(!legacy.isEmpty())manager.removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK,legacy);
         var all=manager.getAllIngredients(VanillaTypes.ITEM_STACK).stream().filter(s->s.getItem() instanceof EmptyCasingItem).toList();
         var invalid=all.stream().filter(s->s.getItem() instanceof ReloadingCasingItem||EmptyCasingItem.ammoId(s)==null||!SentryCasingProfiles.clientSnapshot().contains(EmptyCasingItem.ammoId(s))).toList();
         if(!invalid.isEmpty())manager.removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK,invalid);

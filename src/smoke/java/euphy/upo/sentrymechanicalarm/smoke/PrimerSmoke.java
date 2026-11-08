@@ -23,7 +23,7 @@ final class PrimerSmoke {
     private static final BlockPos POS = DEPOT.offset(4, 0, 0);
     private static final BlockPos ASSEMBLY = POS.offset(2, 0, 0);
     private static DepotBlockEntity primerDepot, assemblyDepot;
-    private static com.simibubi.create.content.kinetics.deployer.DeployerBlockEntity primerHand;
+    private static net.neoforged.neoforge.fluids.capability.IFluidHandler primerFluid;
     private static boolean loaded, supplied;
 
     static void verify() {
@@ -45,7 +45,7 @@ final class PrimerSmoke {
                 var actual = ReloadingCostSmoke.counts(inputs);
                 check(actual.getOrDefault(SentryRegistry.PRIMER.get(), 0) == 1, "wrong primer count: " + ammo);
                 actual.remove(SentryRegistry.PRIMER.get());
-                actual.merge(SentryRegistry.SMALL_GUNPOWDER.get(), 1, Integer::sum);
+
                 check(actual.equals(expected), "primer double-charges materials: " + ammo);
                 check(inputs.getFirst().test(new ItemStack(SentryRegistry.PRIMER.get())), "primer is not installed first");
                 check(output.getCount() == 1, "primer amplified output");
@@ -54,16 +54,10 @@ final class PrimerSmoke {
             check(checked > 0, "no automatic recipes checked");
             euphy.upo.sentrymechanicalarm.SentryMechanicalArm.LOGGER.info("PRIMER_BUDGET PASS {} caliber recipes reserve one powder charge and account for 1/8 copper per primer", checked);
         });
-        test("one-charge ammunition reserves powder once without an empty charge step", () -> {
-            var powder = Ingredient.of(SentryRegistry.SMALL_GUNPOWDER.get());
-            var metal = Ingredient.of(Items.IRON_NUGGET);
-            var steps = PrimerAllocation.fromAutomaticCost(List.of(metal, powder));
-            check(steps.size() == 2 && steps.getFirst().test(new ItemStack(SentryRegistry.PRIMER.get()))
-                    && steps.getLast().test(new ItemStack(Items.IRON_NUGGET)), "one-charge allocation changed total");
-            boolean rejected = false;
-            try { PrimerAllocation.fromAutomaticCost(List.of(metal)); } catch (IllegalArgumentException expected) { rejected = true; }
-            check(rejected, "primer generated without a powder budget");
-            check(IAmmo.getIAmmoOrNull(new ItemStack(SentryRegistry.PRIMER.get())) == null, "primer can be loaded as live ammunition");
+        test("primer fluid is reserved once", () -> {
+            var allocation=PrimerAllocation.forFluidAssembly(new ReloadingCosts.Cost(List.of(),10));
+            check(allocation.additionalFluid()==0&&allocation.materials().size()==1,"minimum primer counted twice");
+            check(PrimerAllocation.forFluidAssembly(new ReloadingCosts.Cost(List.of(),40)).additionalFluid()==30,"wrong remaining charge");
         });
         test("uninstalled casing refuses powder and requires a primer", () -> {
             var inv = new net.neoforged.neoforge.items.ItemStackHandler(2);
@@ -80,16 +74,12 @@ final class PrimerSmoke {
             check(!press.matches(new SingleRecipeInput(new ItemStack(SentryRegistry.SMALL_GUNPOWDER.get())), level), "prototype powder pressing still present");
             var output = press.rollResults(level.random);
             check(output.size() == 1 && output.getFirst().is(SentryRegistry.PRIMER_CUP.get()) && output.getFirst().getCount() == 8, "wrong cup yield");
-            var deploy = (DeployerApplicationRecipe) level.getRecipeManager().byKey(ResourceLocation.parse("sentrymechanicalarm:deploying_primer")).orElseThrow().value();
-            var inv = new net.neoforged.neoforge.items.ItemStackHandler(2);
-            inv.setStackInSlot(0, new ItemStack(SentryRegistry.PRIMER_CUP.get()));
-            inv.setStackInSlot(1, new ItemStack(SentryRegistry.SMALL_GUNPOWDER.get()));
-            var wrapper = new net.neoforged.neoforge.items.wrapper.RecipeWrapper(inv);
-            check(deploy.matches(wrapper, level), "cup and small powder rejected");
-            var charged = deploy.rollResults(level.random);
-            check(charged.size() == 1 && charged.getFirst().is(SentryRegistry.PRIMER.get()) && charged.getFirst().getCount() == 1, "wrong primer yield");
-            inv.setStackInSlot(1, new ItemStack(Items.GUNPOWDER));
-            check(!deploy.matches(wrapper, level), "wrong powder denomination accepted");
+            var filling=(com.simibubi.create.content.fluids.transfer.FillingRecipe)level.getRecipeManager().byKey(ResourceLocation.parse("sentrymechanicalarm:filling_primer")).orElseThrow().value();
+            check(filling.getRequiredFluid().amount()==10&&filling.matches(new SingleRecipeInput(new ItemStack(SentryRegistry.PRIMER_CUP.get())),level),"wrong primer filling");
+            var charged=filling.rollResults(level.random);check(charged.size()==1&&charged.getFirst().is(SentryRegistry.PRIMER.get()),"wrong primer output");
+            var mixing=(com.simibubi.create.content.kinetics.mixer.MixingRecipe)level.getRecipeManager().byKey(ResourceLocation.parse("sentrymechanicalarm:mixing_propellant")).orElseThrow().value();
+            check(mixing.getIngredients().size()==1&&mixing.getIngredients().getFirst().test(new ItemStack(Items.GUNPOWDER))&&mixing.getFluidIngredients().isEmpty(),"propellant introduced water or another input");
+            check(mixing.getFluidResults().size()==1&&mixing.getFluidResults().getFirst().getAmount()==1000,"wrong direct powder yield");
         });
         test("primer copper is reserved before rounding direct metal", () -> {
             var cost = ReloadingCosts.derive(ReloadingCostSmoke.synthetic(4,
@@ -106,23 +96,13 @@ final class PrimerSmoke {
         level.setBlock(POS.above(2), AllBlocks.MECHANICAL_PRESS.get().defaultBlockState(), 3);
         level.setBlock(ASSEMBLY, AllBlocks.DEPOT.get().defaultBlockState(), 3);
         assemblyDepot = (DepotBlockEntity) level.getBlockEntity(ASSEMBLY);
-        level.setBlock(ASSEMBLY.above(2), AllBlocks.DEPLOYER.get().defaultBlockState().setValue(
-                com.simibubi.create.content.kinetics.base.DirectionalKineticBlock.FACING, net.minecraft.core.Direction.DOWN), 3);
-        primerHand = (com.simibubi.create.content.kinetics.deployer.DeployerBlockEntity) level.getBlockEntity(ASSEMBLY.above(2));
+        primerFluid=FluidSmokeSupport.spout(ASSEMBLY,30);
     }
 
     static void tick() {
         if (level.getBlockEntity(POS.above(2)) instanceof MechanicalPressBlockEntity press) press.setSpeed(256);
-        if (primerHand == null) return;
-        primerHand.setSpeed(256);
-        if (!supplied && primerHand.getPlayer() != null) {
-            primerHand.getPlayer().setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,
-                    new ItemStack(SentryRegistry.SMALL_GUNPOWDER.get(), 3));
-            supplied = true;
-        }
-        if (!loaded && primerDepot.getHeldItem().is(SentryRegistry.PRIMER_CUP.get()) && primerDepot.getHeldItem().getCount() == 8) {
-            assemblyDepot.setHeldItem(primerDepot.getHeldItem().split(1));
-            primerDepot.setChanged(); loaded = true;
+        if (!loaded && primerDepot.getHeldItem().is(SentryRegistry.PRIMER_CUP.get()) && primerDepot.getHeldItem().getCount()==8){
+            assemblyDepot.setHeldItem(primerDepot.getHeldItem().split(1));primerDepot.setChanged();loaded=true;
         }
     }
 
@@ -131,10 +111,10 @@ final class PrimerSmoke {
     }
 
     static ItemStack take() {
-        test("real copper pressing and mechanical charging preserve cup and powder stock", () -> {
+        test("real cup pressing and spout charging preserve cup and fluid stock", () -> {
             check(ready(), "primer factory did not output one primer");
             check(primerDepot.getHeldItem().is(SentryRegistry.PRIMER_CUP.get()) && primerDepot.getHeldItem().getCount() == 7, "cup yield or stock changed");
-            check(primerHand.getPlayer().getMainHandItem().is(SentryRegistry.SMALL_GUNPOWDER.get()) && primerHand.getPlayer().getMainHandItem().getCount() == 2, "primer charging did not consume one powder portion");
+            check(primerFluid.getFluidInTank(0).getAmount()==20,"primer did not consume exactly 10 mB");
         });
         var result = assemblyDepot.getHeldItem().copy();
         assemblyDepot.setHeldItem(ItemStack.EMPTY);

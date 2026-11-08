@@ -1,5 +1,7 @@
 # alpha.25：口径模具与新制弹壳
 
+> alpha.29 已改为无水流体与比例装药，取消六档并省略微量金属；现行规则见 [FLUID_PROPELLANT.md](FLUID_PROPELLANT.md)。本文件保留历史说明。
+
 > alpha.28 已更新装药分档、特殊配料和旧格式来源读取；现行规则见 [POWDER_BANDS.md](POWDER_BANDS.md)。
 
 > alpha.27 已将制壳与整发配料解析解耦，并增加通用铜壳规则，现行说明见 [RECIPE_COMPACTION.md](RECIPE_COMPACTION.md)。四图标采用 alpha.26 自有资源。下文保留 alpha.25 历史记录。

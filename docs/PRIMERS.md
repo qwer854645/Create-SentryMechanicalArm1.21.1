@@ -1,5 +1,7 @@
 # alpha.24：底火零件生产与单枚再装填
 
+> alpha.29 已改为无水流体与比例装药，取消六档并省略微量金属；现行规则见 [FLUID_PROPELLANT.md](FLUID_PROPELLANT.md)。本文件保留历史说明。
+
 > alpha.28 已更新装药分档、特殊配料和旧格式来源读取；现行规则见 [POWDER_BANDS.md](POWDER_BANDS.md)。
 
 > alpha.26 已接入自有物品贴图，见 [ART_DIRECTION.md](ART_DIRECTION.md)。下文为 alpha.24 功能记录。

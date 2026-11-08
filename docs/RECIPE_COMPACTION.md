@@ -1,5 +1,7 @@
 # alpha.27：模具覆盖与装配序列压缩
 
+> alpha.29 已改为无水流体与比例装药，取消六档并省略微量金属；现行规则见 [FLUID_PROPELLANT.md](FLUID_PROPELLANT.md)。本文件保留历史说明。
+
 > alpha.28 已更新装药分档、特殊配料和旧格式来源读取；现行规则见 [POWDER_BANDS.md](POWDER_BANDS.md)。
 
 本版修正两项通用规则：制壳不再要求能完整解析整发弹药；再装填不再将每一份普通材料展开成独立机械手步骤。
