@@ -52,15 +52,6 @@ public class SentryRegistry {
     public static final DeferredHolder<Item, CasingMoldItem> CASING_MOLD = euphy.upo.sentrymechanicalarm.SMAStartupConfig.ENABLE_CASINGS.get() ? ITEMS.register("casing_mold",
             () -> new CasingMoldItem(new Item.Properties().stacksTo(1))) : DeferredHolder.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MODID,"casing_mold"));
 
-    public static final DeferredHolder<Item, PrimerItem> PRIMER_CUP = ITEMS.register("primer_cup",
-            () -> new PrimerItem(new Item.Properties()));
-
-    public static final DeferredHolder<Item, PrimerItem> PRIMER = ITEMS.register("primer",
-            () -> new PrimerItem(new Item.Properties()));
-
-    public static final DeferredHolder<Item, Item> SMALL_GUNPOWDER = ITEMS.register("small_gunpowder",
-            () -> new Item(new Item.Properties()));
-
     public static final DeferredHolder<Item, EmptyCasingItem> EMPTY_CASING = euphy.upo.sentrymechanicalarm.SMAStartupConfig.ENABLE_CASINGS.get() ? ITEMS.register("empty_casing",
             () -> new EmptyCasingItem(new Item.Properties().stacksTo(64))) : DeferredHolder.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MODID,"empty_casing"));
 
@@ -104,9 +95,6 @@ public class SentryRegistry {
                         output.accept(new net.minecraft.world.item.ItemStack(FIRE_CONTROL_CLIPBOARD.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(APPLE_PIE.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(SENTRY_SCOPE.get(), 1));
-                        // Legacy powder remains registered for existing saves; normal production uses fluid.
-                        output.accept(new net.minecraft.world.item.ItemStack(PRIMER_CUP.get(), 1));
-                        output.accept(new net.minecraft.world.item.ItemStack(PRIMER.get(), 1));
                         if(CASING_MOLD.isBound())output.accept(new net.minecraft.world.item.ItemStack(CASING_MOLD.get()));
                     })
                     .build());

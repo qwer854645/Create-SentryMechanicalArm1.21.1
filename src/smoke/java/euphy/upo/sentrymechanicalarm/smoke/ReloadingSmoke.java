@@ -56,7 +56,7 @@ public final class ReloadingSmoke {
         if(!"reloading".equals(System.getProperty("sentry.smoke")))return;
         running=true;level=event.getServer().overworld();
         recipe=(SequencedAssemblyRecipe)ReloadingRecipes.find(event.getServer().getRecipeManager(),AMMO).orElseThrow().value();
-        test("auto recipe is one case to one native round",()->{check(recipe.getIngredient().test(casing(AMMO,1)),"right case rejected");check(!recipe.getIngredient().test(casing(ResourceLocation.parse("tacz:12g"),1)),"wrong caliber accepted");check(recipe.getResultItem(level.registryAccess()).getCount()==1,"batch amplification");check(recipe.getSequence().size()==3,"unexpected 9mm cost/steps");});
+        test("auto recipe is one case to one native round",()->{check(recipe.getIngredient().test(casing(AMMO,1)),"right case rejected");check(!recipe.getIngredient().test(casing(ResourceLocation.parse("tacz:12g"),1)),"wrong caliber accepted");check(recipe.getResultItem(level.registryAccess()).getCount()==1,"batch amplification");check(recipe.getSequence().size()==2,"unexpected 9mm cost/steps");});
         test("all generated reloading sequences preserve ammo identity",()->{for(var h:level.getRecipeManager().getRecipes())if(h.id().getPath().startsWith("casing_reloading/")&&h.id().getNamespace().equals(SentryMechanicalArm.MODID))nativeSequence((SequencedAssemblyRecipe)h.value());});
         test("reloading ingredient survives recipe JSON and network codecs",()->{var ops=level.registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);var json=Recipe.CODEC.encodeStart(ops,recipe).getOrThrow();var copy=(SequencedAssemblyRecipe)Recipe.CODEC.parse(ops,json).getOrThrow();check(copy.getIngredient().test(casing(AMMO,1))&&!copy.getIngredient().test(casing(ResourceLocation.parse("tacz:12g"),1)),"JSON lost caliber");var b=new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(),level.registryAccess());try{RecipeHolder.STREAM_CODEC.encode(b,new RecipeHolder<>(ReloadingRecipes.find(level.getRecipeManager(),AMMO).orElseThrow().id(),recipe));var decoded=(SequencedAssemblyRecipe)RecipeHolder.STREAM_CODEC.decode(b).value();check(decoded.getIngredient().test(casing(AMMO,1)),"network ingredient rejected");}finally{b.release();}});
         test("unrelated names do not change caliber",()->{var named=casing(AMMO,1);named.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,net.minecraft.network.chat.Component.literal("Recycled"));check(recipe.getIngredient().test(named),"name affects caliber");});
@@ -68,17 +68,14 @@ public final class ReloadingSmoke {
         test("special ammo has no automatic reloading recipe",()->{for(String id:List.of("ars_armorer:mana","applied_armorer:fluix_battery","tacz:rpg_rocket"))check(ReloadingRecipes.find(level.getRecipeManager(),ResourceLocation.parse(id)).isEmpty(),"special ammo recipe");});
         test("reloading switch removes only new recipes",()->{SMAServerConfig.ENABLE_RELOADING.set(false);try{DynamicRecipeManager.rebuild(level.getRecipeManager());check(ReloadingRecipes.find(level.getRecipeManager(),AMMO).isEmpty(),"disabled recipe retained");check(!recipe.getIngredient().test(casing(AMMO,1)),"disabled ingredient active");check(level.getRecipeManager().getRecipes().stream().noneMatch(h->h.id().getNamespace().equals(SentryMechanicalArm.MODID)&&h.id().getPath().startsWith("ammo_")),"legacy production still exists");}finally{SMAServerConfig.ENABLE_RELOADING.set(true);DynamicRecipeManager.rebuild(level.getRecipeManager());}});
         ReloadingCostSmoke.verify();
-        PrimerSmoke.verify();
         CasingFormingSmoke.verify();
         CountedReloadingSmoke.verify();
         level.setChunkForced(34,34,true);level.getChunkAt(COLLECT);
-        PrimerSmoke.setup();
         CasingFormingSmoke.setup();
         CountedReloadingSmoke.setup();
         level.setBlock(COLLECT,Blocks.CHEST.defaultBlockState(),3);level.setBlock(COLLECT.above(),Blocks.HOPPER.defaultBlockState(),3);level.setBlock(COLLECT.above(2),AllBlocks.CHUTE.get().defaultBlockState(),3);
         for(var stack:List.of(casing(AMMO,17),casing(ResourceLocation.parse("tacz:12g"),11))){var item=new ItemEntity(level,COLLECT.getX()+.5,COLLECT.getY()+3.2,COLLECT.getZ()+.5,stack);item.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);level.addFreshEntity(item);}
         level.setBlock(DEPOT,AllBlocks.DEPOT.get().defaultBlockState(),3);depot=(DepotBlockEntity)level.getBlockEntity(DEPOT);depot.setHeldItem(ItemStack.EMPTY);
-        level.setBlock(DEPOT.above(2),AllBlocks.DEPLOYER.get().defaultBlockState().setValue(com.simibubi.create.content.kinetics.base.DirectionalKineticBlock.FACING,Direction.DOWN),3);hand=(DeployerBlockEntity)level.getBlockEntity(DEPOT.above(2));
     }
     static void changePack(boolean include)throws Exception{
         var server=level.getServer();server.getPackRepository().reload();var selected=new ArrayList<>(server.getPackRepository().getSelectedIds());selected.remove("file/reloading-smoke");if(include)selected.add("file/reloading-smoke");reload=server.reloadResources(selected);
@@ -88,7 +85,6 @@ public final class ReloadingSmoke {
     @SubscribeEvent public static void entity(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent e){if(shotWindow&&e.getEntity() instanceof ItemEntity item&&item.getItem().is(SentryRegistry.EMPTY_CASING.get())&&AMMO.equals(EmptyCasingItem.ammoId(item.getItem())))returnedCases+=item.getItem().getCount();}
     @SubscribeEvent public static void tick(ServerTickEvent.Post event){if(!running)return;ticks++;
         if(ticks>2400){test("factory fixture completes within timeout",()->{throw new AssertionError("assembly timed out");});finish();return;}
-        PrimerSmoke.tick();
         CasingFormingSmoke.tick();
         CountedReloadingSmoke.tick();
         if(reload!=null){if(!reload.isDone())return;try{reload.join();if(reloadStage==1){
@@ -99,7 +95,7 @@ public final class ReloadingSmoke {
             test("data-pack cost overrides rebuild and invalidate old progress",()->{
                 var updated=(SequencedAssemblyRecipe)ReloadingRecipes.find(level.getRecipeManager(),AMMO).orElseThrow().value();
                 check(updated.getSequence().get(0).getRecipe().getIngredients().get(1).test(new ItemStack(Items.GUNPOWDER)),"old materials cached");
-                check(updated.getSequence().size()==2&&updated.getSequence().stream().noneMatch(s->s.getRecipe().getIngredients().stream().anyMatch(i->i.test(new ItemStack(SentryRegistry.PRIMER.get())))),"explicit data-pack costs received an implicit primer fee");
+                check(updated.getSequence().size()==2&&updated.getSequence().stream().noneMatch(s->s.getRecipe() instanceof com.simibubi.create.content.fluids.transfer.FillingRecipe),"explicit material recipe received an implicit fluid fee");
                 check(level.getRecipeManager().byKey(previousRecipe).isEmpty(),"cost change retained old progress recipe");
                 check(SequencedAssemblyRecipe.getRecipe(level,new SingleRecipeInput(savedProgress),AllRecipeTypes.PRESSING.getType(),PressingRecipe.class).isEmpty(),"old progress bypasses changed cost");
                 nativeSequence(updated);
@@ -116,14 +112,20 @@ public final class ReloadingSmoke {
             test("removing data pack restores auto costs without duplicate recipes",()->{check(ReloadingRecipes.find(level.getRecipeManager(),ResourceLocation.parse("metis:9x39")).isPresent()&&ReloadingRecipes.find(level.getRecipeManager(),ResourceLocation.parse("metis:357nitro")).isPresent(),"legacy sources did not return after pack removal");var current=ReloadingRecipes.find(level.getRecipeManager(),AMMO).orElseThrow();check(current.id().equals(previousRecipe),"stable costs got a different ID");nativeSequence((SequencedAssemblyRecipe)current.value());int count=level.getRecipeManager().getRecipes().size();DynamicRecipeManager.rebuild(level.getRecipeManager());check(level.getRecipeManager().getRecipes().size()==count,"duplicate generated holders");});finish();return;
         }}catch(Throwable error){failed++;SentryMechanicalArm.LOGGER.error("RELOADING FAIL data reload",error);finish();return;}}
 
-        if(hand!=null){hand.setSpeed(256);if(hand.getPlayer()==null){if(ticks>100){test("machine fixture initializes",()->{throw new AssertionError("deployer not ticking in forced chunk");});finish();}return;}if(started<0){
-            if(!PrimerSmoke.ready()||!CasingFormingSmoke.ready())return;
-            var stock=(net.minecraft.world.level.block.entity.ChestBlockEntity)level.getBlockEntity(COLLECT);ItemStack collected=ItemStack.EMPTY;
-            for(int i=0;i<stock.getContainerSize();i++)if(AMMO.equals(EmptyCasingItem.ammoId(stock.getItem(i)))){collected=stock.getItem(i);break;}
-            if(collected.isEmpty())return;depot.setHeldItem(CasingFormingSmoke.take());started=ticks;hand.getPlayer().setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,PrimerSmoke.take());}}
-        if(started>=0&&ticks-started==120){test("real mechanical hand consumes material and advances depot casing",()->{check(depot.getHeldItem().is(SentryRegistry.RELOADING_CASING.get()),"deployer did not process depot: "+depot.getHeldItem());check(hand.getPlayer().getMainHandItem().isEmpty(),"primer not consumed exactly once");savedProgress=depot.getHeldItem().copy();previousRecipe=savedProgress.get(AllDataComponents.SEQUENCED_ASSEMBLY).id();check(AMMO.equals(EmptyCasingItem.ammoId(savedProgress)),"progress lost caliber");var restored=ItemStack.parse(level.registryAccess(),savedProgress.save(level.registryAccess())).orElseThrow();check(ItemStack.matches(savedProgress,restored),"progress disk round-trip");depot.setHeldItem(restored);});hand=null;chargeFluid=FluidSmokeSupport.spout(DEPOT,60);}
-        if(started>=0&&ticks-started==240){test("pistol spout consumes exactly the remaining 30 mB",()->check(chargeFluid.getFluidInTank(0).getAmount()==30&&depot.getHeldItem().get(AllDataComponents.SEQUENCED_ASSEMBLY).step()==2,"wrong fluid consumption"));}
-        if(started>=0&&ticks-started==360){test("fractional pistol copper is omitted",()->check(chargeFluid.getFluidInTank(0).getAmount()==30,"fluid charged twice"));level.setBlock(DEPOT.above(2),AllBlocks.MECHANICAL_PRESS.get().defaultBlockState(),3);}
+        if(started<0){
+            if(!CasingFormingSmoke.ready())return;
+            var stock=(net.minecraft.world.level.block.entity.ChestBlockEntity)level.getBlockEntity(COLLECT);boolean collected=false;
+            for(int i=0;i<stock.getContainerSize();i++)if(AMMO.equals(EmptyCasingItem.ammoId(stock.getItem(i))))collected=true;
+            if(!collected)return;depot.setHeldItem(CasingFormingSmoke.take());started=ticks;chargeFluid=FluidSmokeSupport.spout(DEPOT,80);
+        }
+        if(started>=0&&ticks-started==120){test("bare casing accepts the full 40 mB pistol charge",()->{
+            check(depot.getHeldItem().is(SentryRegistry.RELOADING_CASING.get()),"spout did not create WIP");check(chargeFluid.getFluidInTank(0).getAmount()==40,"wrong full fluid charge");
+            savedProgress=depot.getHeldItem().copy();previousRecipe=savedProgress.get(AllDataComponents.SEQUENCED_ASSEMBLY).id();
+            check(AMMO.equals(EmptyCasingItem.ammoId(savedProgress)),"progress lost caliber");
+            check(ItemStack.matches(savedProgress,ItemStack.parse(level.registryAccess(),savedProgress.save(level.registryAccess())).orElseThrow()),"WIP save round trip failed");
+        });}
+        if(started>=0&&ticks-started==240){test("filled pistol casing waits for pressing without another charge",()->check(chargeFluid.getFluidInTank(0).getAmount()==40&&depot.getHeldItem().get(AllDataComponents.SEQUENCED_ASSEMBLY).step()==1,"duplicate fluid charge"));}
+        if(started>=0&&ticks-started==360)level.setBlock(DEPOT.above(2),AllBlocks.MECHANICAL_PRESS.get().defaultBlockState(),3);
         if(started>=0&&ticks-started>=361&&ticks-started<541){var press=(MechanicalPressBlockEntity)level.getBlockEntity(DEPOT.above(2));press.setSpeed(256);}
         if(started>=0&&ticks-started==540){test("real chute hopper chest preserve both calibers and total",()->{var chest=(net.minecraft.world.level.block.entity.ChestBlockEntity)level.getBlockEntity(COLLECT);int a=0,b=0;for(int i=0;i<chest.getContainerSize();i++){var stack=chest.getItem(i);if(AMMO.equals(EmptyCasingItem.ammoId(stack)))a+=stack.getCount();else if(ResourceLocation.parse("tacz:12g").equals(EmptyCasingItem.ammoId(stack)))b+=stack.getCount();}check(a==17&&b==11,"collected "+a+" / "+b);});test("real pressing machine outputs one original gunpack round",()->{var item=depot.getHeldItem();var api=IAmmo.getIAmmoOrNull(item);check(api!=null&&AMMO.equals(api.getAmmoId(item))&&item.getCount()==1,"output="+item);});
             // Transfer the actual single factory output into the test gun's sole chambered round.

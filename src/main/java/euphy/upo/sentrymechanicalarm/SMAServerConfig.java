@@ -5,7 +5,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class SMAServerConfig {
 
     public static final ModConfigSpec SPEC;
-    public static final ModConfigSpec.BooleanValue ENABLE_RELOADING, AUTO_RELOADING, LEGACY_RELOADING_SOURCES, ENABLE_CASING_FORMING, GENERIC_CASING_FORMING;
+    public static final ModConfigSpec.BooleanValue ENABLE_RELOADING, AUTO_RELOADING, LEGACY_RELOADING_SOURCES, RESTORE_LEGACY_AMMO_RECIPES, ENABLE_CASING_FORMING, GENERIC_CASING_FORMING;
     public static final ModConfigSpec.BooleanValue ENABLE_CASINGS, PLAYER_CASINGS, SENTRY_CASINGS, OTHER_CASINGS;
     public static final ModConfigSpec.DoubleValue CASING_CHANCE, RELOADING_METAL_FACTOR;
     public static final ModConfigSpec.IntValue CASING_ENTITY_LIMIT, CASING_LIFETIME, DEFAULT_CASING_YIELD;
@@ -28,8 +28,12 @@ public class SMAServerConfig {
         builder.push("reloading");
         ENABLE_RELOADING=builder.comment("Enable casing reloading; requires casing registration. Reload data packs after changing.").define("enabled",true);
         AUTO_RELOADING=builder.comment("Derive single-round metal, proportional fluid propellant and retained solid payload costs from TaCZ material recipes.").define("autoFromTaCZ",true);
-        RELOADING_METAL_FACTOR=builder.comment("Metal share used for automatic reloading costs, after converting ingots to nuggets.", "Default 0.5 is a balance policy, not inferred casing composition. Direct metal below one nugget per round after primer reservation is omitted; other costs round up.", "Only automatic costs change; explicit data-pack costs are used exactly. Reload data packs after changing.").defineInRange("metalCostMultiplier",0.5,0.01,1.0);
+        RELOADING_METAL_FACTOR=builder.comment("Metal share used for automatic reloading costs, after converting ingots to nuggets.", "Default 0.5 is a balance policy, not inferred casing composition. Direct metal below one nugget per round is omitted; other costs round up.", "Only automatic costs change; explicit data-pack costs are used exactly. Reload data packs after changing.").defineInRange("metalCostMultiplier",0.5,0.01,1.0);
         LEGACY_RELOADING_SOURCES=builder.comment("Read simple legacy TaCZ recipes/ material data from active packs when modern recipes are absent. Does not register native recipes.", "Conditional, NBT, component and complex legacy sources are skipped; modern resources always win. Reload after changing.").define("readLegacyMaterialRecipes",true);
+        builder.pop();
+
+        builder.push("gunpackCompatibility");
+        RESTORE_LEGACY_AMMO_RECIPES=builder.comment("Restore strictly convertible legacy TaCZ ammo recipes from active recipes/ resources as native recipes.", "Modern resources and loaded recipes win. Conditional, component/NBT and unresolved material recipes are skipped. Reload after changing.").define("restoreLegacyAmmoRecipes",true);
         builder.pop();
 
         builder.push("casingManufacturing");

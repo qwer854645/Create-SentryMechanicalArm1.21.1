@@ -1,5 +1,7 @@
 # alpha.28：按原配方装药分档与再装填覆盖
 
+> alpha.30 已删除底火与少量火药，并恢复可转换的旧原生弹药配方；现行说明见 [PRIMERLESS_AND_LEGACY_RECIPES.md](PRIMERLESS_AND_LEGACY_RECIPES.md)。下文为历史记录。
+
 > alpha.29 已改为无水流体与比例装药，取消六档并省略微量金属；现行规则见 [FLUID_PROPELLANT.md](FLUID_PROPELLANT.md)。本文件保留历史说明。
 
 ## 装药规则

@@ -49,7 +49,6 @@ public final class CasingFormingRecipes {
             if (steps.isPresent()) {
                 long direct = steps.get().stream().filter(i -> i.test(new ItemStack(metal))).count();
                 var reloading = BigDecimal.valueOf(direct);
-                if (metal == AllItems.COPPER_NUGGET.get()) reloading = reloading.add(BigDecimal.ONE.divide(BigDecimal.valueOf(PrimerAllocation.CUPS_PER_NUGGET)));
                 budget = budget.min(nativeUnits.subtract(reloading.multiply(rounds)));
             }
             if (budget.signum() <= 0) continue;

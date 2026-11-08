@@ -1,6 +1,6 @@
 # Create: Sentry Mechanical Arm（非官方移植）
 
-当前修复开发版本：**1.4.0-alpha.29**。固定验证环境：Minecraft 1.21.1 / NeoForge 21.1.228 / Create 6.0.10 / TaCZ 1.2.0 / Java 21。
+当前修复开发版本：**1.4.0-alpha.30**。固定验证环境：Minecraft 1.21.1 / NeoForge 21.1.228 / Create 6.0.10 / TaCZ 1.2.0 / Java 21。
 
 两份第三方枪包的实测与限制见 [docs/GUNPACK_COMPATIBILITY.md](docs/GUNPACK_COMPATIBILITY.md)。
 
@@ -19,7 +19,7 @@
 - **弹药管理** — 为哨戒臂附加弹药箱实现自动补给，弹药可用时即时装填。
 - **物理结构兼容** — 完整支持 **Sable**（Create: Aeronautics）飞船座舱姿态、子世界坐标变换。
 - **静态 + Contraption 双状态** — 支持普通方块放置和 Create 动态结构（传送带/矿车/飞船）安装。
-- **弹壳回收与再装填** — 按枪包数据识别可回收弹壳，使用 Create 序列组装单发再装填，并支持 JEI 按口径查询。可重复口径模具制造新壳，支持通用铜壳后备规则；装药改为火药直接加工的无水流体，按原方每发比例取整，省略不足一粒的金属并保留特殊配料（见 [流体装药](docs/FLUID_PROPELLANT.md)）；普通材料按数量一次加入以缩短装配（见 [制造与装配修复](docs/RECIPE_COMPACTION.md)），与回收壳共用底火和各口径单枚装配，详见 [弹壳制造](docs/CASING_MANUFACTURING.md)；使用金属粒与少量火药控制成本，详见 [底火生产](docs/PRIMERS.md)；旧模板与铜板制造链已移除，详见 [成本规则](docs/CASING_COSTS.md) 和 [弹壳与 JEI](docs/CASING_JEI.md)。
+- **弹壳回收与再装填** — 按枪包数据识别可回收弹壳，使用 Create 序列组装单发再装填，并支持 JEI 按口径查询。可重复口径模具制造新壳，支持通用铜壳后备规则；装药改为火药直接加工的无水流体，按原方每发比例取整，省略不足一粒的金属并保留特殊配料，不再使用底火；恢复可转换的旧原生弹药配方，JEI 侧栏只显示空白模具（见 [无底火与旧配方恢复](docs/PRIMERLESS_AND_LEGACY_RECIPES.md)）；普通材料按数量一次加入以缩短装配（见 [制造与装配修复](docs/RECIPE_COMPACTION.md)），与回收壳共用各口径单枚流体装配，详见 [弹壳制造](docs/CASING_MANUFACTURING.md)；使用金属粒与少量火药控制成本，详见 [底火生产](docs/PRIMERS.md)；旧模板与铜板制造链已移除，详见 [成本规则](docs/CASING_COSTS.md) 和 [弹壳与 JEI](docs/CASING_JEI.md)。
 
 ## 前置模组
 

@@ -35,8 +35,6 @@ public final class CasingJeiPlugin implements IModPlugin {
     public static IJeiRuntime runtime(){return runtime;}
     public static void refresh(){
         if(runtime==null)return;var manager=runtime.getIngredientManager();
-        var legacy=manager.getAllIngredients(VanillaTypes.ITEM_STACK).stream().filter(s->s.is(SentryRegistry.SMALL_GUNPOWDER.get())).toList();
-        if(!legacy.isEmpty())manager.removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK,legacy);
         var all=manager.getAllIngredients(VanillaTypes.ITEM_STACK).stream().filter(s->s.getItem() instanceof EmptyCasingItem).toList();
         var invalid=all.stream().filter(s->s.getItem() instanceof ReloadingCasingItem||EmptyCasingItem.ammoId(s)==null||!SentryCasingProfiles.clientSnapshot().contains(EmptyCasingItem.ammoId(s))).toList();
         if(!invalid.isEmpty())manager.removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK,invalid);
@@ -44,14 +42,12 @@ public final class CasingJeiPlugin implements IModPlugin {
         Set<ResourceLocation> present=new HashSet<>();for(var s:all)if(!invalid.contains(s))present.add(EmptyCasingItem.ammoId(s));
         var missing=SentryCasingProfiles.clientSnapshot().stream().filter(id->!present.contains(id)).sorted().map(id->EmptyCasingItem.create(id,1)).toList();
         if(!missing.isEmpty())manager.addIngredientsAtRuntime(VanillaTypes.ITEM_STACK,missing);
-        var level=net.minecraft.client.Minecraft.getInstance().level;
         if(SentryRegistry.CASING_MOLD.isBound()){
-            var choices=level==null?java.util.List.<ResourceLocation>of():euphy.upo.sentrymechanicalarm.recipe.CasingFormingRecipes.choices(level.getRecipeManager());
             var molds=manager.getAllIngredients(VanillaTypes.ITEM_STACK).stream().filter(s->s.is(SentryRegistry.CASING_MOLD.get())).toList();
-            var stale=molds.stream().filter(s->EmptyCasingItem.ammoId(s)!=null&&!choices.contains(EmptyCasingItem.ammoId(s))).toList();
-            if(!stale.isEmpty())manager.removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK,stale);
-            var add=choices.stream().filter(id->molds.stream().noneMatch(s->id.equals(EmptyCasingItem.ammoId(s)))).map(CasingMoldItem::create).toList();
-            if(!add.isEmpty())manager.addIngredientsAtRuntime(VanillaTypes.ITEM_STACK,add);
+            // Hide configured variants from the ingredient list; recipe stacks and subtype matching remain caliber-specific.
+            var configured=molds.stream().filter(s->EmptyCasingItem.ammoId(s)!=null).toList();
+            if(!configured.isEmpty())manager.removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK,configured);
+            if(molds.stream().noneMatch(s->EmptyCasingItem.ammoId(s)==null))manager.addIngredientsAtRuntime(VanillaTypes.ITEM_STACK,List.of(new ItemStack(SentryRegistry.CASING_MOLD.get())));
         }
     }
 }

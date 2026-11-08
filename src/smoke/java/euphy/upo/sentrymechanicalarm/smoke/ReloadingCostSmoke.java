@@ -40,7 +40,7 @@ final class ReloadingCostSmoke {
     static void verify() {
         test("proportional fluid rounds upward once and fractional metal is omitted", () -> {
             var tiny=ReloadingCosts.deriveFluid(original("tacz:22wmr"),.5).orElseThrow();
-            check(tiny.materials().isEmpty()&&tiny.propellant()==20,"tiny ammo must use only primer and 10 additional mB");
+            check(tiny.materials().isEmpty()&&tiny.propellant()==20,"tiny ammo must use no direct metal and 20 mB");
             var pistol=ReloadingCosts.deriveFluid(original("tacz:9mm"),.5).orElseThrow();
             check(pistol.materials().isEmpty()&&pistol.propellant()==40,"wrong pistol fluid ratio");
             var rifle=ReloadingCosts.deriveFluid(original("tacz:556x45"),.5).orElseThrow();
@@ -64,11 +64,11 @@ final class ReloadingCostSmoke {
             var eligible=euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.eligible();
             check(eligible.size()==37&&eligible.stream().allMatch(a->ReloadingRecipes.find(level.getRecipeManager(),a).isPresent()),"missing proportional recipe");
             var nativeIds=level.getRecipeManager().getRecipes().stream().filter(h->h.value() instanceof GunSmithTableRecipe).map(RecipeHolder::id).collect(java.util.stream.Collectors.toSet());
-            boolean previous=SMAServerConfig.LEGACY_RELOADING_SOURCES.get();
-            try{SMAServerConfig.LEGACY_RELOADING_SOURCES.set(false);DynamicRecipeManager.rebuild(level.getRecipeManager());
+            boolean previous=SMAServerConfig.LEGACY_RELOADING_SOURCES.get(),restore=SMAServerConfig.RESTORE_LEGACY_AMMO_RECIPES.get();
+            try{SMAServerConfig.RESTORE_LEGACY_AMMO_RECIPES.set(false);SMAServerConfig.LEGACY_RELOADING_SOURCES.set(false);DynamicRecipeManager.rebuild(level.getRecipeManager());
                 check(ReloadingRecipes.find(level.getRecipeManager(),ResourceLocation.parse("re:40sw")).isEmpty(),"legacy switch ignored");
                 check(ReloadingRecipes.find(level.getRecipeManager(),ResourceLocation.parse("tacz:338")).isPresent(),"modern source removed");
-            }finally{SMAServerConfig.LEGACY_RELOADING_SOURCES.set(previous);DynamicRecipeManager.rebuild(level.getRecipeManager());}
+            }finally{SMAServerConfig.RESTORE_LEGACY_AMMO_RECIPES.set(restore);SMAServerConfig.LEGACY_RELOADING_SOURCES.set(previous);DynamicRecipeManager.rebuild(level.getRecipeManager());}
             check(nativeIds.equals(level.getRecipeManager().getRecipes().stream().filter(h->h.value() instanceof GunSmithTableRecipe).map(RecipeHolder::id).collect(java.util.stream.Collectors.toSet())),"native recipes changed");
         });
         test("solid payload is retained and large stacks split at capacity", () -> {
@@ -81,7 +81,7 @@ final class ReloadingCostSmoke {
             var ammo=ResourceLocation.parse("tacz:556x45");var old=ReloadingRecipes.find(level.getRecipeManager(),ammo).orElseThrow();double previous=SMAServerConfig.RELOADING_METAL_FACTOR.get();
             try{SMAServerConfig.RELOADING_METAL_FACTOR.set(.25);DynamicRecipeManager.rebuild(level.getRecipeManager());var changed=ReloadingRecipes.find(level.getRecipeManager(),ammo).orElseThrow();
                 check(!changed.id().equals(old.id())&&level.getRecipeManager().byKey(old.id()).isEmpty(),"old recipe retained");
-                check(((SequencedAssemblyRecipe)changed.value()).getSequence().size()==3,"fractional quarter-metal charge retained");
+                check(((SequencedAssemblyRecipe)changed.value()).getSequence().size()==2,"fractional quarter-metal charge retained");
             }finally{SMAServerConfig.RELOADING_METAL_FACTOR.set(previous);DynamicRecipeManager.rebuild(level.getRecipeManager());}
             check(ReloadingRecipes.find(level.getRecipeManager(),ammo).orElseThrow().id().equals(old.id()),"restored fingerprint differs");
         });

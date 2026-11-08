@@ -9,7 +9,7 @@ import net.neoforged.neoforge.event.server.*;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import java.util.*;
 
-/** Owns casing reloading and forming recipes; native TaCZ crafting stays untouched. */
+/** Owns generated manufacturing recipes and explicitly restored legacy ammo recipes. */
 @EventBusSubscriber(modid="sentrymechanicalarm")
 public final class DynamicRecipeManager {
     private static final Map<RecipeManager,Map<ResourceLocation,RecipeHolder<?>>> GENERATED=new WeakHashMap<>();
@@ -20,6 +20,14 @@ public final class DynamicRecipeManager {
         var previous=GENERATED.getOrDefault(manager,Map.of());var combined=new LinkedHashMap<ResourceLocation,RecipeHolder<?>>();
         manager.getRecipes().stream().filter(h->previous.get(h.id())!=h).forEach(h->combined.put(h.id(),h));
         Map<ResourceLocation,RecipeHolder<?>> owned=new HashMap<>();
+        // Remove the previous generated set first; disabled restores and /reload cannot retain stale recipes.
+        manager.replaceRecipes(combined.values());
+        var server=net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+        int restored=0;
+        if(server!=null&&euphy.upo.sentrymechanicalarm.SMAServerConfig.RESTORE_LEGACY_AMMO_RECIPES.get())
+            for(var holder:AmmoMaterialSources.legacy(manager,server))if(combined.putIfAbsent(holder.id(),holder)==null){owned.put(holder.id(),holder);restored++;}
+        manager.replaceRecipes(combined.values());
+        euphy.upo.sentrymechanicalarm.SentryMechanicalArm.LOGGER.info("Restored {} legacy native TaCZ ammo recipes",restored);
         for(var h:ReloadingRecipes.build(manager))if(combined.putIfAbsent(h.id(),h)==null)owned.put(h.id(),h);
         for(var h:CasingFormingRecipes.build(manager))if(combined.putIfAbsent(h.id(),h)==null)owned.put(h.id(),h);
         manager.replaceRecipes(combined.values());GENERATED.put(manager,owned);
