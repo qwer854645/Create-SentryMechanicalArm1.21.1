@@ -62,6 +62,7 @@ public final class ReloadingRecipes {
                     for(var recipe:recipes){var output=recipe.getOutput();var api=IAmmo.getIAmmoOrNull(output);if(api==null||!ammo.equals(api.getAmmoId(output)))continue;plan=fromRecipe(recipe);if(plan!=null)break;}
                 }
                 if(plan==null)continue;
+                plan=new Plan(CountedDeployerIngredient.compact(plan.steps()),plan.output());
                 var builder=new SequencedAssemblyRecipeBuilder(versionedId(ammo,plan,server)).require(new CasingIngredient(ammo).toVanilla()).transitionTo(SentryRegistry.RELOADING_CASING.get()).addOutput(plan.output(),1).loops(1);
                 for(var ingredient:plan.steps())builder.addStep(DeployerApplicationRecipe::new,rb->rb.require(ingredient));
                 builder.addStep(PressingRecipe::new,rb->rb);

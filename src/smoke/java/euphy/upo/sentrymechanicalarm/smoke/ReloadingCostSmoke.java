@@ -18,7 +18,7 @@ import static euphy.upo.sentrymechanicalarm.smoke.ReloadingSmoke.*;
 final class ReloadingCostSmoke {
     static Map<Item, Integer> counts(List<Ingredient> steps) {
         Map<Item, Integer> result = new HashMap<>();
-        for (var ingredient : steps) result.merge(ingredient.getItems()[0].getItem(), 1, Integer::sum);
+        for (var ingredient : steps) result.merge(ingredient.getItems()[0].getItem(), CountedDeployerIngredient.amount(ingredient), Integer::sum);
         return result;
     }
     static GunSmithTableRecipe original(String ammo) {
@@ -87,7 +87,7 @@ final class ReloadingCostSmoke {
                 var changed = ReloadingRecipes.find(level.getRecipeManager(), ammo).orElseThrow();
                 check(!changed.id().equals(old.id()) && level.getRecipeManager().byKey(old.id()).isEmpty(), "old cost ID retained");
                 var seq = (SequencedAssemblyRecipe) changed.value();
-                check(seq.getSequence().size() == 5, "quarter-metal 5.56 cost should be 1 primer + 2 powder + 1 nugget + pressing");
+                check(seq.getSequence().size() == 4, "quarter-metal 5.56 cost should be 1 primer + 2 powder + 1 nugget + pressing");
                 check(original("tacz:9mm").getOutput().getCount() == 50, "native crafting was changed");
             } finally {
                 SMAServerConfig.RELOADING_METAL_FACTOR.set(previous);

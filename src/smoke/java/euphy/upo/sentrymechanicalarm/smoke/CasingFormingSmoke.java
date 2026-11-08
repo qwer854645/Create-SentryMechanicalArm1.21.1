@@ -33,9 +33,25 @@ final class CasingFormingSmoke {
             check(1.0 / plan.yield() + 1.125 <= 1.8, "fresh 9mm exceeds native copper budget");
             var rifle = CasingFormingRecipes.plan(ReloadingCostSmoke.original("tacz:556x45")).orElseThrow();
             check(rifle.yield() == 2 && 1.0 / rifle.yield() + 2.125 <= 3, "fresh 5.56 exceeds native copper budget");
-            check(!CasingFormingRecipes.choices(level.getRecipeManager()).isEmpty(), "no selectable calibers");
+            check(new java.util.HashSet<>(CasingFormingRecipes.choices(level.getRecipeManager())).equals(euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.eligible()), "eligible cases missing mold recipes");
+            var complex=ReloadingCostSmoke.synthetic(10, ReloadingCostSmoke.material(Items.COPPER_INGOT,2),ReloadingCostSmoke.material(Items.DIAMOND,1));
+            check(CasingFormingRecipes.plan(complex).isPresent(),"payload material blocked shell-metal extraction");
             for (String id : List.of("tacz:rpg_rocket", "ars_armorer:mana", "applied_armorer:fluix_battery"))
                 check(CasingFormingRecipes.find(level.getRecipeManager(), ResourceLocation.parse(id)).isEmpty(), "special case manufactured");
+        });
+        test("generic fallback can be disabled and only changes unknown-cost yields", () -> {
+            var all=new java.util.HashSet<>(CasingFormingRecipes.choices(level.getRecipeManager()));
+            boolean previous=SMAServerConfig.GENERIC_CASING_FORMING.get();int yield=SMAServerConfig.DEFAULT_CASING_YIELD.get();
+            try {
+                SMAServerConfig.GENERIC_CASING_FORMING.set(false);DynamicRecipeManager.rebuild(level.getRecipeManager());
+                var nativeOnly=new java.util.HashSet<>(CasingFormingRecipes.choices(level.getRecipeManager()));
+                var fallback=new java.util.HashSet<>(all);fallback.removeAll(nativeOnly);
+                check(!fallback.isEmpty()&&nativeOnly.contains(AMMO),"fallback and native rules not separated");
+                SMAServerConfig.GENERIC_CASING_FORMING.set(true);SMAServerConfig.DEFAULT_CASING_YIELD.set(3);DynamicRecipeManager.rebuild(level.getRecipeManager());
+                var changed=CasingFormingRecipes.find(level.getRecipeManager(),fallback.iterator().next()).orElseThrow().value().getResultItem(level.registryAccess());
+                check(changed.getCount()==3,"fallback yield config ignored");
+                check(CasingFormingRecipes.find(level.getRecipeManager(),AMMO).orElseThrow().value().getResultItem(level.registryAccess()).getCount()==2,"fallback config changed a native budget");
+            }finally{SMAServerConfig.GENERIC_CASING_FORMING.set(previous);SMAServerConfig.DEFAULT_CASING_YIELD.set(yield);DynamicRecipeManager.rebuild(level.getRecipeManager());}
         });
         test("mold identity recipe codecs and reusable tool flag", () -> {
             var holder = CasingFormingRecipes.find(level.getRecipeManager(), AMMO).orElseThrow();

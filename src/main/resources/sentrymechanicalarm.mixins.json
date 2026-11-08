@@ -13,7 +13,8 @@
     "InteractKeyTextOverlayMixin",
     "SequencedAssemblyRecipeMixin",
     "SpyglassZoomMixin",
-    "SequencedAssemblyRecipeAccessor"
+    "SequencedAssemblyRecipeAccessor",
+    "CountedDeployerMixin"
   ],
   "client": [
     "GunDisplayInstanceAccessor",

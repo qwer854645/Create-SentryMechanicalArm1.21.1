@@ -68,9 +68,11 @@ public final class ReloadingSmoke {
         ReloadingCostSmoke.verify();
         PrimerSmoke.verify();
         CasingFormingSmoke.verify();
+        CountedReloadingSmoke.verify();
         level.setChunkForced(34,34,true);level.getChunkAt(COLLECT);
         PrimerSmoke.setup();
         CasingFormingSmoke.setup();
+        CountedReloadingSmoke.setup();
         level.setBlock(COLLECT,Blocks.CHEST.defaultBlockState(),3);level.setBlock(COLLECT.above(),Blocks.HOPPER.defaultBlockState(),3);level.setBlock(COLLECT.above(2),AllBlocks.CHUTE.get().defaultBlockState(),3);
         for(var stack:List.of(casing(AMMO,17),casing(ResourceLocation.parse("tacz:12g"),11))){var item=new ItemEntity(level,COLLECT.getX()+.5,COLLECT.getY()+3.2,COLLECT.getZ()+.5,stack);item.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);level.addFreshEntity(item);}
         level.setBlock(DEPOT,AllBlocks.DEPOT.get().defaultBlockState(),3);depot=(DepotBlockEntity)level.getBlockEntity(DEPOT);depot.setHeldItem(ItemStack.EMPTY);
@@ -86,11 +88,12 @@ public final class ReloadingSmoke {
         if(ticks>2400){test("factory fixture completes within timeout",()->{throw new AssertionError("assembly timed out");});finish();return;}
         PrimerSmoke.tick();
         CasingFormingSmoke.tick();
+        CountedReloadingSmoke.tick();
         if(reload!=null){if(!reload.isDone())return;try{reload.join();if(reloadStage==1){
             test("data-pack cost overrides rebuild and invalidate old progress",()->{
                 var updated=(SequencedAssemblyRecipe)ReloadingRecipes.find(level.getRecipeManager(),AMMO).orElseThrow().value();
                 check(updated.getSequence().get(0).getRecipe().getIngredients().get(1).test(new ItemStack(Items.GUNPOWDER)),"old materials cached");
-                check(updated.getSequence().size()==3&&updated.getSequence().stream().noneMatch(s->s.getRecipe().getIngredients().stream().anyMatch(i->i.test(new ItemStack(SentryRegistry.PRIMER.get())))),"explicit data-pack costs received an implicit primer fee");
+                check(updated.getSequence().size()==2&&updated.getSequence().stream().noneMatch(s->s.getRecipe().getIngredients().stream().anyMatch(i->i.test(new ItemStack(SentryRegistry.PRIMER.get())))),"explicit data-pack costs received an implicit primer fee");
                 check(level.getRecipeManager().byKey(previousRecipe).isEmpty(),"cost change retained old progress recipe");
                 check(SequencedAssemblyRecipe.getRecipe(level,new SingleRecipeInput(savedProgress),AllRecipeTypes.PRESSING.getType(),PressingRecipe.class).isEmpty(),"old progress bypasses changed cost");
                 nativeSequence(updated);
@@ -125,7 +128,8 @@ public final class ReloadingSmoke {
             var op=com.tacz.guns.api.entity.IGunOperator.fromLivingEntity(shooter);op.initialData();op.draw(shooter::getMainHandItem);op.getDataHolder().drawTimestamp=com.tacz.guns.util.time.GunTime.nowMillis()-10000;SMAServerConfig.CASING_CHANCE.set(1.0);SMAServerConfig.CASING_ENTITY_LIMIT.set(1024);
         }
         if(started>=0&&ticks-started==560){shotWindow=true;com.tacz.guns.api.entity.IGunOperator.fromLivingEntity(shooter).shoot(()->0f,()->0f);}
-        if(started>=0&&ticks-started==580){shotWindow=false;test("one reloaded round fires and returns exactly one case",()->{var gun=shooter.getMainHandItem();var api=IGun.getIGunOrNull(gun);check(shots==1&&returnedCases==1,"shots/cases="+shots+"/"+returnedCases);check(api.getCurrentAmmoCount(gun)==0&&!api.hasBulletInBarrel(gun),"shot did not consume sole round");});
+        if(started>=0&&ticks-started==580){shotWindow=false;test("one reloaded round fires and returns exactly one case",()->{var gun=shooter.getMainHandItem();var api=IGun.getIGunOrNull(gun);check(shots==1&&returnedCases==1,"shots/cases="+shots+"/"+returnedCases);check(api.getCurrentAmmoCount(gun)==0&&!api.hasBulletInBarrel(gun),"shot did not consume sole round");});}
+        if(started>=0&&ticks-started>=580&&reloadStage==0&&CountedReloadingSmoke.finished){
             try{pack=level.getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.DATAPACK_DIR).resolve("reloading-smoke");
                 write("pack.mcmeta","{\"pack\":{\"pack_format\":48,\"description\":\"Disposable reloading verification\"}}");
                 write("data/tacz/sentry_reloading/9mm.json","{\"materials\":[{\"ingredient\":{\"item\":\"minecraft:gunpowder\"},\"count\":2}]}");

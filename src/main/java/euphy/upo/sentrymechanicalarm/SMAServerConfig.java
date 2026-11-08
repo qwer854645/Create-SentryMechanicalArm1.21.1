@@ -5,10 +5,10 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class SMAServerConfig {
 
     public static final ModConfigSpec SPEC;
-    public static final ModConfigSpec.BooleanValue ENABLE_RELOADING, AUTO_RELOADING, ENABLE_CASING_FORMING;
+    public static final ModConfigSpec.BooleanValue ENABLE_RELOADING, AUTO_RELOADING, ENABLE_CASING_FORMING, GENERIC_CASING_FORMING;
     public static final ModConfigSpec.BooleanValue ENABLE_CASINGS, PLAYER_CASINGS, SENTRY_CASINGS, OTHER_CASINGS;
     public static final ModConfigSpec.DoubleValue CASING_CHANCE, RELOADING_METAL_FACTOR;
-    public static final ModConfigSpec.IntValue CASING_ENTITY_LIMIT, CASING_LIFETIME;
+    public static final ModConfigSpec.IntValue CASING_ENTITY_LIMIT, CASING_LIFETIME, DEFAULT_CASING_YIELD;
 
     static {
         var builder = new ModConfigSpec.Builder();
@@ -33,6 +33,8 @@ public class SMAServerConfig {
 
         builder.push("casingManufacturing");
         ENABLE_CASING_FORMING=builder.comment("Enable mold-based casing manufacture from understood native TaCZ costs. Reload data packs after changing.").define("enabled",true);
+        GENERIC_CASING_FORMING=builder.comment("Allow every eligible physical casing to use the generic copper-nugget forming rule if no native metal budget is available. Does not grant live-ammo reloading recipes.").define("allowGenericCopperFallback",true);
+        DEFAULT_CASING_YIELD=builder.comment("Cases per copper nugget for generic fallback only; native-budget yields remain automatic.").defineInRange("fallbackCasesPerCopperNugget",1,1,64);
         builder.pop();
 
         SPEC = builder.build();
