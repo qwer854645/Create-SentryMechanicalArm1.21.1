@@ -50,3 +50,7 @@ players=false 仍表示完全不生成玩家弹壳，不等同于选择地面模
 新增方块、方块实体和 Create 移动存储类型，协议升级为 14，客户端和服务端一起更新。
 
 本轮只阅读本地源码/API并执行 clean jar 编译打包，没有运行检查、自动测试、客户端或服务端。动态结构拆装、同结构隔离与玩家溢出路径已实现，但没有进行游戏内验收，不沿用旧版本测试通过数。
+
+## alpha.37 材质更新
+
+收集器顶部直接引用 create:block/funnel/andesite_funnel 的 Back 面区域（UV 0,0–6,6）；其余五面及粒子统一引用 create:block/andesite_casing。按原模型的 UV 取背面部分，避免把漏斗整张拼接图铺到顶部。没有复制或内嵌 Create PNG。

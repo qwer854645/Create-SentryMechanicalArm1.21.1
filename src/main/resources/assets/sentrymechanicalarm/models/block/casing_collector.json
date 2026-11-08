@@ -2,11 +2,83 @@
   "parent": "minecraft:block/cube",
   "textures": {
     "particle": "create:block/andesite_casing",
-    "down": "create:block/industrial_iron_block",
-    "up": "create:block/depot_top",
-    "north": "create:block/brass_casing",
-    "south": "create:block/brass_casing",
-    "west": "create:block/andesite_casing",
-    "east": "create:block/andesite_casing"
-  }
+    "casing": "create:block/andesite_casing",
+    "funnel_back": "create:block/funnel/andesite_funnel"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#casing",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "cullface": "down"
+        },
+        "north": {
+          "texture": "#casing",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "cullface": "north"
+        },
+        "south": {
+          "texture": "#casing",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "cullface": "south"
+        },
+        "west": {
+          "texture": "#casing",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "cullface": "west"
+        },
+        "east": {
+          "texture": "#casing",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "cullface": "east"
+        },
+        "up": {
+          "texture": "#funnel_back",
+          "uv": [
+            0,
+            0,
+            6,
+            6
+          ],
+          "cullface": "up"
+        }
+      }
+    }
+  ]
 }
