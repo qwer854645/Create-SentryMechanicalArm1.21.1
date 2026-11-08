@@ -48,8 +48,14 @@ public final class CasingSwitchSmoke {
             var tabId=ResourceLocation.parse("sentrymechanicalarm:casings");
             check(net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB.containsKey(tabId)==enabled,"tab registration mismatch");
             if(enabled){var tab=SentryRegistry.CASINGS_TAB.get();tab.buildContents(new CreativeModeTab.ItemDisplayParameters(net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS,true,level.registryAccess()));
-                check(tab.getDisplayItems().size()==com.tacz.guns.api.TimelessAPI.getAllCommonAmmoIndex().size()+1,"missing casing variants");
+                check(tab.getDisplayItems().size()==SentryCasingProfiles.eligible().size(),"missing casing variants");
                 check(tab.getDisplayItems().stream().allMatch(x->x.getItem() instanceof EmptyCasingItem),"non-casing entry");}
+        });
+        test("casing eligibility packet round-trips and excludes unsupported ammo",()->{
+            var original=new euphy.upo.sentrymechanicalarm.network.SentryCasingProfilesPacket(SentryCasingProfiles.eligible());
+            var buffer=new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+            try{euphy.upo.sentrymechanicalarm.network.SentryCasingProfilesPacket.CODEC.encode(buffer,original);check(original.equals(euphy.upo.sentrymechanicalarm.network.SentryCasingProfilesPacket.CODEC.decode(buffer)),"packet mismatch");}finally{buffer.release();}
+            for(String ammoId:java.util.List.of("tacz:rpg_rocket","ars_armorer:mana","applied_armorer:fluix_battery"))check(!original.ammo().contains(ResourceLocation.parse(ammoId)),"unsupported casing "+ammoId);
         });
         test("factory safely handles missing item",()->check(EmptyCasingItem.create(ResourceLocation.parse("tacz:9mm"),1).isEmpty()!=enabled,"unsafe factory"));
         if(!enabled){test("disabled shot hooks remain safe",()->{var entity=new Husk(EntityType.HUSK,level);entity.setItemSlot(EquipmentSlot.MAINHAND,gun());pair(entity,true);check(drops==0,"disabled casing drop");});test("disabled discovery skips casing profiles",()->check(SentryCasingProfiles.snapshot().isEmpty(),"profiles loaded while disabled"));finish();return;}

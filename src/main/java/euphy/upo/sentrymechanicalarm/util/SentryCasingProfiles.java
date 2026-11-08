@@ -17,11 +17,19 @@ import java.util.*;
 @EventBusSubscriber(modid=SentryMechanicalArm.MODID)
 public final class SentryCasingProfiles {
     private static volatile Map<ResourceLocation,Boolean> profiles = Map.of();
+    private static volatile Set<ResourceLocation> client=Set.of();
+    public static void receive(Set<ResourceLocation> ids){client=Set.copyOf(ids);}
+    public static Set<ResourceLocation> clientSnapshot(){return client;}
+    public static Set<ResourceLocation> eligible(){return profiles.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).collect(java.util.stream.Collectors.toUnmodifiableSet());}
+    public static boolean creativeEligible(ResourceLocation id){return net.neoforged.fml.loading.FMLEnvironment.dist==net.neoforged.api.distmarker.Dist.CLIENT?client.contains(id):enabled(id);}
     public static boolean enabled(ResourceLocation id) { return profiles.getOrDefault(id,false); }
     public static Map<ResourceLocation,Boolean> snapshot() { return profiles; }
     @SubscribeEvent(priority=EventPriority.HIGHEST) public static void start(ServerStartedEvent event) { rebuild(event.getServer()); }
     @SubscribeEvent(priority=EventPriority.HIGH) public static void sync(OnDatapackSyncEvent event) {
         if(event.getPlayer()==null) { SentryCasingDrops.clear(); rebuild(event.getPlayerList().getServer()); }
+        var packet=new euphy.upo.sentrymechanicalarm.network.SentryCasingProfilesPacket(eligible());
+        if(event.getPlayer()!=null)net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(event.getPlayer(),packet);
+        else for(var player:event.getPlayerList().getPlayers())net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,packet);
     }
     @SubscribeEvent public static void stop(ServerStoppedEvent event) { profiles=Map.of();SentryCasingDrops.clear(); }
     public static void rebuild(MinecraftServer server) {

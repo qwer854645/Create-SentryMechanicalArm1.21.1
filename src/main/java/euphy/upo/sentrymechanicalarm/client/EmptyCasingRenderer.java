@@ -59,7 +59,7 @@ public final class EmptyCasingRenderer extends BlockEntityWithoutLevelRenderer {
             pose.pushPose();
             try{
                 pose.translate(.5,1.5,.5);pose.mulPose(Axis.ZN.rotationDegrees(180));
-                ICON_MODEL.renderToBuffer(pose,buffers.getBuffer(RenderType.entityCutoutNoCull(icon.texture())),light,overlay,-1);
+                ICON_MODEL.renderToBuffer(pose,buffers.getBuffer(RenderType.entityTranslucent(icon.texture())),light,overlay,net.minecraft.util.FastColor.ARGB32.color((int)(255*com.tacz.guns.client.renderer.item.ItemPreviewRenderContext.alpha()),255,255,255));
             }finally{pose.popPose();}
             return;
         }

@@ -59,6 +59,16 @@ public class ClientPacketHandler {
 
     private static final Map<ResourceLocation, GunDisplayInstance> SENTRY_DISPLAYS = new HashMap<>();
     public static void clearCaches() { SENTRY_DISPLAYS.clear(); }
+    public static void handleCasingProfiles(SentryCasingProfilesPacket packet){
+        euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.receive(packet.ammo());
+        var mc=net.minecraft.client.Minecraft.getInstance();
+        if(mc.level!=null&&euphy.upo.sentrymechanicalarm.registry.SentryRegistry.CASINGS_TAB.isBound()){
+            var parameters=new net.minecraft.world.item.CreativeModeTab.ItemDisplayParameters(mc.level.enabledFeatures(),mc.player!=null&&mc.player.canUseGameMasterBlocks(),mc.level.registryAccess());
+            euphy.upo.sentrymechanicalarm.registry.SentryRegistry.CASINGS_TAB.get().buildContents(parameters);
+            net.minecraft.world.item.CreativeModeTabs.searchTab().buildContents(parameters);
+            if(mc.screen instanceof net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen)mc.screen.init(mc,mc.getWindow().getGuiScaledWidth(),mc.getWindow().getGuiScaledHeight());
+        }
+    }
     public static void handleGunProfiles(SentryGunProfilesPacket packet) {
         euphy.upo.sentrymechanicalarm.util.SentryGunProfiles.receive(packet.profiles());
         clearCaches(); SentryTrailManager.clear();

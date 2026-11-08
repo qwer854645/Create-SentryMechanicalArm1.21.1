@@ -99,11 +99,12 @@ public class SentryRegistry {
             euphy.upo.sentrymechanicalarm.SMAStartupConfig.ENABLE_CASINGS.get()
             ? CREATIVE_TABS.register("casings", () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup." + MODID + ".casings"))
-                    .icon(() -> new net.minecraft.world.item.ItemStack(EMPTY_CASING.get()))
-                    .withTabsAfter(SENTRY_TAB.getId())
+                    .icon(() -> EmptyCasingItem.create(ResourceLocation.parse("tacz:9mm"),1))
+                    .withTabsAfter(ResourceLocation.parse("tacz:ammo"))
+                    .withTabsBefore(ResourceLocation.parse("tacz:other"))
                     .displayItems((parameters, output) -> {
-                        output.accept(new net.minecraft.world.item.ItemStack(EMPTY_CASING.get()));
                         com.tacz.guns.api.TimelessAPI.getAllCommonAmmoIndex().stream()
+                                .filter(entry -> euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.creativeEligible(entry.getKey()))
                                 .sorted(java.util.Map.Entry.comparingByKey())
                                 .forEach(entry -> output.accept(EmptyCasingItem.create(entry.getKey(), 1)));
                     }).build())

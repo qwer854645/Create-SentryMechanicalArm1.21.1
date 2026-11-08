@@ -13,6 +13,7 @@ import java.util.Map;
 @EventBusSubscriber(modid=SentryMechanicalArm.MODID,value=Dist.CLIENT)
 public final class SentryClientCaches {
     @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) {
+        euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.receive(java.util.Set.of());
         EmptyCasingRenderer.clear(); SentryGunProfiles.receive(Map.of()); ClientPacketHandler.clearCaches(); SentryTrailManager.clear();
     }
 }

@@ -34,8 +34,21 @@ public final class CasingClientSmoke {
                 }
                 SentryMechanicalArm.LOGGER.info("CASING_CLIENT PASS crop removes projectile and label, retains exact body pixels");
             }catch(Throwable e){failures++;SentryMechanicalArm.LOGGER.error("CASING_CLIENT FAIL crop",e);}
+            try{
+                var tab=euphy.upo.sentrymechanicalarm.registry.SentryRegistry.CASINGS_TAB.get();
+                if(!ResourceLocation.parse("tacz:9mm").equals(EmptyCasingItem.ammoId(tab.getIconItem())))throw new AssertionError("tab icon is not 9mm casing");
+                if(euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.clientSnapshot().isEmpty())throw new AssertionError("no casing rules received from server");
+                tab.buildContents(new net.minecraft.world.item.CreativeModeTab.ItemDisplayParameters(mc.level.enabledFeatures(),true,mc.level.registryAccess()));
+                if(tab.getDisplayItems().size()!=euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.clientSnapshot().size())throw new AssertionError("creative tab does not match synchronized rules");
+                for(var stack:tab.getDisplayItems())if(!euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.clientSnapshot().contains(EmptyCasingItem.ammoId(stack)))throw new AssertionError("ineligible creative casing");
+                var tabs=net.neoforged.neoforge.common.CreativeModeTabRegistry.getSortedCreativeModeTabs();
+                int ammo=tabs.indexOf(com.tacz.guns.init.ModCreativeTabs.AMMO_TAB.get()),casings=tabs.indexOf(tab);
+                if(ammo<0||Math.abs(casings-ammo)!=1)throw new AssertionError("casing tab not adjacent to ammo: "+ammo+" / "+casings);
+                SentryMechanicalArm.LOGGER.info("CASING_CLIENT PASS 9mm tab icon and immediate placement next to TaCZ ammo");
+            }catch(Throwable e){failures++;SentryMechanicalArm.LOGGER.error("CASING_CLIENT FAIL creative tab",e);}
             var renderer=new EmptyCasingRenderer();
             for(var entry:TimelessAPI.getAllClientAmmoIndex().stream().sorted(Map.Entry.comparingByKey()).toList()){
+                if(!euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.creativeEligible(entry.getKey()))continue;
                 var casing=EmptyCasingItem.create(entry.getKey(),1);samples.add(casing);
                 try {
                     var texture=entry.getValue().getShellTextureLocation();
@@ -52,7 +65,6 @@ public final class CasingClientSmoke {
                     }
                 }catch(Throwable e){failures++;SentryMechanicalArm.LOGGER.error("CASING_CLIENT FAIL "+entry.getKey(),e);}
             }
-            samples.add(EmptyCasingItem.create(ResourceLocation.parse("removed_pack:ammo"),1));
             if(nativeModels<15){failures++;SentryMechanicalArm.LOGGER.error("CASING_CLIENT FAIL insufficient real pack shell models {}",nativeModels);}
             SentryMechanicalArm.LOGGER.info("CASING_CLIENT models={} samples={} missingTextures={} failed={}",nativeModels,samples.size(),missingTextures,failures);
             mc.setScreen(new Preview());return false;
@@ -71,22 +83,16 @@ public final class CasingClientSmoke {
         @Override public boolean isPauseScreen(){return false;}
         @Override public void render(GuiGraphics gui,int mouseX,int mouseY,float partialTick){
             gui.fill(0,0,width,height,0xff18212c);
-            gui.drawString(font,"Automatic casings - cropped ammo icon (left) / world appearance (right)",12,10,0xffffff);
+            gui.drawString(font,"Automatic casings - TaCZ ammo (left) / cropped casing (right)",12,10,0xffffff);
             int cols=7,cellW=Math.min(100,(width-20)/cols),cellH=Math.min(62,(height-35)/((samples.size()+cols-1)/cols));
             float scale=Math.min(1.8f,(cellH-15)/16f);
             for(int i=0;i<samples.size();i++){
                 int x=10+(i%cols)*cellW,y=30+(i/cols)*cellH;
                 gui.fill(x,y,x+cellW-3,y+cellH-3,0xff293746);
-                gui.pose().pushPose();gui.pose().translate(x+cellW*.25f-8*scale,y+3,0);gui.pose().scale(scale,scale,1);gui.renderItem(samples.get(i),0,0);gui.pose().popPose();
-                gui.flush();
-                gui.pose().pushPose();
-                gui.pose().translate(x+cellW*.73f,y+(cellH-12)/2f,100);
-                gui.pose().scale(24,-24,24);
-                gui.pose().mulPose(com.mojang.math.Axis.YP.rotationDegrees(-35));
-                gui.pose().mulPose(com.mojang.math.Axis.XP.rotationDegrees(25));
-                Minecraft.getInstance().getItemRenderer().renderStatic(samples.get(i),ItemDisplayContext.FIXED,15728880,net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY,gui.pose(),Minecraft.getInstance().renderBuffers().bufferSource(),Minecraft.getInstance().level,0);
-                Minecraft.getInstance().renderBuffers().bufferSource().endBatch();
-                gui.pose().popPose();
+                var ammoId=EmptyCasingItem.ammoId(samples.get(i));
+                var ammo=com.tacz.guns.api.item.builder.AmmoItemBuilder.create().setId(ammoId).build();
+                gui.pose().pushPose();gui.pose().translate(x+cellW*.25f-8*scale,y+3,0);gui.pose().scale(scale,scale,1);gui.renderItem(ammo,0,0);gui.pose().popPose();
+                gui.pose().pushPose();gui.pose().translate(x+cellW*.73f-8*scale,y+3,0);gui.pose().scale(scale,scale,1);gui.renderItem(samples.get(i),0,0);gui.pose().popPose();
                 String id=EmptyCasingItem.ammoId(samples.get(i)).getPath();if(id.length()>14)id=id.substring(0,13)+"~";
                 gui.pose().pushPose();gui.pose().translate(x+3,y+cellH-11,0);gui.pose().scale(.65f,.65f,1);gui.drawString(font,id,0,0,0xd5dce5,false);gui.pose().popPose();
             }
