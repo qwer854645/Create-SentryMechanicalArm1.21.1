@@ -1,6 +1,8 @@
 package euphy.upo.sentrymechanicalarm.recipe;
 
 import com.simibubi.create.AllItems;
+import com.google.gson.*;
+import com.mojang.serialization.JsonOps;
 import com.simibubi.create.content.kinetics.deployer.*;
 import com.tacz.guns.api.item.IAmmo;
 import com.tacz.guns.crafting.GunSmithTableRecipe;
@@ -69,8 +71,10 @@ public final class CasingFormingRecipes {
     public static List<RecipeHolder<?>> build(RecipeManager manager) {
         if (!enabled()) return List.of();
         var result = new ArrayList<RecipeHolder<?>>();
+        var server=net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
         var inputs = net.minecraft.core.NonNullList.of(Ingredient.EMPTY, Ingredient.of(Items.IRON_INGOT), Ingredient.of(Items.IRON_INGOT), Ingredient.of(Items.STICK));
-        result.add(new RecipeHolder<>(ResourceLocation.parse("sentrymechanicalarm:casing_mold"), new ShapelessRecipe("", CraftingBookCategory.MISC, new ItemStack(SentryRegistry.CASING_MOLD.get()), inputs)));
+        var moldId=ResourceLocation.parse("sentrymechanicalarm:casing_mold");
+        if(!ManufacturingRules.nativeRecipePresent(manager,server,moldId))result.add(new RecipeHolder<>(moldId,new ShapelessRecipe("",CraftingBookCategory.MISC,new ItemStack(SentryRegistry.CASING_MOLD.get()),inputs)));
         var sources = new LinkedHashMap<ResourceLocation, List<GunSmithTableRecipe>>();
         for (var holder : AmmoMaterialSources.collect(manager,net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer())) {
             var original = holder.value();
@@ -78,8 +82,25 @@ public final class CasingFormingRecipes {
             var ammo = api.getAmmoId(original.getOutput());
             sources.computeIfAbsent(ammo, key -> new ArrayList<>()).add(original);
         }
-        int nativeCount = 0, fallbackCount = 0;
+        int nativeCount = 0, fallbackCount = 0, customCount=0;
         for (var ammo : SentryCasingProfiles.eligible().stream().sorted().toList()) {
+            if(ManufacturingRules.nativeRecipePresent(manager,server,id(ammo)))continue;
+            var custom=ManufacturingRules.section(server,ammo,"forming",null);
+            if(custom.present()){
+                if(custom.valid())try{
+                    var json=custom.json();ManufacturingRules.requireKeys(json,Set.of("enabled","input","output_count"));
+                    if(!ManufacturingRules.enabled(json))continue;
+                    if(!json.has("input"))throw new IllegalArgumentException("forming.input is required");
+                    if(json.get("input").isJsonObject()&&json.getAsJsonObject("input").has("count"))throw new IllegalArgumentException("Forming consumes one input item; input.count is unsupported");
+                    var input=Ingredient.CODEC.parse(server.registryAccess().createSerializationContext(JsonOps.INSTANCE),json.get("input")).getOrThrow();
+                    if(input.getItems().length==0||input.test(ItemStack.EMPTY)||Arrays.stream(input.getItems()).anyMatch(stack->stack.isEmpty()||stack.getCount()!=1))throw new IllegalArgumentException("Forming input must represent one nonempty item");
+                    int count=json.has("output_count")?json.get("output_count").getAsBigDecimal().intValueExact():1;
+                    if(count<1||count>64)throw new IllegalArgumentException("forming.output_count must be 1..64");
+                    var recipe=new ItemApplicationRecipe.Builder<>(DeployerApplicationRecipe::new,id(ammo)).require(input).require(new MoldIngredient(ammo)).output(EmptyCasingItem.create(ammo,count)).toolNotConsumed().build();
+                    result.add(new RecipeHolder<>(id(ammo),recipe));customCount++;
+                }catch(Exception error){euphy.upo.sentrymechanicalarm.SentryMechanicalArm.LOGGER.warn("Invalid forming rule {}: {}; no automatic fallback",custom.source(),error.toString());}
+                continue;
+            }
             var originals = sources.getOrDefault(ammo, List.of());
             // Use the same automatic source, and deduct the actual active recipe rather than a theoretical discount.
             var understood=originals.stream().filter(r->ReloadingCosts.derive(r,SMAServerConfig.RELOADING_METAL_FACTOR.get()).isPresent()).findFirst();
@@ -95,7 +116,7 @@ public final class CasingFormingRecipes {
                     .require(p.metal()).require(new MoldIngredient(ammo)).output(EmptyCasingItem.create(ammo, p.yield())).toolNotConsumed().build();
             result.add(new RecipeHolder<>(id(ammo), recipe));
         }
-        euphy.upo.sentrymechanicalarm.SentryMechanicalArm.LOGGER.info("Casing manufacture: {} native metal budgets, {} generic copper rules", nativeCount, fallbackCount);
+        euphy.upo.sentrymechanicalarm.SentryMechanicalArm.LOGGER.info("Casing manufacture: {} custom, {} native metal budgets, {} generic copper rules",customCount, nativeCount, fallbackCount);
         return List.copyOf(result);
     }
 }

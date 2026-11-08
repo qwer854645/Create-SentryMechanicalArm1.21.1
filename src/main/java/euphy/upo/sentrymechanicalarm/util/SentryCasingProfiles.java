@@ -18,6 +18,8 @@ import java.util.*;
 public final class SentryCasingProfiles {
     private static volatile Map<ResourceLocation,Boolean> profiles = Map.of();
     private static volatile Set<ResourceLocation> client=Set.of();
+    private static volatile Map<ResourceLocation,CasingDropRule> drops=Map.of();
+    public static CasingDropRule drop(ResourceLocation ammo){return drops.getOrDefault(ammo,CasingDropRule.disabled());}
     public static void receive(Set<ResourceLocation> ids){client=Set.copyOf(ids);}
     public static Set<ResourceLocation> clientSnapshot(){return client;}
     public static Set<ResourceLocation> eligible(){return profiles.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).collect(java.util.stream.Collectors.toUnmodifiableSet());}
@@ -31,9 +33,10 @@ public final class SentryCasingProfiles {
         if(event.getPlayer()!=null)net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(event.getPlayer(),packet);
         else for(var player:event.getPlayerList().getPlayers())net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,packet);
     }
-    @SubscribeEvent public static void stop(ServerStoppedEvent event) { profiles=Map.of();SentryCasingDrops.clear(); }
+    @SubscribeEvent public static void stop(ServerStoppedEvent event) { profiles=Map.of();drops=Map.of();euphy.upo.sentrymechanicalarm.recipe.ManufacturingRules.clear();SentryCasingDrops.clear(); }
     public static void rebuild(MinecraftServer server) {
-        if(!euphy.upo.sentrymechanicalarm.registry.SentryRegistry.EMPTY_CASING.isBound()){profiles=Map.of();return;}
+        if(!euphy.upo.sentrymechanicalarm.registry.SentryRegistry.EMPTY_CASING.isBound()){profiles=Map.of();drops=Map.of();euphy.upo.sentrymechanicalarm.recipe.ManufacturingRules.clear();return;}
+        euphy.upo.sentrymechanicalarm.recipe.ManufacturingRules.reload(server);
         var resources=server.getResourceManager();var packs=resources.listPacks().toList();
         Map<ResourceLocation,Boolean> loaded=new LinkedHashMap<>();
         for(var entry:TimelessAPI.getAllCommonAmmoIndex()) {
@@ -52,9 +55,24 @@ public final class SentryCasingProfiles {
                     var json=JsonParser.parseReader(reader).getAsJsonObject();allow=json.get("enabled").getAsBoolean();
                 }
             } catch(Exception e) { allow=false;SentryMechanicalArm.LOGGER.warn("Casing rule rejected for {}: {}",id,e.toString()); }
+            allow=euphy.upo.sentrymechanicalarm.recipe.ManufacturingRules.casingOverride(id).orElse(allow);
             loaded.put(id,allow);
         }
-        profiles=Map.copyOf(loaded);
+        var defaults=Map.copyOf(loaded);
+        var dropRules=new HashMap<ResourceLocation,CasingDropRule>();
+        for(var entry:TimelessAPI.getAllCommonAmmoIndex()){
+            var id=entry.getKey();
+            var rule=euphy.upo.sentrymechanicalarm.recipe.ManufacturingRules.section(server,id,"drops",null);
+            var drop=CasingDropRule.automatic(id,defaults.getOrDefault(id,false));
+            if(rule.present()){
+                drop=CasingDropRule.disabled();
+                if(rule.valid())try{drop=CasingDropRule.read(server,id,rule.json());}
+                catch(Exception error){SentryMechanicalArm.LOGGER.warn("Invalid casing drop {}: {}; no automatic fallback",rule.source(),error.getMessage());}
+                if(drop.enabled()&&drop.casing()!=null)loaded.put(drop.casing(),true);
+            }
+            dropRules.put(id,drop);
+        }
+        profiles=Map.copyOf(loaded);drops=Map.copyOf(dropRules);
         SentryMechanicalArm.LOGGER.info("Casing discovery: {} ammo entries, {} eligible",loaded.size(),loaded.values().stream().filter(Boolean::booleanValue).count());
     }
 }

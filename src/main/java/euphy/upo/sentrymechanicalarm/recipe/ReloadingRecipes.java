@@ -22,7 +22,13 @@ import java.util.*;
 public final class ReloadingRecipes {
     public static boolean enabled(){return SentryRegistry.EMPTY_CASING.isBound()&&SentryRegistry.RELOADING_CASING.isBound()&&SMAServerConfig.ENABLE_RELOADING.get();}
     public static ResourceLocation id(ResourceLocation ammo){return ResourceLocation.fromNamespaceAndPath(SentryMechanicalArm.MODID,"casing_reloading/"+ammo.getNamespace()+"/"+ammo.getPath());}
-    public static Optional<RecipeHolder<?>> find(RecipeManager manager,ResourceLocation ammo){String prefix=id(ammo).getPath()+"/v_";return manager.getRecipes().stream().filter(h->h.id().getNamespace().equals(SentryMechanicalArm.MODID)&&h.id().getPath().startsWith(prefix)).findFirst();}
+    public static Optional<RecipeHolder<?>> find(RecipeManager manager,ResourceLocation ammo){
+        var canonical=manager.byKey(id(ammo)).filter(h->h.value() instanceof com.simibubi.create.content.processing.sequenced.SequencedAssemblyRecipe);
+        if(canonical.isPresent())return canonical;
+        String prefix=id(ammo).getPath()+"/v_";
+        return manager.getRecipes().stream().filter(h->h.id().getNamespace().equals(SentryMechanicalArm.MODID)&&h.id().getPath().startsWith(prefix)
+                &&h.value() instanceof com.simibubi.create.content.processing.sequenced.SequencedAssemblyRecipe).sorted(Comparator.comparing(RecipeHolder::id)).findFirst();
+    }
     private static JsonElement canonical(JsonElement value){
         if(value.isJsonObject()){var result=new JsonObject();value.getAsJsonObject().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(e->result.add(e.getKey(),canonical(e.getValue())));return result;}
         if(value.isJsonArray()){var result=new JsonArray();value.getAsJsonArray().forEach(e->result.add(canonical(e)));return result;}return value;
@@ -44,17 +50,21 @@ public final class ReloadingRecipes {
         boolean automatic=SMAServerConfig.AUTO_RELOADING.get();
         for(var entry:TimelessAPI.getAllCommonAmmoIndex().stream().sorted(Map.Entry.comparingByKey()).toList()){
             var ammo=entry.getKey();if(!SentryCasingProfiles.enabled(ammo))continue;
+            // Full native data-pack replacements have the highest recipe-source priority.
+            if(ManufacturingRules.nativeRecipePresent(manager,server,id(ammo))||find(manager,ammo).isPresent())continue;
+            var override=ManufacturingRules.section(server,ammo,"reloading","sentry_reloading");
             try{
                 Plan plan=null;
-                var override=server.getResourceManager().getResource(ResourceLocation.fromNamespaceAndPath(ammo.getNamespace(),"sentry_reloading/"+ammo.getPath()+".json"));
-                if(override.isPresent()){
-                    try(var reader=override.get().openAsReader()){
-                        var json=JsonParser.parseReader(reader).getAsJsonObject();
-                        if(json.has("enabled")&&!json.get("enabled").getAsBoolean())continue;
+                if(override.present()){
+                    if(!override.valid())continue;
+                    {
+                        var json=override.json();
+                        ManufacturingRules.requireKeys(json,Set.of("enabled","materials","propellant"));
+                        if(!ManufacturingRules.enabled(json))continue;
                         var steps=new ArrayList<Ingredient>();
                         var materials=json.has("materials")?json.getAsJsonArray("materials"):new JsonArray();
                         for(var raw:materials){
-                            var material=raw.getAsJsonObject();int count=material.has("count")?material.get("count").getAsBigDecimal().intValueExact():1;
+                            var material=raw.getAsJsonObject();ManufacturingRules.requireKeys(material,Set.of("ingredient","count"));int count=material.has("count")?material.get("count").getAsBigDecimal().intValueExact():1;
                             if(count<1||count>ReloadingCosts.MAX_MATERIAL_UNITS||steps.size()+count>ReloadingCosts.MAX_MATERIAL_UNITS)throw new IllegalArgumentException("Material count must total 1..1024");
                             var ingredient=Ingredient.CODEC.parse(server.registryAccess().createSerializationContext(JsonOps.INSTANCE),material.get("ingredient")).getOrThrow();
                             if(ingredient.getItems().length==0||ingredient.test(ItemStack.EMPTY)||Arrays.stream(ingredient.getItems()).anyMatch(ItemStack::isEmpty))throw new IllegalArgumentException("Empty material ingredient");
@@ -82,7 +92,7 @@ public final class ReloadingRecipes {
                 // the spent case for the first step too; the outer ingredient still checks AmmoId.
                 built.value().getSequence().getFirst().getRecipe().getIngredients().set(0,Ingredient.of(SentryRegistry.EMPTY_CASING.get(),SentryRegistry.RELOADING_CASING.get()));
                 result.add(built);
-            }catch(Exception error){SentryMechanicalArm.LOGGER.warn("Skipping reloading recipe for {}: {}",ammo,error.toString());}
+            }catch(Exception error){SentryMechanicalArm.LOGGER.warn("Skipping reloading recipe for {} ({}): {}; no automatic fallback",ammo,override.present()?override.source():"automatic",error.toString());}
         }
         SentryMechanicalArm.LOGGER.info("Reloading recipes: {} eligible plans",result.size());return result;
     }

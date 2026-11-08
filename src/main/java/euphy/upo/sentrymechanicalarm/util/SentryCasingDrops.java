@@ -32,7 +32,7 @@ public final class SentryCasingDrops {
     public static void clear(){pending.clear();budgets.clear();}
     @SubscribeEvent(priority=EventPriority.LOWEST) public static void tick(ServerTickEvent.Post event){clear();}
     private static boolean shooterAllowed(LivingEntity shooter, ResourceLocation ammo) {
-        if(!SentryRegistry.EMPTY_CASING.isBound()||!SMAServerConfig.ENABLE_CASINGS.get()||!SentryCasingProfiles.enabled(ammo))return false;
+        if(!SentryRegistry.EMPTY_CASING.isBound()||!SMAServerConfig.ENABLE_CASINGS.get()||!SentryCasingProfiles.drop(ammo).enabled())return false;
         if(shooter instanceof FakePlayer fp){
             var arm=SentryFakePlayer.getArmFromPlayer(fp);
             if(arm==null||!arm.isShooterActive()||!SMAServerConfig.SENTRY_CASINGS.get())return false;
@@ -77,7 +77,8 @@ public final class SentryCasingDrops {
         var shooter=event.getShooter();var before=pending.remove(shooter);
         if(before==null||before.gun()!=event.getGunItemStack()||!(shooter.level() instanceof ServerLevel level)
                 ||!shooterAllowed(shooter,before.ammo())||before.count()<=ammunition(shooter,before.gun(),before.ammo()))return;
-        if(level.random.nextDouble()>=SMAServerConfig.CASING_CHANCE.get())return;
+        var rule=SentryCasingProfiles.drop(before.ammo());
+        if(level.random.nextDouble()>=(rule.chance()==null?SMAServerConfig.CASING_CHANCE.get():rule.chance()))return;
         Vec3 forward=shooter.getLookAngle().normalize();Vec3 origin=shooter.getEyePosition();
         if(shooter instanceof FakePlayer fp){var pose=SentryFakePlayer.getArmFromPlayer(fp).getGunPose();origin=pose.position();forward=pose.forward();}
         Vec3 right=forward.cross(new Vec3(0,1,0));if(right.lengthSqr()<1e-8)right=new Vec3(1,0,0);else right=right.normalize();
@@ -88,11 +89,17 @@ public final class SentryCasingDrops {
         int cap=SMAServerConfig.CASING_ENTITY_LIMIT.get();
         var key=new ChunkKey(level.dimension().location(),net.minecraft.world.level.ChunkPos.asLong(cx,cz));
         int occupied=budgets.computeIfAbsent(key,k->level.getEntitiesOfClass(ItemEntity.class,chunkBox,
-                e->e.getItem().is(SentryRegistry.EMPTY_CASING.get())).size());
+                e->e.getItem().is(SentryRegistry.EMPTY_CASING.get())||e.getPersistentData().getBoolean("sentrymechanicalarm:casing_drop")).size());
         if(occupied>=cap)return;
-        var item=new ItemEntity(level,position.x,position.y,position.z,EmptyCasingItem.create(before.ammo(),1));
-        item.setDeltaMovement(right.scale(.18+level.random.nextDouble()*.08).add(0,.1+level.random.nextDouble()*.04,0));
-        item.setPickUpDelay(10);item.lifespan=SMAServerConfig.CASING_LIFETIME.get();
-        if(level.addFreshEntity(item))budgets.put(key,occupied+1);
+        var template=rule.template();int remaining=rule.count();
+        while(remaining>0&&occupied<cap){
+            int amount=Math.min(remaining,template.getMaxStackSize());
+            var item=new ItemEntity(level,position.x,position.y,position.z,template.copyWithCount(amount));
+            item.getPersistentData().putBoolean("sentrymechanicalarm:casing_drop",true);
+            item.setDeltaMovement(right.scale(.18+level.random.nextDouble()*.08).add(0,.1+level.random.nextDouble()*.04,0));
+            item.setPickUpDelay(10);item.lifespan=SMAServerConfig.CASING_LIFETIME.get();
+            if(!level.addFreshEntity(item))break;
+            remaining-=amount;occupied++;budgets.put(key,occupied);
+        }
     }
 }

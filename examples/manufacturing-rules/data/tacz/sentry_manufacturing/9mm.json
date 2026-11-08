@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "reloading": {
+    "materials": [],
+    "propellant": 40
+  },
+  "forming": {
+    "input": {
+      "item": "minecraft:copper_ingot"
+    },
+    "output_count": 5
+  },
+  "drops": {
+    "casing": "tacz:9mm",
+    "count": 1,
+    "chance": 1
+  }
+}

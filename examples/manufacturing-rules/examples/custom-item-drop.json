@@ -1,0 +1,9 @@
+{
+  "drops": {
+    "item": {
+      "id": "minecraft:iron_nugget"
+    },
+    "count": 2,
+    "chance": 0.5
+  }
+}
