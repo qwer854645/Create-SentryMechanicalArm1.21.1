@@ -37,7 +37,7 @@ public class SentryMechanicalArmScene {
     public static void introducing(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
 
-        scene.title("sentry_arm_intro", "哨兵机械臂简介");
+        scene.title("sentry_arm_intro", "哨戒动力臂简介");
         scene.configureBasePlate(0, 0, 5);
         scene.showBasePlate();
 
@@ -62,7 +62,7 @@ public class SentryMechanicalArmScene {
         scene.idle(60);
 
         scene.overlay().showText(60)
-                .text("手持一把来自TacZ的枪械，按[O]即可将其部署")
+                .text("手持 TaCZ 枪械，使用交互键（默认 O）装枪；空手右键取下。")
                 .pointAt(util.vector().topOf(sentryPos))
                 .attachKeyFrame()
                 .placeNearTarget();
@@ -73,7 +73,7 @@ public class SentryMechanicalArmScene {
         scene.idle(30);
 
         scene.overlay().showText(60)
-                .text("手持弹药盒右键装载，SHIFT右键可取下")
+                .text("手持匹配弹药盒右键装载，最多两个；潜行右键取下。")
                 .pointAt(util.vector().topOf(sentryPos))
                 .attachKeyFrame()
                 .placeNearTarget();
@@ -114,7 +114,7 @@ public class SentryMechanicalArmScene {
         scene.idle(15);
 
         scene.overlay().showText(120)
-                .text("若下方有容器，则会收集掉落物和经验并放入下方的容器中。")
+                .text("静态炮台可把击杀战利品送入正下方容器，经验转换为附魔之瓶；射后弹壳另用收集器。")
                 .pointAt(util.vector().blockSurface(sentryPos, Direction.WEST))
                 .attachKeyFrame()
                 .placeNearTarget();
@@ -167,20 +167,21 @@ public class SentryMechanicalArmScene {
         Selection deployerSelection_2 = util.select().position(deployerPos_2);
 
         ItemStack ammoStack = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("tacz:ammo_box")));
-        CompoundTag boxTag = new CompoundTag();
-        boxTag.putString("AmmoId", "tacz:9mm");
-        boxTag.putInt("AmmoCount", 30);
-        ammoStack.set(DataComponents.CUSTOM_DATA, CustomData.of(boxTag));
+        if(ammoStack.getItem() instanceof com.tacz.guns.api.item.IAmmoBox box) {
+            box.setAmmoId(ammoStack, ResourceLocation.parse("tacz:9mm"));
+            box.setAmmoCount(ammoStack,30);
+        }
         ItemStack ammo_Stack = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("tacz:ammo")), 40);
-        CompoundTag ammoTag = new CompoundTag();
-        ammoTag.putString("AmmoId", "tacz:9mm");
-        ammo_Stack.set(DataComponents.CUSTOM_DATA, CustomData.of(ammoTag));
+        if(ammo_Stack.getItem() instanceof com.tacz.guns.api.item.IAmmo ammo)
+            ammo.setAmmoId(ammo_Stack,ResourceLocation.parse("tacz:9mm"));
+        ItemStack emptyBox=ammoStack.copy();
+        if(emptyBox.getItem() instanceof com.tacz.guns.api.item.IAmmoBox box)box.setAmmoCount(emptyBox,0);
 
         scene.idle(20);
 
         scene.world().showSection(sentrySelect, Direction.DOWN);
         scene.idle(15);
-        setGun(scene, sentryPos, "tacz:minigun");
+        setGun(scene, sentryPos, "tacz:glock_17");
         scene.idle(10);
 
         scene.overlay().showText(50)
@@ -256,11 +257,11 @@ public class SentryMechanicalArmScene {
         scene.world().modifyBlockEntity(sentryPos, SentryArmBlockEntity.class, be -> {
             be.attachedAmmoBoxes.set(1, ItemStack.EMPTY);
         });
-        scene.world().instructArm(supply_1, ArmBlockEntity.Phase.SEARCH_OUTPUTS, ammoStack, 0);
+        scene.world().instructArm(supply_1, ArmBlockEntity.Phase.SEARCH_OUTPUTS, emptyBox, 0);
         scene.idle(24);
-        scene.world().instructArm(supply_1, ArmBlockEntity.Phase.MOVE_TO_OUTPUT, ammoStack, 0);
+        scene.world().instructArm(supply_1, ArmBlockEntity.Phase.MOVE_TO_OUTPUT, emptyBox, 0);
         scene.idle(24);
-        scene.world().createItemOnBelt(beltEnd, Direction.UP, ammoStack);
+        scene.world().createItemOnBelt(beltEnd, Direction.UP, emptyBox);
         scene.world().instructArm(supply_1, ArmBlockEntity.Phase.SEARCH_INPUTS, ItemStack.EMPTY, 0);
         scene.idle(15);
         scene.overlay().showOutline(PonderPalette.GREEN, "frame_1", deployerSelection, 60);
@@ -353,7 +354,7 @@ public class SentryMechanicalArmScene {
         scene.idle(10);
 
         scene.overlay().showText(60)
-                .text("炮台转速正比于移动速度")
+                .text("移动炮台沿用装配时的有效转速；没有保存转速时才按结构运动速度推导。")
                 .pointAt(util.vector().topOf(util.grid().at(2, 2, 2)))
                 .placeNearTarget();
         scene.idle(70);
@@ -383,7 +384,7 @@ public class SentryMechanicalArmScene {
         scene.markAsFinished();
     }
 
-    private static void setGun(CreateSceneBuilder scene, BlockPos sentryPos, String gunId) {
+    static void setGun(CreateSceneBuilder scene, BlockPos sentryPos, String gunId) {
         ItemStack gun = createGun(gunId);
         if (!gun.isEmpty()) {
             scene.world().modifyBlockEntity(sentryPos, SentryArmBlockEntity.class, be -> be.setHeldItem(gun));
