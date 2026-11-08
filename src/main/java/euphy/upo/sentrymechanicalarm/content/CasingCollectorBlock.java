@@ -16,7 +16,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.level.BlockGetter;
 
 public final class CasingCollectorBlock extends BaseEntityBlock {
-    private static final VoxelShape SHAPE=Shapes.or(Block.box(0,0,0,16,8,16),Block.box(2,8,2,14,16,14));
+    private static final VoxelShape SHAPE=Shapes.or(Block.box(0,0,0,16,16,16),Block.box(2,16,2,14,17,14));
     public static final MapCodec<CasingCollectorBlock> CODEC=simpleCodec(CasingCollectorBlock::new);
     public CasingCollectorBlock(Properties properties){super(properties.noOcclusion());}
     @Override protected VoxelShape getShape(BlockState state,BlockGetter level,BlockPos pos,CollisionContext context){return SHAPE;}

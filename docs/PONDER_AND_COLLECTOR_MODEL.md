@@ -1,5 +1,7 @@
 # alpha.39：收集器立体模型与思索补全
 
+> 本文保留 alpha.39 开发记录。用户反馈新场景空白，且模型需求为单独一面的结构；alpha.40 修复与现行说明见 [PONDER_FIX_AND_TEXT.md](PONDER_FIX_AND_TEXT.md)，文案规范见 [CREATE_TEXT_STYLE.md](CREATE_TEXT_STYLE.md)。
+
 ## 收集器模型
 
 此前 alpha.37–38 是整方块顶部引用漏斗背面。按用户要求，本版改为下半部安山机壳、上半部实际漏斗几何。上部取自 Create 6.0.10 的 `block/funnel/block_horizontal`：保留背板、侧板、倾斜进料板等六组元素，统一转向并以 0.75 比例缩放，让原本侧向贴着容器的背面朝上，与机壳基座结合。

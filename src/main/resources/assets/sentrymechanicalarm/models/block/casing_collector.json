@@ -3,15 +3,12 @@
   "textures": {
     "particle": "create:block/andesite_casing",
     "casing": "create:block/andesite_casing",
-    "base": "create:block/funnel/andesite_funnel",
-    "back": "create:block/funnel/funnel_back",
-    "block": "create:block/andesite_block",
-    "direction": "create:block/funnel/andesite_funnel_pull",
-    "redstone": "create:block/funnel/andesite_funnel_unpowered"
+    "panel": "create:block/funnel/andesite_funnel",
+    "edge": "create:block/funnel/andesite_funnel_unpowered"
   },
   "elements": [
     {
-      "name": "Andesite casing base",
+      "name": "Andesite casing",
       "from": [
         0,
         0,
@@ -19,46 +16,10 @@
       ],
       "to": [
         16,
-        8,
+        16,
         16
       ],
       "faces": {
-        "north": {
-          "texture": "#casing",
-          "uv": [
-            0,
-            0,
-            16,
-            8
-          ]
-        },
-        "south": {
-          "texture": "#casing",
-          "uv": [
-            0,
-            0,
-            16,
-            8
-          ]
-        },
-        "east": {
-          "texture": "#casing",
-          "uv": [
-            0,
-            0,
-            16,
-            8
-          ]
-        },
-        "west": {
-          "texture": "#casing",
-          "uv": [
-            0,
-            0,
-            16,
-            8
-          ]
-        },
         "down": {
           "texture": "#casing",
           "uv": [
@@ -69,6 +30,46 @@
           ],
           "cullface": "down"
         },
+        "north": {
+          "texture": "#casing",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "cullface": "north"
+        },
+        "south": {
+          "texture": "#casing",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "cullface": "south"
+        },
+        "east": {
+          "texture": "#casing",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "cullface": "east"
+        },
+        "west": {
+          "texture": "#casing",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "cullface": "west"
+        },
         "up": {
           "texture": "#casing",
           "uv": [
@@ -76,414 +77,68 @@
             0,
             16,
             16
+          ],
+          "cullface": "up"
+        }
+      }
+    },
+    {
+      "name": "Funnel mounting face",
+      "from": [
+        2,
+        16,
+        2
+      ],
+      "to": [
+        14,
+        17,
+        14
+      ],
+      "faces": {
+        "up": {
+          "texture": "#panel",
+          "uv": [
+            6,
+            0,
+            12,
+            6
           ]
-        }
-      }
-    },
-    {
-      "name": "Top",
-      "from": [
-        2.075,
-        11.425,
-        12.5
-      ],
-      "to": [
-        13.925,
-        14.575,
-        14.75
-      ],
-      "rotation": {
-        "angle": 0,
-        "axis": "z",
-        "origin": [
-          8.0,
-          5.425,
-          14.0
-        ]
-      },
-      "faces": {
-        "down": {
-          "uv": [
-            0,
-            9,
-            16,
-            12
-          ],
-          "texture": "#block",
-          "rotation": 0
-        },
-        "east": {
-          "uv": [
-            9,
-            16,
-            7.5,
-            14
-          ],
-          "rotation": 0,
-          "texture": "#base"
-        },
-        "up": {
-          "uv": [
-            7.5,
-            8,
-            9,
-            16
-          ],
-          "rotation": 270,
-          "texture": "#base"
-        },
-        "west": {
-          "uv": [
-            9,
-            10,
-            7.5,
-            8
-          ],
-          "rotation": 180,
-          "texture": "#base"
         },
         "north": {
+          "texture": "#edge",
           "uv": [
-            0,
-            5,
-            16,
-            9
-          ],
-          "rotation": 180,
-          "texture": "#block"
+            8,
+            2,
+            12,
+            3
+          ]
         },
         "south": {
+          "texture": "#edge",
           "uv": [
-            0,
-            12,
-            16,
-            16
-          ],
-          "rotation": 0,
-          "texture": "#block"
-        }
-      }
-    },
-    {
-      "from": [
-        2.7125,
-        10.675,
-        2.7875
-      ],
-      "to": [
-        13.2875,
-        12.925,
-        8.0
-      ],
-      "rotation": {
-        "angle": 0,
-        "axis": "z",
-        "origin": [
-          8.75,
-          18.175,
-          9.5
-        ]
-      },
-      "faces": {
-        "east": {
-          "uv": [
-            0,
-            0.5,
-            3.5,
-            2
-          ],
-          "rotation": 180,
-          "texture": "#back"
-        },
-        "up": {
-          "uv": [
-            0,
-            7.5,
-            7,
-            11
-          ],
-          "texture": "#back",
-          "rotation": 180
-        },
-        "west": {
-          "uv": [
-            0,
+            8,
             2,
-            3.5,
-            0.5
-          ],
-          "rotation": 0,
-          "texture": "#back"
-        },
-        "north": {
-          "uv": [
-            0,
-            5.5,
-            7,
-            7
-          ],
-          "rotation": 180,
-          "texture": "#back"
-        }
-      }
-    },
-    {
-      "name": "Back",
-      "from": [
-        3.5375,
-        12.925,
-        3.5375
-      ],
-      "to": [
-        12.4625,
-        16.0,
-        12.5
-      ],
-      "rotation": {
-        "angle": 0,
-        "axis": "z",
-        "origin": [
-          8.0,
-          6.925,
-          20.075
-        ]
-      },
-      "faces": {
-        "down": {
-          "uv": [
-            0,
-            0,
-            6,
-            6
-          ],
-          "texture": "#base",
-          "rotation": 0
+            12,
+            3
+          ]
         },
         "east": {
+          "texture": "#edge",
           "uv": [
             8,
             2,
             12,
-            14
-          ],
-          "texture": "#redstone",
-          "rotation": 90
-        },
-        "up": {
-          "uv": [
-            6,
-            0,
-            12,
-            6
-          ],
-          "texture": "#base",
-          "rotation": 180
+            3
+          ]
         },
         "west": {
+          "texture": "#edge",
           "uv": [
             8,
             2,
             12,
-            14
-          ],
-          "rotation": 90,
-          "texture": "#redstone"
-        },
-        "north": {
-          "uv": [
-            8,
-            2,
-            12,
-            14
-          ],
-          "rotation": 270,
-          "texture": "#redstone"
-        },
-        "south": {
-          "uv": [
-            8,
-            2,
-            12,
-            14
-          ],
-          "rotation": 270,
-          "texture": "#redstone"
-        }
-      }
-    },
-    {
-      "name": "RearBackPlate",
-      "from": [
-        3.5,
-        9.925,
-        5.0
-      ],
-      "to": [
-        12.5,
-        12.925,
-        6.5
-      ],
-      "rotation": {
-        "angle": 0,
-        "axis": "z",
-        "origin": [
-          7.25,
-          8.425,
-          8.825
-        ]
-      },
-      "faces": {
-        "south": {
-          "uv": [
-            0,
-            0,
-            6,
-            2.5
-          ],
-          "rotation": 0,
-          "texture": "#base"
-        }
-      }
-    },
-    {
-      "from": [
-        1.9625,
-        11.425,
-        2.0
-      ],
-      "to": [
-        14.0375,
-        15.925,
-        14.0
-      ],
-      "neoforge_data": {
-        "calculate_normals": true
-      },
-      "rotation": {
-        "angle": -22.5,
-        "axis": "x",
-        "origin": [
-          8.0,
-          11.425,
-          14.0
-        ]
-      },
-      "faces": {
-        "down": {
-          "uv": [
-            0,
-            0,
-            8,
-            8
-          ],
-          "texture": "#direction",
-          "rotation": 0
-        },
-        "east": {
-          "uv": [
-            11,
-            16,
-            14,
-            8
-          ],
-          "rotation": 270,
-          "texture": "#direction"
-        },
-        "up": {
-          "uv": [
-            0,
-            8,
-            8,
-            16
-          ],
-          "rotation": 0,
-          "texture": "#direction"
-        },
-        "west": {
-          "uv": [
-            11,
-            8,
-            14,
-            16
-          ],
-          "texture": "#direction",
-          "rotation": 270
-        },
-        "north": {
-          "uv": [
-            11,
-            0,
-            14,
-            8
-          ],
-          "rotation": 90,
-          "texture": "#direction"
-        },
-        "south": {
-          "uv": [
-            0,
-            7,
-            8,
-            10
-          ],
-          "texture": "#direction",
-          "rotation": 180
-        }
-      }
-    },
-    {
-      "from": [
-        3.425,
-        11.425,
-        6.4625
-      ],
-      "to": [
-        12.575,
-        15.925,
-        14.0
-      ],
-      "neoforge_data": {
-        "calculate_normals": true
-      },
-      "rotation": {
-        "angle": -22.5,
-        "axis": "x",
-        "origin": [
-          8.0,
-          11.425,
-          14.0
-        ]
-      },
-      "faces": {
-        "east": {
-          "uv": [
-            13,
-            6,
-            16,
-            11
-          ],
-          "rotation": 270,
-          "texture": "#base"
-        },
-        "west": {
-          "uv": [
-            13,
-            11,
-            16,
-            16
-          ],
-          "texture": "#base",
-          "rotation": 270
-        },
-        "north": {
-          "uv": [
-            13,
-            8,
-            16,
-            14
-          ],
-          "rotation": 90,
-          "texture": "#base"
+            3
+          ]
         }
       }
     }

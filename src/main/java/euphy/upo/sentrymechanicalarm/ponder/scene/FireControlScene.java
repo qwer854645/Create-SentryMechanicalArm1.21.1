@@ -127,7 +127,7 @@ public class FireControlScene {
                 .withItem(new ItemStack(Items.SPYGLASS));
         scene.idle(7);
         scene.overlay().showText(60)
-                .text("主手使用望远镜、副手拿许可，按中键记录目标；也可右键许可编辑名单。")
+                .text("使用望远镜时，副手持许可并按中键，可将目标加入名单。")
                 .pointAt(villagertext)
                 .placeNearTarget().attachKeyFrame();
         scene.idle(70);
@@ -147,7 +147,7 @@ public class FireControlScene {
         scene.idle(40);
 
         scene.overlay().showText(80)
-                .text("黑名单模式只攻击名单内目标；白名单是安全列表，名单外目标可能被攻击。")
+                .text("黑名单指定攻击目标，白名单指定需要保护的目标。")
                 .pointAt(sentryPos.getCenter())
                 .placeNearTarget();
         scene.idle(40);
@@ -233,25 +233,23 @@ public class FireControlScene {
 
     public static void targeting(SceneBuilder builder,SceneBuildingUtil util) {
         var scene=new CreateSceneBuilder(builder);
-        scene.title("sentry_targeting","名单模式与瞄准镜指挥");
+        scene.title("sentry_targeting","使用瞄准镜指挥");
         scene.configureBasePlate(0,0,9);
         scene.scaleSceneView(.75f);
         scene.showBasePlate();
         BlockPos arm=new BlockPos(2,1,3),control=new BlockPos(5,1,3);
-        scene.world().setBlock(arm,SentryRegistry.SENTRY_ARM_BLOCK.get().defaultBlockState(),false);
-        scene.world().setBlock(control,SentryRegistry.BLAZE_FIRE_CONTROL.get().defaultBlockState(),false);
         scene.world().showSection(util.select().position(arm),Direction.DOWN);
         scene.world().showSection(util.select().position(control),Direction.DOWN);
         SentryMechanicalArmScene.setGun(scene,arm,"tacz:glock_17");
         var permit=new ItemStack(SentryRegistry.FIRE_CONTROL_CLIPBOARD.get());
         var scope=new ItemStack(SentryRegistry.SENTRY_SCOPE.get());
-        targetingNote(scene,control,"先用扳手连接火控台与哨戒动力臂，再右键许可编辑名单。");
+        targetingNote(scene,control,"使用扳手连接火控台与哨戒动力臂。");
         scene.overlay().showControls(control.getCenter(),Pointing.RIGHT,70).rightClick().withItem(permit);
-        targetingNote(scene,control,"黑名单是攻击列表，只攻击名单内目标；白名单是安全列表，会保护名单内目标。");
-        targetingNote(scene,control,"白名单模式请先把自己加入名单：手持许可潜行右键。主手望远镜加副手许可，中键可远程记录目标。");
+        targetingNote(scene,control,"黑名单指定攻击目标，白名单指定需要保护的目标。");
+        targetingNote(scene,control,"手持许可潜行右击，可以将自己加入名单。");
         scene.world().modifyBlockEntity(control,BlazeFireControlBlockEntity.class,be->be.inventory.setStackInSlot(0,permit.copy()));
         scene.overlay().showControls(control.getCenter(),Pointing.RIGHT,70).rightClick().withItem(scope);
-        targetingNote(scene,control,"手持哨戒瞄准镜，潜行右键火控台绑定；再次操作同一火控台可解绑。");
+        targetingNote(scene,control,"手持瞄准镜潜行右击火控台，即可绑定。");
         var target=scene.world().createEntity(world->{
             var entity=EntityType.ZOMBIE.create(world);
             entity.setPos(5.5,1,6.5);
@@ -260,11 +258,10 @@ public class FireControlScene {
         scene.idle(15);
         scene.overlay().showControls(new Vec3(5.5,2.5,6.5),Pointing.RIGHT,70).withItem(scope);
         drawGreenLine(scene,control,new BlockPos(5,2,6),util,8);
-        targetingNote(scene,new BlockPos(5,2,6),"右键使用瞄准镜放大，使用期间左键标记实体，引导已连接的炮台集火。");
-        scene.world().setBlock(new BlockPos(6,1,6),Blocks.TARGET.defaultBlockState(),false);
+        targetingNote(scene,new BlockPos(5,2,6),"使用瞄准镜时，左击实体可指挥动力臂集火。");
         scene.world().showSection(util.select().position(6,1,6),Direction.DOWN);
-        targetingNote(scene,new BlockPos(6,1,6),"使用期间中键标记坐标。坐标攻击只供符合条件的爆炸武器使用，普通枪械不会因此对地面开火。");
-        targetingNote(scene,arm,"标记不能绕过射程、动力与弹药条件；移动结构上的火控也遵守这些限制。");
+        targetingNote(scene,new BlockPos(6,1,6),"中键可以标记位置，引导爆炸武器攻击。");
+        targetingNote(scene,arm,"动力臂仍需有效动力、足够弹药，并处于射程内。");
         scene.markAsFinished();
     }
 

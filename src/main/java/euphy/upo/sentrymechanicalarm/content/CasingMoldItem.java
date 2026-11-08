@@ -24,9 +24,9 @@ public final class CasingMoldItem extends Item {
     }
     @Override public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> lines, TooltipFlag flag) {
         var ammo = EmptyCasingItem.ammoId(stack);
-        lines.add(Component.translatable("item.sentrymechanicalarm.casing_mold.description").withStyle(ChatFormatting.GRAY));
         if (ammo != null) lines.add(Component.translatable("item.sentrymechanicalarm.casing_mold.selected",
                 SentryRegistry.EMPTY_CASING.get().getName(EmptyCasingItem.create(ammo, 1))).withStyle(ChatFormatting.GOLD));
+        else lines.add(Component.translatable("item.sentrymechanicalarm.casing_mold.unconfigured").withStyle(ChatFormatting.GRAY));
         if (flag.isAdvanced() && ammo != null) lines.add(Component.literal(ammo.toString()).withStyle(ChatFormatting.DARK_GRAY));
     }
 }

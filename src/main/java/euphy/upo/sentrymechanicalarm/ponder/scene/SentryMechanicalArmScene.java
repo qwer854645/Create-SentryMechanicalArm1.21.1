@@ -62,7 +62,7 @@ public class SentryMechanicalArmScene {
         scene.idle(60);
 
         scene.overlay().showText(60)
-                .text("手持 TaCZ 枪械，使用交互键（默认 O）装枪；空手右键取下。")
+                .text("手持 TaCZ 枪械，按交互键（默认 O）装入动力臂。")
                 .pointAt(util.vector().topOf(sentryPos))
                 .attachKeyFrame()
                 .placeNearTarget();
@@ -73,7 +73,7 @@ public class SentryMechanicalArmScene {
         scene.idle(30);
 
         scene.overlay().showText(60)
-                .text("手持匹配弹药盒右键装载，最多两个；潜行右键取下。")
+                .text("右击装入弹药盒，潜行右击取下。")
                 .pointAt(util.vector().topOf(sentryPos))
                 .attachKeyFrame()
                 .placeNearTarget();
@@ -114,7 +114,7 @@ public class SentryMechanicalArmScene {
         scene.idle(15);
 
         scene.overlay().showText(120)
-                .text("静态炮台可把击杀战利品送入正下方容器，经验转换为附魔之瓶；射后弹壳另用收集器。")
+                .text("静态动力臂可将击杀战利品和转化的经验存入下方容器。")
                 .pointAt(util.vector().blockSurface(sentryPos, Direction.WEST))
                 .attachKeyFrame()
                 .placeNearTarget();
@@ -354,7 +354,7 @@ public class SentryMechanicalArmScene {
         scene.idle(10);
 
         scene.overlay().showText(60)
-                .text("移动炮台沿用装配时的有效转速；没有保存转速时才按结构运动速度推导。")
+                .text("移动结构上的动力臂会保留装配时的转速。")
                 .pointAt(util.vector().topOf(util.grid().at(2, 2, 2)))
                 .placeNearTarget();
         scene.idle(70);
