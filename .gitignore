@@ -1,9 +1,36 @@
 # NeoForge
 run/
+/run-*/
 .gradle/
 build/
+verification/
+/outputs/
+/evidence/
+/logs/
+/crash-reports/
 .idea/
 *.iml
+*.class
+*.log
+*.zip
+*.jar
+!/gradle/wrapper/gradle-wrapper.jar
+
+# Local reference binaries
+/com/
+/squeek/
+
+# Keep only maintained user and build documentation.
+/docs/*
+!/docs/MOD_GUIDE.md
+!/docs/CUSTOM_MANUFACTURING.md
+!/docs/COST_ALLOCATION.md
+!/docs/RELEASE_INSTALL.md
+!/docs/BUILDING.md
+/CHANGELOG.md
+/TODO.md
+/NOTES.md
+/DEV*.md
 
 # Generated
 src/generated/resources/
@@ -27,3 +54,7 @@ src/generated/resources/
 .cursor/skills/mixin-writing/references/expressions-language.md
 .cursor/skills/mixinmcp-tools/SKILL.md
 .cursor/skills/mixinmcp-tools/references/toolchains.md
+
+# Machine-specific development settings
+/local-development.properties
+/local.properties

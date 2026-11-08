@@ -3,6 +3,7 @@ package euphy.upo.sentrymechanicalarm.util;
 import com.mojang.authlib.GameProfile;
 import com.tacz.guns.api.entity.IGunOperator;
 import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.util.time.GunTime;
 import euphy.upo.sentrymechanicalarm.compat.AeronauticsHelper;
 import euphy.upo.sentrymechanicalarm.content.SentryArmBlock;
 import euphy.upo.sentrymechanicalarm.content.SentryArmBlockEntity;
@@ -24,11 +25,22 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
 
+@net.neoforged.fml.common.EventBusSubscriber(modid="sentrymechanicalarm")
 public class SentryFakePlayer {
 
     private static final WeakHashMap<SentryArmBlockEntity, FakePlayer> FAKE_PLAYERS = new WeakHashMap<>();
-    private static final WeakHashMap<FakePlayer, SentryArmBlockEntity> REVERSE_MAP = new WeakHashMap<>();
+    private static final WeakHashMap<FakePlayer, java.lang.ref.WeakReference<SentryArmBlockEntity>> REVERSE_MAP = new WeakHashMap<>();
     private static final Map<String, RobustFakePlayer> CONTRAPTION_FAKE_PLAYERS = new HashMap<>();
+    public record Shot(Vec3 origin, Vec3 direction) {}
+    private static final Map<FakePlayer,Shot> LAST_SHOT = new WeakHashMap<>();
+    public static void beginShot(FakePlayer player) { LAST_SHOT.remove(player); }
+    public static boolean rememberShot(FakePlayer player,Vec3 origin,Vec3 velocity) {
+        if (velocity.lengthSqr()>1e-10 && !LAST_SHOT.containsKey(player)) {
+            LAST_SHOT.put(player,new Shot(origin,velocity.normalize())); return true;
+        }
+        return false;
+    }
+    public static Shot lastShot(FakePlayer player) { return LAST_SHOT.get(player); }
 
     private static final java.util.Map<FakePlayer, Boolean> FIRED_TRACKER = java.util.Collections.synchronizedMap(new WeakHashMap<>());
     private static final java.util.concurrent.atomic.AtomicInteger COUNTER = new java.util.concurrent.atomic.AtomicInteger(0);
@@ -84,12 +96,28 @@ public class SentryFakePlayer {
             String name = "Sentry_" + arm.getBlockPos().getX() + "_" + arm.getBlockPos().getY() + "_" + arm.getBlockPos().getZ();
             return createRobustFakePlayer(serverLevel, name);
         });
-        REVERSE_MAP.put(fp, arm);
+        if(getArmFromPlayer(fp)!=arm)REVERSE_MAP.put(fp,new java.lang.ref.WeakReference<>(arm));
         return fp;
     }
 
     public static SentryArmBlockEntity getArmFromPlayer(FakePlayer fp) {
-        return REVERSE_MAP.get(fp);
+        var reference=REVERSE_MAP.get(fp);return reference==null?null:reference.get();
+    }
+
+    @net.neoforged.bus.api.SubscribeEvent
+    public static void cleanInactive(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){
+        if(event.getServer().getTickCount()%20!=0)return;
+        for(var arm:new java.util.ArrayList<>(FAKE_PLAYERS.keySet()))if(arm!=null && !arm.isShooterActive())remove(arm);
+        for(var player:new java.util.ArrayList<>(REVERSE_MAP.keySet()))if(player!=null && getArmFromPlayer(player)==null){
+            REVERSE_MAP.remove(player);player.setItemSlot(EquipmentSlot.MAINHAND,ItemStack.EMPTY);player.discard();FIRED_TRACKER.remove(player);LAST_SHOT.remove(player);
+        }
+    }
+
+    @net.neoforged.bus.api.SubscribeEvent
+    public static void clearServer(net.neoforged.neoforge.event.server.ServerStoppedEvent event){
+        for(var arm:new java.util.ArrayList<>(FAKE_PLAYERS.keySet()))if(arm!=null)remove(arm);
+        for(var player:CONTRAPTION_FAKE_PLAYERS.values()){player.setItemSlot(EquipmentSlot.MAINHAND,ItemStack.EMPTY);player.discard();}
+        CONTRAPTION_FAKE_PLAYERS.clear();REVERSE_MAP.clear();FAKE_PLAYERS.clear();FIRED_TRACKER.clear();LAST_SHOT.clear();
     }
 
     public static FakePlayer getForContraption(ServerLevel level, UUID contraptionUUID, BlockPos localPos) {
@@ -114,6 +142,7 @@ public class SentryFakePlayer {
         String key = contraptionUUID.toString() + "_" + localPos.asLong();
         FakePlayer removed = CONTRAPTION_FAKE_PLAYERS.remove(key);
         if (removed != null) {
+            removed.setItemSlot(EquipmentSlot.MAINHAND,ItemStack.EMPTY);
             removed.discard();
         }
     }
@@ -154,43 +183,19 @@ public class SentryFakePlayer {
         double pitchRad = Math.toRadians(pitch);
         return basePos.add(
             -Math.sin(yawRad) * Math.cos(pitchRad) * armLength,
-            Math.sin(pitchRad) * armLength,
+            -Math.sin(pitchRad) * armLength,
             Math.cos(yawRad) * Math.cos(pitchRad) * armLength
         );
     }
 
+    /** Visual policy only: every weapon still uses the same real projectile spawn path. */
     public static boolean hasEntityBullet(ItemStack gunStack) {
-        IGun iGun = IGun.getIGunOrNull(gunStack);
-        if (iGun == null) return false;
-        ResourceLocation gunId = iGun.getGunId(gunStack);
-        if (gunId == null) return false;
-        String path = gunId.getPath().toLowerCase();
-        if (path.contains("rifle") || path.contains("pistol") || path.contains("smg")
-                || path.contains("shotgun") || path.contains("carbine") || path.contains("dmr")
-                || path.contains("lmg") || path.contains("machine_gun") || path.contains("marksman")
-                || path.contains("sniper") || path.contains("revolver") || path.contains("handgun")
-                || path.contains("mini_gun") || path.contains("minigun") || path.contains("blaster"))
-            return false;
-        return true;
+        return SentryGunProfiles.get(gunStack).visibleProjectile();
     }
 
     public static double getGunArmLength(ItemStack gunStack) {
-        IGun iGun = IGun.getIGunOrNull(gunStack);
-        if (iGun == null) return 2.8;
-        ResourceLocation gunId = iGun.getGunId(gunStack);
-        if (gunId == null) return 2.8;
-        String path = gunId.getPath().toLowerCase();
-        if (path.contains("sniper") || path.contains("rpg") || path.contains("rocket") || path.contains("launcher"))
-            return 3.4;
-        if (path.contains("rifle") || path.contains("carbine") || path.contains("shotgun") || path.contains("dmr") || path.contains("lmg") || path.contains("machine_gun") || path.contains("marksman"))
-            return 3.0;
-        if (path.contains("smg") || path.contains("pistol") || path.contains("handgun") || path.contains("revolver") || path.contains("shotgun"))
-            return 2.6;
-        if (path.contains("grenade") || path.contains("throwable") || path.contains("melee"))
-            return 2.2;
-        return 2.8;
+        return SentryGunProfiles.get(gunStack).muzzle().length() * 1.5;
     }
-
     public static Vec3 getMuzzlePosition(SentryArmBlockEntity arm, float yaw, float pitch, double armLength) {
         boolean isCeiling = arm.getBlockState().hasProperty(SentryArmBlock.CEILING) && arm.getBlockState().getValue(SentryArmBlock.CEILING);
         double yBase = isCeiling ? -2.8 : 1.0;
@@ -200,69 +205,58 @@ public class SentryFakePlayer {
 
     public static Vec3 getContraptionLocalMuzzle(Vec3 localPosCenter, VirtualSentryArmBlockEntity virtualBE, ItemStack gunStack) {
         boolean isCeiling = virtualBE.getBlockState().hasProperty(SentryArmBlock.CEILING) && virtualBE.getBlockState().getValue(SentryArmBlock.CEILING);
-        double yBase = isCeiling ? -2.0 : 2.0;
-
-        Vec3 basePos = new Vec3(localPosCenter.x, localPosCenter.y + yBase, localPosCenter.z);
-
-        if (hasEntityBullet(gunStack)) {
-            return basePos;
-        }
-
-        float yaw;
-        float pitch;
-        if (isCeiling) {
-            yaw = virtualBE.baseAngle.getValue();
-            pitch = virtualBE.headAngle.getValue();
-        } else {
-            yaw = 180 - virtualBE.baseAngle.getValue();
-            pitch = -virtualBE.headAngle.getValue();
-        }
-        double armLen = getGunArmLength(gunStack);
-        return getMuzzlePosition(basePos, yaw, pitch, armLen);
+        return SentryGunGeometry.pose(BlockPos.containing(localPosCenter),isCeiling,
+                virtualBE.baseAngle.getValue(),virtualBE.lowerArmAngle.getValue(),
+                virtualBE.upperArmAngle.getValue(),virtualBE.headAngle.getValue(),SentryGunProfiles.get(gunStack)).position();
     }
-
     public static void remove(SentryArmBlockEntity arm) {
         FakePlayer fp = FAKE_PLAYERS.remove(arm);
         if (fp != null) {
             REVERSE_MAP.remove(fp);
             FIRED_TRACKER.remove(fp);
+            LAST_SHOT.remove(fp);
+            fp.setItemSlot(EquipmentSlot.MAINHAND,ItemStack.EMPTY);
             if (fp.level() instanceof ServerLevel serverLevel) {
                 fp.discard();
             }
         }
     }
 
-    public static void sync(FakePlayer fp, SentryArmBlockEntity arm, float yaw, float pitch, ItemStack gunStack) {
-        boolean isVirtual = arm instanceof VirtualSentryArmBlockEntity;
-
-        if (!isVirtual) {
-            Vec3 worldPos;
-            if (arm.isInSableSubLevel()) {
-                Vec3 muzzleWorld = arm.getProjectedMuzzlePos();
-                worldPos = new Vec3(muzzleWorld.x, muzzleWorld.y - 1.62, muzzleWorld.z);
-            } else if (AeronauticsHelper.isAeronauticsLoaded()) {
-                worldPos = arm.getProjectedMuzzlePos();
-            } else {
-                net.minecraft.world.level.block.state.BlockState state = arm.getBlockState();
-                boolean isCeiling = false;
-                if (state.hasProperty(SentryArmBlock.CEILING)) {
-                    isCeiling = state.getValue(SentryArmBlock.CEILING);
-                }
-                double x = arm.getBlockPos().getX() + 0.5;
-                double yOffset = isCeiling ? -2.8 : 1.0;
-                double y = arm.getBlockPos().getY() + yOffset;
-                double z = arm.getBlockPos().getZ() + 0.5;
-                worldPos = new Vec3(x, y, z);
-            }
-            fp.setPos(worldPos.x, worldPos.y, worldPos.z);
-            fp.xo = worldPos.x; fp.yo = worldPos.y; fp.zo = worldPos.z;
-            fp.xOld = worldPos.x; fp.yOld = worldPos.y; fp.zOld = worldPos.z;
+    /** TaCZ attachment properties and burst tasks belong to the old resource generation. */
+    public static void invalidateGunData() {
+        for (var arm : new java.util.ArrayList<>(FAKE_PLAYERS.keySet())) {
+            if (arm != null) remove(arm);
         }
+        for (var player : CONTRAPTION_FAKE_PLAYERS.values()) {
+            player.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+            player.discard();
+        }
+        CONTRAPTION_FAKE_PLAYERS.clear();
+    }
+
+    public static void sync(FakePlayer fp, SentryArmBlockEntity arm, float yaw, float pitch, ItemStack gunStack) {
+        updatePose(fp,arm);
+        yaw=fp.getYRot();pitch=fp.getXRot();
 
         fp.setYRot(yaw);
         fp.setXRot(pitch);
         fp.yHeadRot = yaw;
         fp.yBodyRot = yaw;
+
+        syncEquipment(fp,arm,gunStack);
+    }
+
+    /** Refresh only geometry during delayed bursts, never overwrite already-consumed ammo. */
+    public static void updatePose(FakePlayer fp,SentryArmBlockEntity arm) {
+        var pose = arm.getGunPose();
+        Vec3 feet = pose.position().subtract(0,fp.getEyeHeight(),0);
+        fp.setPos(feet.x,feet.y,feet.z);
+        fp.xo=fp.xOld=feet.x; fp.yo=fp.yOld=feet.y; fp.zo=fp.zOld=feet.z;
+        fp.setYRot(pose.yaw());fp.setXRot(pose.pitch());
+        fp.yHeadRot=pose.yaw();fp.yBodyRot=pose.yaw();
+    }
+
+    private static void syncEquipment(FakePlayer fp,SentryArmBlockEntity arm,ItemStack gunStack) {
 
         fp.setHealth(fp.getMaxHealth());
         fp.deathTime = 0;
@@ -301,7 +295,8 @@ public class SentryFakePlayer {
             fp.setItemSlot(EquipmentSlot.MAINHAND, newStack);
 
             operator.draw(() -> newStack);
-            operator.getDataHolder().drawTimestamp = System.currentTimeMillis() - 10000;
+            // TaCZ 1.2 uses its pause-aware clock, not wall-clock epoch time.
+            operator.getDataHolder().drawTimestamp = GunTime.nowMillis() - 10000;
 
         } else {
             if (ItemNBTHelper.hasTag(gunStack)) {

@@ -1,0 +1,9 @@
+{
+  "enabled": true,
+  "forming": {
+    "enabled": false
+  },
+  "drops": {
+    "count": 1
+  }
+}

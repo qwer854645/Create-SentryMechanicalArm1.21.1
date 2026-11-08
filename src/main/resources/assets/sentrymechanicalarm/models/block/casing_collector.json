@@ -1,0 +1,146 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "create:block/andesite_casing",
+    "casing": "create:block/andesite_casing",
+    "panel": "create:block/funnel/andesite_funnel",
+    "edge": "create:block/funnel/andesite_funnel_unpowered"
+  },
+  "elements": [
+    {
+      "name": "Andesite casing",
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#casing",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "cullface": "down"
+        },
+        "north": {
+          "texture": "#casing",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "cullface": "north"
+        },
+        "south": {
+          "texture": "#casing",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "cullface": "south"
+        },
+        "east": {
+          "texture": "#casing",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "cullface": "east"
+        },
+        "west": {
+          "texture": "#casing",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "cullface": "west"
+        },
+        "up": {
+          "texture": "#casing",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "cullface": "up"
+        }
+      }
+    },
+    {
+      "name": "Funnel mounting face",
+      "from": [
+        2,
+        16,
+        2
+      ],
+      "to": [
+        14,
+        17,
+        14
+      ],
+      "faces": {
+        "up": {
+          "texture": "#panel",
+          "uv": [
+            6,
+            0,
+            12,
+            6
+          ]
+        },
+        "north": {
+          "texture": "#edge",
+          "uv": [
+            8,
+            2,
+            12,
+            3
+          ]
+        },
+        "south": {
+          "texture": "#edge",
+          "uv": [
+            8,
+            2,
+            12,
+            3
+          ]
+        },
+        "east": {
+          "texture": "#edge",
+          "uv": [
+            8,
+            2,
+            12,
+            3
+          ]
+        },
+        "west": {
+          "texture": "#edge",
+          "uv": [
+            8,
+            2,
+            12,
+            3
+          ]
+        }
+      }
+    }
+  ]
+}

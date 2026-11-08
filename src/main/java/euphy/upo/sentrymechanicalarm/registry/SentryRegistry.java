@@ -46,11 +46,23 @@ public class SentryRegistry {
     public static final DeferredHolder<Block, SentryArmBlock> SENTRY_ARM_BLOCK = BLOCKS.register("sentry_mechanical_arm",
             id -> new SentryArmBlock(id, BlockBehaviour.Properties.of()));
 
+    public static final DeferredHolder<Block,CasingCollectorBlock> CASING_COLLECTOR_BLOCK=BLOCKS.register("casing_collector",
+            ()->new CasingCollectorBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.5f).sound(net.minecraft.world.level.block.SoundType.METAL)));
+    public static final DeferredHolder<Item,BlockItem> CASING_COLLECTOR_ITEM=ITEMS.register("casing_collector",()->new BlockItem(CASING_COLLECTOR_BLOCK.get(),new Item.Properties()));
+    public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<CasingCollectorBlockEntity>> CASING_COLLECTOR_BE=BLOCK_ENTITIES.register("casing_collector",
+            ()->BlockEntityType.Builder.of(CasingCollectorBlockEntity::new,CASING_COLLECTOR_BLOCK.get()).build(null));
+
     public static final DeferredHolder<Item, ApplePieItem> APPLE_PIE = ITEMS.register("apple_pie",
             () -> new ApplePieItem(new Item.Properties().food(new FoodProperties.Builder().nutrition(8).saturationModifier(0.3f).build())));
 
-    public static final DeferredHolder<Item, UnfinishedAmmoItem> UNFINISHED_AMMO = ITEMS.register("unfinished_ammo",
-            id -> new UnfinishedAmmoItem(new Item.Properties()));
+    public static final DeferredHolder<Item, CasingMoldItem> CASING_MOLD = euphy.upo.sentrymechanicalarm.SMAStartupConfig.ENABLE_CASINGS.get() ? ITEMS.register("casing_mold",
+            () -> new CasingMoldItem(new Item.Properties().stacksTo(1))) : DeferredHolder.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MODID,"casing_mold"));
+
+    public static final DeferredHolder<Item, EmptyCasingItem> EMPTY_CASING = euphy.upo.sentrymechanicalarm.SMAStartupConfig.ENABLE_CASINGS.get() ? ITEMS.register("empty_casing",
+            () -> new EmptyCasingItem(new Item.Properties().stacksTo(64))) : DeferredHolder.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MODID,"empty_casing"));
+
+    public static final DeferredHolder<Item, EmptyCasingItem> RELOADING_CASING = euphy.upo.sentrymechanicalarm.SMAStartupConfig.ENABLE_CASINGS.get() ? ITEMS.register("reloading_casing",
+            () -> new ReloadingCasingItem(new Item.Properties().stacksTo(1))) : DeferredHolder.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MODID,"reloading_casing"));
 
     public static final DeferredHolder<Block, BlazeFireControlBlock> BLAZE_FIRE_CONTROL = BLOCKS.register("blaze_fire_control",
             id -> new BlazeFireControlBlock(BlockBehaviour.Properties.of()));
@@ -87,11 +99,27 @@ public class SentryRegistry {
                         output.accept(new net.minecraft.world.item.ItemStack(SENTRY_ARM_ITEM.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(BLAZE_FIRE_CONTROL_ITEM.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(FIRE_CONTROL_CLIPBOARD.get(), 1));
-                        output.accept(new net.minecraft.world.item.ItemStack(UNFINISHED_AMMO.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(APPLE_PIE.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(SENTRY_SCOPE.get(), 1));
+                        output.accept(CASING_COLLECTOR_ITEM.get());
+                        if(CASING_MOLD.isBound())output.accept(new net.minecraft.world.item.ItemStack(CASING_MOLD.get()));
                     })
                     .build());
+
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> CASINGS_TAB =
+            euphy.upo.sentrymechanicalarm.SMAStartupConfig.ENABLE_CASINGS.get()
+            ? CREATIVE_TABS.register("casings", () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup." + MODID + ".casings"))
+                    .icon(() -> EmptyCasingItem.create(ResourceLocation.parse("tacz:9mm"),1))
+                    .withTabsAfter(ResourceLocation.parse("tacz:ammo"))
+                    .withTabsBefore(ResourceLocation.parse("tacz:other"))
+                    .displayItems((parameters, output) -> {
+                        com.tacz.guns.api.TimelessAPI.getAllCommonAmmoIndex().stream()
+                                .filter(entry -> euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.creativeEligible(entry.getKey()))
+                                .sorted(java.util.Map.Entry.comparingByKey())
+                                .forEach(entry -> output.accept(EmptyCasingItem.create(entry.getKey(), 1)));
+                    }).build())
+            : DeferredHolder.create(Registries.CREATIVE_MODE_TAB, ResourceLocation.fromNamespaceAndPath(MODID,"casings"));
 
     public static void register(IEventBus eventBus) {
         BLOCKS.register(eventBus);

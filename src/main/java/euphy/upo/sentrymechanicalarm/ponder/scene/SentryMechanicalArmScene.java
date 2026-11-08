@@ -37,7 +37,7 @@ public class SentryMechanicalArmScene {
     public static void introducing(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
 
-        scene.title("sentry_arm_intro", "哨兵机械臂简介");
+        scene.title("sentry_arm_intro", "哨戒动力臂简介");
         scene.configureBasePlate(0, 0, 5);
         scene.showBasePlate();
 
@@ -62,7 +62,7 @@ public class SentryMechanicalArmScene {
         scene.idle(60);
 
         scene.overlay().showText(60)
-                .text("手持一把来自TacZ的枪械，按[O]即可将其部署")
+                .text("手持 TaCZ 枪械，按交互键（默认 O）装入动力臂。")
                 .pointAt(util.vector().topOf(sentryPos))
                 .attachKeyFrame()
                 .placeNearTarget();
@@ -73,7 +73,7 @@ public class SentryMechanicalArmScene {
         scene.idle(30);
 
         scene.overlay().showText(60)
-                .text("手持弹药盒右键装载，SHIFT右键可取下")
+                .text("右击装入弹药盒，潜行右击取下。")
                 .pointAt(util.vector().topOf(sentryPos))
                 .attachKeyFrame()
                 .placeNearTarget();
@@ -114,7 +114,7 @@ public class SentryMechanicalArmScene {
         scene.idle(15);
 
         scene.overlay().showText(120)
-                .text("若下方有容器，则会收集掉落物和经验并放入下方的容器中。")
+                .text("静态动力臂可将击杀战利品和转化的经验存入下方容器。")
                 .pointAt(util.vector().blockSurface(sentryPos, Direction.WEST))
                 .attachKeyFrame()
                 .placeNearTarget();
@@ -167,20 +167,21 @@ public class SentryMechanicalArmScene {
         Selection deployerSelection_2 = util.select().position(deployerPos_2);
 
         ItemStack ammoStack = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("tacz:ammo_box")));
-        CompoundTag boxTag = new CompoundTag();
-        boxTag.putString("AmmoId", "tacz:9mm");
-        boxTag.putInt("AmmoCount", 30);
-        ammoStack.set(DataComponents.CUSTOM_DATA, CustomData.of(boxTag));
+        if(ammoStack.getItem() instanceof com.tacz.guns.api.item.IAmmoBox box) {
+            box.setAmmoId(ammoStack, ResourceLocation.parse("tacz:9mm"));
+            box.setAmmoCount(ammoStack,30);
+        }
         ItemStack ammo_Stack = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("tacz:ammo")), 40);
-        CompoundTag ammoTag = new CompoundTag();
-        ammoTag.putString("AmmoId", "tacz:9mm");
-        ammo_Stack.set(DataComponents.CUSTOM_DATA, CustomData.of(ammoTag));
+        if(ammo_Stack.getItem() instanceof com.tacz.guns.api.item.IAmmo ammo)
+            ammo.setAmmoId(ammo_Stack,ResourceLocation.parse("tacz:9mm"));
+        ItemStack emptyBox=ammoStack.copy();
+        if(emptyBox.getItem() instanceof com.tacz.guns.api.item.IAmmoBox box)box.setAmmoCount(emptyBox,0);
 
         scene.idle(20);
 
         scene.world().showSection(sentrySelect, Direction.DOWN);
         scene.idle(15);
-        setGun(scene, sentryPos, "tacz:minigun");
+        setGun(scene, sentryPos, "tacz:glock_17");
         scene.idle(10);
 
         scene.overlay().showText(50)
@@ -256,11 +257,11 @@ public class SentryMechanicalArmScene {
         scene.world().modifyBlockEntity(sentryPos, SentryArmBlockEntity.class, be -> {
             be.attachedAmmoBoxes.set(1, ItemStack.EMPTY);
         });
-        scene.world().instructArm(supply_1, ArmBlockEntity.Phase.SEARCH_OUTPUTS, ammoStack, 0);
+        scene.world().instructArm(supply_1, ArmBlockEntity.Phase.SEARCH_OUTPUTS, emptyBox, 0);
         scene.idle(24);
-        scene.world().instructArm(supply_1, ArmBlockEntity.Phase.MOVE_TO_OUTPUT, ammoStack, 0);
+        scene.world().instructArm(supply_1, ArmBlockEntity.Phase.MOVE_TO_OUTPUT, emptyBox, 0);
         scene.idle(24);
-        scene.world().createItemOnBelt(beltEnd, Direction.UP, ammoStack);
+        scene.world().createItemOnBelt(beltEnd, Direction.UP, emptyBox);
         scene.world().instructArm(supply_1, ArmBlockEntity.Phase.SEARCH_INPUTS, ItemStack.EMPTY, 0);
         scene.idle(15);
         scene.overlay().showOutline(PonderPalette.GREEN, "frame_1", deployerSelection, 60);
@@ -310,224 +311,7 @@ public class SentryMechanicalArmScene {
         scene.markAsFinished();
     }
 
-    public static void ammo(SceneBuilder builder, SceneBuildingUtil util) {
-        CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-        scene.title("sentry_arm_ammo", "子弹生产");
-        scene.configureBasePlate(0, 0, 10);
-        scene.showBasePlate();
-        scene.scaleSceneView(0.7f);
 
-        BlockPos depotPos = util.grid().at(4, 1, 3);
-        BlockPos saw = util.grid().at(8, 1, 4);
-        BlockPos beltStart = util.grid().at(8, 1, 2);
-        BlockPos d1 = util.grid().at(7, 3, 7);
-        BlockPos d2 = util.grid().at(6, 3, 7);
-        BlockPos d3 = util.grid().at(5, 3, 7);
-        BlockPos d4 = util.grid().at(4, 3, 7);
-        BlockPos p5 = util.grid().at(3, 3, 7);
-
-        Selection depotSelect = util.select().position(depotPos);
-        Selection deployerSelect = util.select().position(depotPos.above(2));
-        Selection shaftSelect = util.select().fromTo(3, 3, 3,0, 3, 3);
-        Selection inPut = util.select().fromTo(8, 2, 6,8, 1, 1);
-        Selection process = util.select().fromTo(8, 1, 7,0, 3, 7);
-        Selection out = util.select().fromTo(1, 1, 7,1, 1, 2);
-        Selection sawSelect = util.select().position(saw);
-        Selection d1s = util.select().position(d1);
-        Selection d2s = util.select().position(d2);
-        Selection d3s = util.select().position(d3);
-        Selection d4s = util.select().position(d4);
-
-        ItemStack ammo_Stack = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("tacz:ammo")), 40);
-        CompoundTag ammoTag2 = new CompoundTag();
-        ammoTag2.putString("AmmoId", "tacz:9mm");
-        ammo_Stack.set(DataComponents.CUSTOM_DATA, CustomData.of(ammoTag2));
-        ItemStack sheet =  new ItemStack(AllItems.COPPER_SHEET.get());
-        ItemStack unfinishedAmmo = new ItemStack (SentryRegistry.UNFINISHED_AMMO.get());
-        ItemStack filter = new ItemStack (AllItems.FILTER.get());
-        ItemStack gunPowder = new ItemStack(Items.GUNPOWDER);
-        Class<MechanicalPressBlockEntity> type = MechanicalPressBlockEntity.class;
-
-        scene.idle(20);
-        scene.world().showSection(depotSelect, Direction.DOWN);
-
-        scene.overlay().showText(50)
-                .text("要生产子弹，你需要先获得子弹模板")
-                .pointAt(util.vector().topOf(depotPos))
-                .placeNearTarget();
-        scene.idle(60);
-        scene.world().showSection(deployerSelect, Direction.DOWN);
-        scene.world().showSection(shaftSelect, Direction.DOWN);
-        scene.idle(20);
-        scene.world().setKineticSpeed(deployerSelect, -32);
-        scene.world().setKineticSpeed(shaftSelect, -32);
-
-        scene.idle(20);
-
-        scene.world().modifyBlockEntityNBT(deployerSelect, DeployerBlockEntity.class, nbt -> {
-            nbt.put("HeldItem", ammo_Stack.saveOptional(scene.world().getHolderLookupProvider()));
-        });
-        scene.world().createItemOnBeltLike(depotPos, Direction.UP, sheet);
-        scene.idle(20);
-
-        scene.overlay().showControls(depotPos.getCenter(), Pointing.UP, 30).withItem(sheet);
-
-        scene.idle(20);
-
-        scene.overlay().showText(60)
-                .text("将铜板放在置物台上，子弹放在机械手上……")
-                .pointAt(util.vector().topOf(depotPos))
-                .placeNearTarget().attachKeyFrame();
-        scene.idle(70);
-
-        scene.world().moveDeployer(depotPos.above(2), 1.0f, 25);
-        scene.idle(26);
-        scene.effects().indicateSuccess(depotPos.above());
-        scene.world().moveDeployer(depotPos.above(2), -1.0f, 25);
-        scene.world().removeItemsFromBelt(depotPos);
-        scene.world().createItemOnBeltLike(depotPos, Direction.UP, unfinishedAmmo);
-        scene.idle(25);
-        scene.overlay().showText(60)
-                .text("即可得到对应的子弹模板")
-                .pointAt(util.vector().topOf(depotPos))
-                .placeNearTarget();
-        scene.idle(80);
-
-        scene.world().removeItemsFromBelt(depotPos);
-        scene.world().hideSection(deployerSelect, Direction.UP);
-        scene.world().hideSection(shaftSelect, Direction.UP);
-        scene.world().hideSection(depotSelect, Direction.UP);
-
-        scene.idle(30);
-
-        scene.world().showSection(inPut, Direction.DOWN);
-
-        scene.idle(30);
-
-        scene.overlay().showText(60)
-                .text("你需要一个动力锯来处理原材料")
-                .pointAt(util.vector().topOf(saw))
-                .placeNearTarget().attachKeyFrame();
-        scene.idle(70);
-
-        scene.world().modifyBlockEntityNBT(sawSelect, SawBlockEntity.class, nbt -> {
-            nbt.put("Filter", filter.saveOptional(scene.world().getHolderLookupProvider()));
-        });
-        scene.overlay().showControls(saw.getCenter(), Pointing.UP, 150).withItem(filter);
-        scene.overlay().showFilterSlotInput(util.vector().blockSurface(saw, Direction.UP), Direction.DOWN, 10);
-        scene.overlay().showText(160)
-                .text("把子弹模板放入列表过滤器，并勾选匹配物品属性，插入动力锯的过滤槽中")
-                .pointAt(util.vector().topOf(saw))
-                .placeNearTarget();
-        scene.idle(170);
-
-        scene.overlay().showText(60)
-                .text("之后的铜板都会被加工成这种子弹模板")
-                .pointAt(util.vector().topOf(saw))
-                .placeNearTarget();
-        scene.idle(60);
-
-        scene.world().setKineticSpeed(util.select().everywhere(), 48);
-        scene.world().setKineticSpeed(sawSelect, -48);
-        scene.idle(10);
-
-        scene.world().setFilterData(util.select().position(saw), SawBlockEntity.class, unfinishedAmmo);
-
-        scene.world().createItemOnBelt(beltStart, Direction.UP, sheet);
-
-        scene.idle(40);
-
-        scene.world().setFilterData(util.select().position(saw), SawBlockEntity.class, filter);
-
-        scene.world().showSection(process, Direction.DOWN);
-        scene.world().setKineticSpeed(out, -48);
-        scene.world().showSection(out, Direction.DOWN);
-        scene.idle(10);
-
-        scene.world().modifyBlockEntityNBT(d1s, DeployerBlockEntity.class, nbt -> {
-            nbt.put("HeldItem", sheet.saveOptional(scene.world().getHolderLookupProvider()));
-        });
-        scene.world().modifyBlockEntityNBT(d2s, DeployerBlockEntity.class, nbt -> {
-            nbt.put("HeldItem", sheet.saveOptional(scene.world().getHolderLookupProvider()));
-        });
-        scene.world().modifyBlockEntityNBT(d3s, DeployerBlockEntity.class, nbt -> {
-            nbt.put("HeldItem", sheet.saveOptional(scene.world().getHolderLookupProvider()));
-        });
-        scene.world().modifyBlockEntityNBT(d4s, DeployerBlockEntity.class, nbt -> {
-            nbt.put("HeldItem", gunPowder.saveOptional(scene.world().getHolderLookupProvider()));
-        });
-
-        scene.idle(30);
-
-        scene.overlay().showText(60)
-                .text("依次序列组装……")
-                .pointAt(util.vector().blockSurface(d1, Direction.EAST))
-                .placeNearTarget()
-                .attachKeyFrame();
-
-        scene.world().moveDeployer(d1, 1.0f, 25);
-        scene.overlay().showControls(d1.below(2).getCenter(), Pointing.UP, 30).withItem(sheet);
-        scene.idle(26);
-        scene.world().moveDeployer(d1, -1.0f, 25);
-        scene.effects().indicateSuccess(d1.below(2));
-        scene.world().removeItemsFromBelt(d1.below(2));
-        ElementLink<BeltItemElement> itemLink =scene.world().createItemOnBelt(d1.below(2), Direction.UP, unfinishedAmmo);
-        scene.world().stallBeltItem(itemLink, true);
-        scene.idle(15);
-        scene.world().stallBeltItem(itemLink, false);
-        scene.idle(10);
-
-        scene.world().moveDeployer(d2, 1.0f, 25);
-        scene.overlay().showControls(d2.below(2).getCenter(), Pointing.UP, 30).withItem(sheet);
-        scene.idle(26);
-        scene.world().moveDeployer(d2, -1.0f, 25);
-        scene.effects().indicateSuccess(d2.below(2));
-        scene.world().removeItemsFromBelt(d2.below(2));
-        ElementLink<BeltItemElement> itemLink_2 =scene.world().createItemOnBelt(d2.below(2), Direction.UP, unfinishedAmmo);
-        scene.world().stallBeltItem(itemLink_2, true);
-        scene.idle(15);
-        scene.world().stallBeltItem(itemLink_2, false);
-        scene.idle(10);
-
-        scene.world().moveDeployer(d3, 1.0f, 25);
-        scene.overlay().showControls(d3.below(2).getCenter(), Pointing.UP, 30).withItem(sheet);
-        scene.idle(26);
-        scene.world().moveDeployer(d3, -1.0f, 25);
-        scene.effects().indicateSuccess(d3.below(2));
-        scene.world().removeItemsFromBelt(d3.below(2));
-        ElementLink<BeltItemElement> itemLink_3 =scene.world().createItemOnBelt(d3.below(2), Direction.UP, unfinishedAmmo);
-        scene.world().stallBeltItem(itemLink_3, true);
-        scene.idle(15);
-        scene.world().stallBeltItem(itemLink_3, false);
-        scene.idle(10);
-
-        scene.world().moveDeployer(d4, 1.0f, 25);
-        scene.overlay().showControls(d4.below(2).getCenter(), Pointing.UP, 30).withItem(gunPowder);
-        scene.idle(26);
-        scene.world().moveDeployer(d4, -1.0f, 25);
-        scene.effects().indicateSuccess(d4.below(2));
-        scene.world().removeItemsFromBelt(d4.below(2));
-        ElementLink<BeltItemElement> itemLink_4 =scene.world().createItemOnBelt(d4.below(2), Direction.UP, unfinishedAmmo);
-        scene.world().stallBeltItem(itemLink_4, true);
-        scene.idle(15);
-        scene.world().stallBeltItem(itemLink_4, false);
-
-        scene.idle(10);
-        scene.world().stallBeltItem(itemLink_4, true);
-
-        scene.world().modifyBlockEntity(p5, type, pte -> pte.getPressingBehaviour()
-                .start(PressingBehaviour.Mode.BELT));
-        scene.idle(30);
-        scene.world().removeItemsFromBelt(p5.below(2));
-        ElementLink<BeltItemElement> itemLink_5 =scene.world().createItemOnBelt(p5.below(2), Direction.UP, ammo_Stack);
-
-        scene.world().stallBeltItem(itemLink_5, true);
-        scene.idle(15);
-        scene.world().stallBeltItem(itemLink_5, false);
-        scene.idle(10);
-
-        scene.markAsFinished();
-    }
 
     public static void movement(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
@@ -570,7 +354,7 @@ public class SentryMechanicalArmScene {
         scene.idle(10);
 
         scene.overlay().showText(60)
-                .text("炮台转速正比于移动速度")
+                .text("移动结构上的动力臂会保留装配时的转速。")
                 .pointAt(util.vector().topOf(util.grid().at(2, 2, 2)))
                 .placeNearTarget();
         scene.idle(70);
@@ -600,7 +384,7 @@ public class SentryMechanicalArmScene {
         scene.markAsFinished();
     }
 
-    private static void setGun(CreateSceneBuilder scene, BlockPos sentryPos, String gunId) {
+    static void setGun(CreateSceneBuilder scene, BlockPos sentryPos, String gunId) {
         ItemStack gun = createGun(gunId);
         if (!gun.isEmpty()) {
             scene.world().modifyBlockEntity(sentryPos, SentryArmBlockEntity.class, be -> be.setHeldItem(gun));

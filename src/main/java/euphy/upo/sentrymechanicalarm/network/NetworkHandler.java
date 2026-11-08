@@ -16,7 +16,15 @@ public class NetworkHandler {
 
     @SubscribeEvent
     public static void register(final RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("1");
+        PayloadRegistrar registrar = event.registrar("14");
+        registrar.playToServer(CasingMoldSelectPacket.TYPE,CasingMoldSelectPacket.CODEC,
+                (payload,context)->context.enqueueWork(()->CasingMoldSelectPacket.handle(payload,(ServerPlayer)context.player())));
+        registrar.playToClient(SentryContraptionStatePacket.TYPE,SentryContraptionStatePacket.CODEC,
+                (payload,context)->context.enqueueWork(()->dispatchClientHandler("handleContraptionState",SentryContraptionStatePacket.class,payload)));
+        registrar.playToClient(SentryCasingProfilesPacket.TYPE,SentryCasingProfilesPacket.CODEC,
+                (payload,context)->context.enqueueWork(()->dispatchClientHandler("handleCasingProfiles",SentryCasingProfilesPacket.class,payload)));
+        registrar.playToClient(SentryGunProfilesPacket.TYPE,SentryGunProfilesPacket.CODEC,
+                (payload,context)->context.enqueueWork(()->dispatchClientHandler("handleGunProfiles",SentryGunProfilesPacket.class,payload)));
 
         registrar.playToClient(
                 SentryShootPacket.TYPE,
@@ -97,7 +105,7 @@ public class NetworkHandler {
     public static void sendToNearby(Object packet, Level level, BlockPos pos) {
         if (level.isClientSide) return;
         if (!(packet instanceof net.minecraft.network.protocol.common.custom.CustomPacketPayload payload)) return;
-        for (ServerPlayer player : ((ServerLevel) level).getServer().getPlayerList().getPlayers()) {
+        for (ServerPlayer player : ((ServerLevel) level).players()) {
             if (player.distanceToSqr(pos.getX(), pos.getY(), pos.getZ()) < 64 * 64) {
                 PacketDistributor.sendToPlayer(player, payload);
             }

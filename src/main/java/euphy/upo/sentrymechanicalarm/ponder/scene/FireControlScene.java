@@ -11,6 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
 import net.createmod.catnip.math.Pointing;
 import net.createmod.ponder.api.ParticleEmitter;
 import net.createmod.ponder.api.PonderPalette;
@@ -123,11 +124,10 @@ public class FireControlScene {
         scene.idle(20);
 
         scene.overlay().showControls(villagerPos.east().getCenter(), Pointing.RIGHT, 60)
-                .rightClick()
-                .withItem(list);
+                .withItem(new ItemStack(Items.SPYGLASS));
         scene.idle(7);
         scene.overlay().showText(60)
-                .text("使用跨境追缉许可右键生物，即可将其加入名单，包括玩家")
+                .text("使用望远镜时，副手持许可并按中键，可将目标加入名单。")
                 .pointAt(villagertext)
                 .placeNearTarget().attachKeyFrame();
         scene.idle(70);
@@ -147,7 +147,7 @@ public class FireControlScene {
         scene.idle(40);
 
         scene.overlay().showText(80)
-                .text("与之相连的哨戒动力臂便只会攻击名单上的生物")
+                .text("黑名单指定攻击目标，白名单指定需要保护的目标。")
                 .pointAt(sentryPos.getCenter())
                 .placeNearTarget();
         scene.idle(40);
@@ -229,6 +229,45 @@ public class FireControlScene {
         scene.idle(30);
 
         scene.markAsFinished();
+    }
+
+    public static void targeting(SceneBuilder builder,SceneBuildingUtil util) {
+        var scene=new CreateSceneBuilder(builder);
+        scene.title("sentry_targeting","使用瞄准镜指挥");
+        scene.configureBasePlate(0,0,9);
+        scene.scaleSceneView(.75f);
+        scene.showBasePlate();
+        BlockPos arm=new BlockPos(2,1,3),control=new BlockPos(5,1,3);
+        scene.world().showSection(util.select().position(arm),Direction.DOWN);
+        scene.world().showSection(util.select().position(control),Direction.DOWN);
+        SentryMechanicalArmScene.setGun(scene,arm,"tacz:glock_17");
+        var permit=new ItemStack(SentryRegistry.FIRE_CONTROL_CLIPBOARD.get());
+        var scope=new ItemStack(SentryRegistry.SENTRY_SCOPE.get());
+        targetingNote(scene,control,"使用扳手连接火控台与哨戒动力臂。");
+        scene.overlay().showControls(control.getCenter(),Pointing.RIGHT,70).rightClick().withItem(permit);
+        targetingNote(scene,control,"黑名单指定攻击目标，白名单指定需要保护的目标。");
+        targetingNote(scene,control,"手持许可潜行右击，可以将自己加入名单。");
+        scene.world().modifyBlockEntity(control,BlazeFireControlBlockEntity.class,be->be.inventory.setStackInSlot(0,permit.copy()));
+        scene.overlay().showControls(control.getCenter(),Pointing.RIGHT,70).rightClick().withItem(scope);
+        targetingNote(scene,control,"手持瞄准镜潜行右击火控台，即可绑定。");
+        var target=scene.world().createEntity(world->{
+            var entity=EntityType.ZOMBIE.create(world);
+            entity.setPos(5.5,1,6.5);
+            return entity;
+        });
+        scene.idle(15);
+        scene.overlay().showControls(new Vec3(5.5,2.5,6.5),Pointing.RIGHT,70).withItem(scope);
+        drawGreenLine(scene,control,new BlockPos(5,2,6),util,8);
+        targetingNote(scene,new BlockPos(5,2,6),"使用瞄准镜时，左击实体可指挥动力臂集火。");
+        scene.world().showSection(util.select().position(6,1,6),Direction.DOWN);
+        targetingNote(scene,new BlockPos(6,1,6),"中键可以标记位置，引导爆炸武器攻击。");
+        targetingNote(scene,arm,"动力臂仍需有效动力、足够弹药，并处于射程内。");
+        scene.markAsFinished();
+    }
+
+    private static void targetingNote(CreateSceneBuilder scene,BlockPos pos,String text) {
+        scene.overlay().showText(100).text(text).pointAt(pos.getCenter()).placeNearTarget().attachKeyFrame();
+        scene.idle(110);
     }
 
     private static void setGun(CreateSceneBuilder scene, BlockPos sentryPos, String gunId) {

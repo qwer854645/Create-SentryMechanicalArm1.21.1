@@ -43,7 +43,7 @@ public class AeronauticsHelper {
     /** Check if a block position is inside a Sable sub-level plot. */
     public static boolean isInSableSubLevel(Level level, BlockPos pos) {
         if (level == null) return false;
-        return SableCompanion.INSTANCE.isInPlotGrid(level, pos);
+        return SableCompanion.INSTANCE.getContaining(level, pos) != null;
     }
 
     /** Project a sub-level position to global world space (safe no-op if not in sub-level). */
@@ -60,6 +60,16 @@ public class AeronauticsHelper {
         SubLevelAccess access = SableCompanion.INSTANCE.getContaining(level, queryPos);
         if (access == null) return worldPos;
         return access.logicalPose().transformPositionInverse(worldPos);
+    }
+
+    /** Use the block anchor to select the plot: a long barrel may cross its boundary. */
+    public static euphy.upo.sentrymechanicalarm.util.SentryGunGeometry.Pose sablePoseToWorld(
+            Level level,BlockPos anchor,euphy.upo.sentrymechanicalarm.util.SentryGunGeometry.Pose local) {
+        SubLevelAccess access = level == null ? null : SableCompanion.INSTANCE.getContaining(level,anchor);
+        if (access == null) return local;
+        var pose=access.logicalPose();
+        return new euphy.upo.sentrymechanicalarm.util.SentryGunGeometry.Pose(
+                pose.transformPosition(local.position()),pose.transformNormal(local.forward()).normalize());
     }
 
     // ---- VS2 methods (reflection) ----
@@ -141,7 +151,7 @@ public class AeronauticsHelper {
                     queryWorldPos.y + contraptionLocalPos.y,
                     queryWorldPos.z + contraptionLocalPos.z);
             if (result.distanceTo(sourcePos) > 0.01) {
-                SentryMechanicalArm.LOGGER.info("[AeroTransform] localToSimulatedWorld ...");
+                SentryMechanicalArm.LOGGER.trace("[AeroTransform] localToSimulatedWorld ...");
             }
             return result;
         } catch (Exception e) {

@@ -20,6 +20,14 @@ public class SMAPonderTags {
                 .add(SentryRegistry.SENTRY_ARM_BLOCK.getId())
                 .add(SentryRegistry.BLAZE_FIRE_CONTROL.getId())
                 .add(SentryRegistry.FIRE_CONTROL_CLIPBOARD.getId())
+                .add(SentryRegistry.SENTRY_SCOPE.getId())
+                .add(SentryRegistry.CASING_COLLECTOR_BLOCK.getId())
                 .add(SentryRegistry.APPLE_PIE.getId());
+        if(SentryRegistry.EMPTY_CASING.isBound()) {
+            helper.addToTag(SENTRY_TAG_ID)
+                    .add(SentryRegistry.EMPTY_CASING.getId())
+                    .add(SentryRegistry.RELOADING_CASING.getId())
+                    .add(SentryRegistry.CASING_MOLD.getId());
+        }
     }
 }

@@ -14,11 +14,11 @@ public class ModEventSubscriber {
 
     @SubscribeEvent
     public static void onBuildCreativeTab(BuildCreativeModeTabContentsEvent event) {
-        SentryMechanicalArm.LOGGER.info("BuildCreativeModeTabContentsEvent fired for tab: {}", event.getTabKey());
+        SentryMechanicalArm.LOGGER.debug("BuildCreativeModeTabContentsEvent fired for tab: {}", event.getTabKey());
 
         ResourceLocation tabKey = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(SentryRegistry.SENTRY_TAB.get());
         if (event.getTabKey().equals(tabKey)) {
-            SentryMechanicalArm.LOGGER.info("=== CreativeTab Build START (our tab) ===");
+            SentryMechanicalArm.LOGGER.debug("=== CreativeTab Build START (our tab) ===");
 
             ItemStack stack1 = new ItemStack(SentryRegistry.SENTRY_ARM_BLOCK.get(), 1);
             event.accept(stack1);
@@ -32,11 +32,11 @@ public class ModEventSubscriber {
             ItemStack stack4 = new ItemStack(SentryRegistry.APPLE_PIE.get(), 1);
             event.accept(stack4);
 
-            SentryMechanicalArm.LOGGER.info("=== CreativeTab Build END ===");
+            SentryMechanicalArm.LOGGER.debug("=== CreativeTab Build END ===");
         }
 
         if (event.getTabKey().toString().equals("minecraft:tools")) {
-            SentryMechanicalArm.LOGGER.info("=== Adding to TOOLS tab ===");
+            SentryMechanicalArm.LOGGER.debug("=== Adding to TOOLS tab ===");
             ItemStack stack = new ItemStack(SentryRegistry.SENTRY_ARM_BLOCK.get(), 1);
             event.accept(stack);
         }

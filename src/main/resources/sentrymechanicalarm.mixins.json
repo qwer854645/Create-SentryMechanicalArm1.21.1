@@ -5,16 +5,16 @@
   "compatibilityLevel": "JAVA_21",
   "refmap": "sentrymechanicalarm.refmap.json",
   "plugin": "euphy.upo.sentrymechanicalarm.mixin.SentryMixinConfigPlugin",
-"mixins": [
+  "mixins": [
     "AppleSkinCompatMixin",
     "BeltDeployerCallbacksMixin",
     "DeployerBlockEntityMixin",
     "DeployerHandlerMixin",
     "InteractKeyTextOverlayMixin",
-    "PressingRecipeMixin",
-    "SawBlockEntityMixin",
     "SequencedAssemblyRecipeMixin",
-    "SpyglassZoomMixin"
+    "SpyglassZoomMixin",
+    "SequencedAssemblyRecipeAccessor",
+    "CountedDeployerMixin"
   ],
   "client": [
     "GunDisplayInstanceAccessor",

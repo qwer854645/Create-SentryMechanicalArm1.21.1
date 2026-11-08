@@ -1,0 +1,15 @@
+{
+  "type": "create:mixing",
+  "ingredients": [
+    {
+      "item": "minecraft:gunpowder"
+    }
+  ],
+  "results": [
+    {
+      "id": "sentrymechanicalarm:propellant",
+      "amount": 1000
+    }
+  ],
+  "processingTime": 100
+}

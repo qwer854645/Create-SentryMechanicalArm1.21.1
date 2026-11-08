@@ -69,8 +69,12 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
 
     @Override
     protected void renderSafe(SentryArmBlockEntity be, float pt, PoseStack ms, MultiBufferSource buffer, int light, int overlay) {
+        // A failed external gun/effect renderer must not leak pushed poses into Ponder or the world.
+        PoseStack isolated = new PoseStack();
+        isolated.mulPose(ms.last().pose());
+        isolated.last().normal().set(ms.last().normal());
         try {
-            renderSafeInner(be, pt, ms, buffer, light, overlay);
+            renderSafeInner(be, pt, isolated, buffer, light, overlay);
         } catch (Exception e) {
             LOGGER.warn("Failed to render SentryArmBlockEntity", e);
         }
@@ -134,17 +138,11 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
             if (item.getItem() instanceof IGun iGun) {
 
                 ResourceLocation gunId = iGun.getGunId(item);
-                msLocal.mulPose(Axis.XP.rotationDegrees(-90));
-                msLocal.translate(0, 0.18, 0);
-
-                if (gunId.getPath().contains("minigun")) {
-                    msLocal.mulPose(Axis.XP.rotationDegrees(-90));
-                    msLocal.translate(0, -0.7, 0.2);
-                }
- 
-
-                float armScale = 1.5f;
-                msLocal.scale(armScale, armScale, armScale);
+                Matrix4f gunMount = new Matrix4f(euphy.upo.sentrymechanicalarm.util.SentryGunGeometry.mount(
+                        inverted, baseAngle, lowerArmAngle+135, upperArmAngle+90, headAngle,
+                        euphy.upo.sentrymechanicalarm.util.SentryGunProfiles.get(item).minigunMount()));
+                msLocal.last().pose().set(gunMount);
+                msLocal.last().normal().set(new Matrix3f(gunMount).invert().transpose());
                 if (be.shouldEjectShell()) {
                     Optional<GunDisplayInstance> displayOpt = TimelessAPI.getGunDisplay(item);
                     displayOpt.ifPresent(display -> {
@@ -156,7 +154,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
                     be.setShellEjected();
                 }
                 ms.pushPose();
-                ms.last().pose().mul(msLocal.last().pose());
+                ms.mulPose(msLocal.last().pose());
                 try {
                     ItemDisplayContext displayContext = ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
                     Minecraft.getInstance().getItemRenderer().renderStatic(item, displayContext, light, overlay, ms, buffer, be.getLevel(), 0);
@@ -173,7 +171,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
   
                 float itemScale = isBlockItem ? 0.5F : 0.625F;
                 msLocal.scale(itemScale, itemScale, itemScale);
-                ms.last().pose().mul(msLocal.last().pose());
+                ms.mulPose(msLocal.last().pose());
                 try {
                     Minecraft.getInstance().getItemRenderer().renderStatic(item, ItemDisplayContext.FIXED, light, overlay, ms, buffer, be.getLevel(), 0);
                 } catch (Exception e) {
@@ -216,7 +214,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
         if (gunModel == null) return;
 
         MuzzleFlash muzzleFlash = display.getMuzzleFlash();
-        if (muzzleFlash == null) return;
+        if (muzzleFlash == null || muzzleFlash.isRenew() || muzzleFlash.getTexture() == null) return;
 
         ms.pushPose();
 
@@ -263,7 +261,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
 
         if (heldItem.getItem() instanceof IGun iGun) {
             ResourceLocation gunId = iGun.getGunId(heldItem);
-            if (gunId.getPath().contains("minigun")) {
+            if (euphy.upo.sentrymechanicalarm.util.SentryGunProfiles.get(gunId).minigunMount()) {
                 isMinigun = true;
             }
         }
@@ -545,7 +543,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
         ResourceLocation gunId = iGun.getGunId(stack);
 
  
-        if (gunId.getPath().contains("minigun")) {
+        if (euphy.upo.sentrymechanicalarm.util.SentryGunProfiles.get(gunId).minigunMount()) {
             Vector3f minigunLocalOffset = new Vector3f(0.2f, 0.65f, 0.55f);
             normalMatrix.transform(minigunLocalOffset);
             calculatedPos = calculatedPos.add(minigunLocalOffset.x(), minigunLocalOffset.y(), minigunLocalOffset.z());
@@ -586,33 +584,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
                 || SentryPartialModels.SENTRU_COG.get() == null)
             return;
 
-        if (context.temporaryData == null || !(context.temporaryData instanceof VirtualSentryArmBlockEntity)) {
-            VirtualSentryArmBlockEntity newBE = new VirtualSentryArmBlockEntity(BlockPos.ZERO, context.state);
-            if (context.blockEntityData != null) {
-                if (context.blockEntityData.contains("Angles")) {
-                    CompoundTag angles = context.blockEntityData.getCompound("Angles");
-                    newBE.baseAngle.setValue(angles.getFloat("Base"));
-                    newBE.lowerArmAngle.setValue(angles.getFloat("Lower"));
-                    newBE.upperArmAngle.setValue(angles.getFloat("Upper"));
-                    newBE.headAngle.setValue(angles.getFloat("Head"));
-                }
-                if (context.blockEntityData.contains("Speed")) {
-                    newBE.setSpeed(context.blockEntityData.getFloat("Speed"));
-                }
-                if (context.blockEntityData.contains("SentryHeldItem")) {
-                    newBE.setHeldItem(ItemStack.parseOptional(renderWorld.registryAccess(), context.blockEntityData.getCompound("SentryHeldItem")));
-                }
-                if (context.blockEntityData.contains("SentryAmmoBoxes")) {
-                    net.minecraft.world.ContainerHelper.loadAllItems(context.blockEntityData.getCompound("SentryAmmoBoxes"), newBE.attachedAmmoBoxes, renderWorld.registryAccess());
-                }
-                if (context.blockEntityData.contains("color")) {
-                    int colorId = context.blockEntityData.getInt("color");
-                    newBE.color = Optional.of(DyeColor.byId(colorId));
-                }
-            }
-            context.temporaryData = newBE;
-        }
-        VirtualSentryArmBlockEntity virtualBE = (VirtualSentryArmBlockEntity) context.temporaryData;
+        VirtualSentryArmBlockEntity virtualBE = SentryMovementBehaviour.getOrCreate(context);
 
         BlockState blockState = context.state;
         float pt = net.createmod.catnip.animation.AnimationTickHolder.getPartialTicks();
@@ -646,8 +618,10 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
 
         VertexConsumer builder = buffer.getBuffer(RenderType.solid());
         PoseStack ms = matrices.getModel();
+        Matrix4f actorWorld = new Matrix4f(matrices.getWorld()).mul(ms.last().pose());
         ms.pushPose();
         try {
+            ms.pushPose(); // Body frame; the outer actor frame remains until finally.
             dev.engine_room.flywheel.lib.transform.PoseTransformStack msr = dev.engine_room.flywheel.lib.transform.TransformStack.of(ms);
             msr.center();
 
@@ -663,6 +637,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
                 ms.popPose();
             }
 
+            Matrix4f clawTipWorldMatrix = null;
             SuperByteBuffer lowerBodyBuffer = CachedBuffers.partial(SentryPartialModels.ARM_LOWER_BODY, blockState);
             SuperByteBuffer upperBodyBuffer = CachedBuffers.partial(SentryPartialModels.ARM_UPPER_BODY, blockState);
             SuperByteBuffer clawBaseBuffer = CachedBuffers.partial(SentryPartialModels.ARM_CLAW_BASE, blockState);
@@ -681,44 +656,43 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
                 if (inverted) msr.rotateZDegrees(180.0F);
                 applyDye(clawBaseBuffer, virtualBE.color, SentrySpriteShifts.ARM_TEXTURES);
                 clawBaseBuffer.light(light).transform(ms).renderInto(matrices.getViewProjection(), builder);
-                ms.popPose();
-            }
-
-            org.joml.Matrix4f clawTipWorldMatrix = null;
-            for (int flip : net.createmod.catnip.data.Iterate.positiveAndNegative) {
-                ms.pushPose();
-                transformClawHalf(msr, hasItem, isBlockItem, flip);
-                if (flip > 0) {
-                    clawTipWorldMatrix = new org.joml.Matrix4f(matrices.getWorld());
-                    clawTipWorldMatrix.mul(ms.last().pose());
+                if (inverted) msr.rotateZDegrees(180.0F);
+                for (int flip : net.createmod.catnip.data.Iterate.positiveAndNegative) {
+                    ms.pushPose();
+                    transformClawHalf(msr, hasItem, isBlockItem, flip);
+                    if (flip > 0) {
+                        clawTipWorldMatrix = new org.joml.Matrix4f(matrices.getWorld());
+                        clawTipWorldMatrix.mul(ms.last().pose());
+                    }
+                    PartialModel gripModel = (flip > 0) ? SentryPartialModels.ARM_CLAW_GRIP_LOWER : SentryPartialModels.ARM_CLAW_GRIP_UPPER;
+                    SuperByteBuffer gripBuffer = CachedBuffers.partial(gripModel, blockState);
+                    if (gripBuffer != null) {
+                        applyDye(gripBuffer, virtualBE.color, SentrySpriteShifts.ARM_TEXTURES);
+                        gripBuffer.light(light).transform(ms).renderInto(matrices.getViewProjection(), builder);
+                    }
+                    ms.popPose();
                 }
-                PartialModel gripModel = (flip > 0) ? SentryPartialModels.ARM_CLAW_GRIP_LOWER : SentryPartialModels.ARM_CLAW_GRIP_UPPER;
-                SuperByteBuffer gripBuffer = CachedBuffers.partial(gripModel, blockState);
-                if (gripBuffer != null) {
-                    applyDye(gripBuffer, virtualBE.color, SentrySpriteShifts.ARM_TEXTURES);
-                    gripBuffer.light(light).transform(ms).renderInto(matrices.getViewProjection(), builder);
-                }
-                ms.popPose();
+                ms.popPose(); // Arm joints.
             }
-            ms.popPose();
+            ms.popPose(); // Body center and ceiling frame.
 
             SuperByteBuffer cogBuffer = CachedBuffers.partial(SentryPartialModels.SENTRU_COG, blockState);
             if (cogBuffer != null) {
                 ms.pushPose();
-                msr.uncenter();
-                msr.center();
                 float speed = virtualBE.getSpeed();
                 float time = net.createmod.catnip.animation.AnimationTickHolder.getRenderTime();
                 float cogAngle = (time * speed * 3f / 10f) % 360;
-                ms.mulPose(com.mojang.math.Axis.YP.rotationDegrees(cogAngle));
-                msr.uncenter();
+                transformContraptionCog(ms,inverted,cogAngle);
                 applyDye(cogBuffer, virtualBE.color, SentrySpriteShifts.COG_TEXTURES);
                 cogBuffer.light(light).transform(ms).renderInto(matrices.getViewProjection(), builder);
                 ms.popPose();
             }
 
             if (clawTipWorldMatrix != null) {
-                renderHeldItem(buffer, renderWorld, virtualBE, light, clawTipWorldMatrix, context);
+                renderHeldItem(buffer,renderWorld,virtualBE,light,clawTipWorldMatrix,context,
+                        new Matrix4f(actorWorld).mul(new Matrix4f(euphy.upo.sentrymechanicalarm.util.SentryGunGeometry.mount(
+                                inverted,baseAngle,lowerArmAngle+135,upperArmAngle+90,headAngle,
+                                euphy.upo.sentrymechanicalarm.util.SentryGunProfiles.get(heldItem).minigunMount()))));
                 net.minecraft.world.level.Level ammoLevel = context.world != null ? context.world : renderWorld;
                 org.joml.Matrix4f ammoMatrix = new org.joml.Matrix4f(clawTipWorldMatrix);
                 org.joml.Vector4f ammoWorldPos = new org.joml.Vector4f(0, 0, 0, 1);
@@ -751,10 +725,18 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
         }
     }
 
+    /** Rotate about the block center inside the caller's unmodified actor frame. */
+    public static void transformContraptionCog(PoseStack pose,boolean ceiling,float angle) {
+        pose.translate(.5,.5,.5);
+        if(ceiling)pose.mulPose(Axis.XP.rotationDegrees(180));
+        pose.mulPose(Axis.YP.rotationDegrees(angle));
+        pose.translate(-.5,-.5,-.5);
+    }
+
     private static void renderHeldItem(MultiBufferSource buffer, VirtualRenderWorld renderWorld,
                                        VirtualSentryArmBlockEntity virtualBE, int light,
                                        Matrix4f clawTipWorldMatrix, 
-                                       com.simibubi.create.content.contraptions.behaviour.MovementContext context) {
+                                       com.simibubi.create.content.contraptions.behaviour.MovementContext context,Matrix4f canonicalMount) {
 
         ItemStack heldItem = virtualBE.getHeldItem();
         if (heldItem.isEmpty()) return;
@@ -774,22 +756,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
 
         boolean isGun = heldItem.getItem() instanceof IGun;
 
-        if (isGun) {
-            ResourceLocation gunId = ((IGun) heldItem.getItem()).getGunId(heldItem);
-            gunStack.mulPose(Axis.XP.rotationDegrees(-90));
-
-            if (isCeiling) {
-                gunStack.mulPose(Axis.ZP.rotationDegrees(180.0F));
-            }
-            float yOffset = isCeiling ? 0.1f : 0.42f;
-
-            gunStack.translate(0, yOffset, 0.3f);
-
-            if (gunId.getPath().contains("minigun")) {
-                gunStack.mulPose(Axis.XP.rotationDegrees(-90));
-                gunStack.translate(0, -0.7, 0.1);
-            }
-        }
+        if (isGun) gunStack.last().pose().set(canonicalMount);
 
         Matrix4f finalMatrix = gunStack.last().pose();
         Vector4f worldPos = new Vector4f(0, 0, 0, 1);
@@ -831,7 +798,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
 
                 long now = System.currentTimeMillis();
                 long lst = virtualBE.getLastShootTime();
-                LOGGER.info("[ContraptionShellCheck] lst={} now-lst={} lastEject={}", lst, now - lst, virtualBE.lastShellEjectTime);
+                LOGGER.trace("[ContraptionShellCheck] lst={} now-lst={} lastEject={}", lst, now - lst, virtualBE.lastShellEjectTime);
                 if (lst > 0 && now - lst < 200 && lst != virtualBE.lastShellEjectTime) {
                     Optional<GunDisplayInstance> displayOpt = TimelessAPI.getGunDisplay(heldItem);
                     displayOpt.ifPresent(display -> {
@@ -865,7 +832,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
                                     Vector3f vel = new Vector3f(0.05f,0.02f,-0.01f);
                                     Matrix3f nm = new Matrix3f();
                                     shellMatrix.get3x3(nm);
-                                    if (((IGun) heldItem.getItem()).getGunId(heldItem).getPath().contains("minigun")) {
+                                    if (euphy.upo.sentrymechanicalarm.util.SentryGunProfiles.get(heldItem).minigunMount()) {
                                         Vector3f mg = new Vector3f(0.2f,0.65f,0.55f);
                                         nm.transform(mg);
                                         calculatedPos = calculatedPos.add(mg.x(),mg.y(),mg.z());
@@ -879,7 +846,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
                                     final Vector3f fAccel = accel;
                                     TimelessAPI.getCommonGunIndex(((IGun) heldItem.getItem()).getGunId(heldItem)).ifPresent(idx ->
                                         SentryShellManager.addShell(idx.getGunData().getAmmoId(), fPos, fVel, display.getShellEjection().getAngularVelocity(), fAccel, display.getShellEjection().getLivingTime()));
-                                    LOGGER.info("[ContraptionShell] added at ({},{},{}) lst={} diff={}", String.format("%.1f",fPos.x),String.format("%.1f",fPos.y),String.format("%.1f",fPos.z), lst, now-lst);
+                                    LOGGER.trace("[ContraptionShell] added at ({},{},{}) lst={} diff={}", String.format("%.1f",fPos.x),String.format("%.1f",fPos.y),String.format("%.1f",fPos.z), lst, now-lst);
                                 }
                             }
                         }
@@ -920,7 +887,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
         if (gunModel == null) return;
 
         MuzzleFlash muzzleFlash = display.getMuzzleFlash();
-        if (muzzleFlash == null) return;
+        if (muzzleFlash == null || muzzleFlash.isRenew() || muzzleFlash.getTexture() == null) return;
 
         ms.pushPose();
 

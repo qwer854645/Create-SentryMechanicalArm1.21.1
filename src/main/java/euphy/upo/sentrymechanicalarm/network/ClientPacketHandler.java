@@ -41,94 +41,38 @@ import java.util.Map;
 import java.util.Optional;
 
 public class ClientPacketHandler {
+    public static void handleContraptionState(SentryContraptionStatePacket packet) {
+        var level=net.minecraft.client.Minecraft.getInstance().level;
+        if (level==null || !(level.getEntity(packet.entityId()) instanceof com.simibubi.create.content.contraptions.AbstractContraptionEntity ace)
+                || ace.getContraption()==null) return;
+        for (var pair:ace.getContraption().getActors()) {
+            var ctx=pair.getValue();
+            if (ctx==null || !ctx.localPos.equals(packet.localPos()) || !(ctx.state.getBlock() instanceof euphy.upo.sentrymechanicalarm.content.SentryArmBlock)) continue;
+            var arm=euphy.upo.sentrymechanicalarm.content.SentryMovementBehaviour.getOrCreate(ctx);
+            arm.acceptNetworkState(packet.state());
+            ctx.blockEntityData=packet.state().copy();
+            return;
+        }
+    }
+
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private static final Map<ResourceLocation, GunDisplayInstance> SENTRY_DISPLAYS = new HashMap<>();
-
-    private static Vec3 calculateExactMuzzle(SentryArmBlockEntity sentry, ItemStack gunStack) {
-        Optional<GunDisplayInstance> displayOpt = TimelessAPI.getGunDisplay(gunStack);
-        if (displayOpt.isEmpty()) return null;
-        GunDisplayInstance display = displayOpt.get();
-        BedrockGunModel gunModel = display.getGunModel();
-        if (gunModel == null) return null;
-
-        List<BedrockPart> handPath = gunModel.getThirdPersonHandOriginPath();
-        List<BedrockPart> muzzlePath = gunModel.getMuzzleFlashPosPath();
-        if (muzzlePath == null || muzzlePath.isEmpty()) return null;
-
-        boolean isCeiling = sentry.getBlockState().hasProperty(SentryArmBlock.CEILING) && sentry.getBlockState().getValue(SentryArmBlock.CEILING);
-        BlockPos pos = sentry.getBlockPos();
-        float baseAngle = sentry.baseAngle.getValue();
-        float lowerArmAngle = sentry.lowerArmAngle.getValue() - 135.0F;
-        float upperArmAngle = sentry.upperArmAngle.getValue() - 90.0F;
-        float headAngle = sentry.headAngle.getValue();
-
-        String gunPath = gunStack.getItem() instanceof IGun iGun2 ? iGun2.getGunId(gunStack).getPath().toLowerCase() : "";
-
-        PoseStack ps = new PoseStack();
-        Matrix4f worldMatrix = new Matrix4f();
-        worldMatrix.translate((float) pos.getX() + 0.5f, (float) pos.getY() + 0.5f, (float) pos.getZ() + 0.5f);
-
-        ps.last().pose().set(worldMatrix);
-        ps.translate(0, 0.25f, 0);
-        ps.mulPose(Axis.YP.rotationDegrees(baseAngle));
-        ps.translate(0, 0.125f, 0);
-        ps.mulPose(Axis.XP.rotationDegrees(lowerArmAngle + 135));
-        ps.translate(0, 0, -0.875f);
-        ps.mulPose(Axis.XP.rotationDegrees(upperArmAngle - 90));
-        ps.translate(0, 0, -0.9375f);
-        ps.mulPose(Axis.XP.rotationDegrees(headAngle - 45));
-        if (isCeiling) ps.mulPose(Axis.ZP.rotationDegrees(180));
-        ps.translate(0, 0, -0.375f);
-
-        ps.mulPose(Axis.XP.rotationDegrees(90.0F));
-        ps.translate(0, -0.625f, 0);
-        ps.mulPose(Axis.XP.rotationDegrees(-90));
-        ps.translate(0, 0.18f, 0);
-
-        if (gunPath.contains("minigun")) {
-            ps.mulPose(Axis.XP.rotationDegrees(-90));
-            ps.translate(0, -0.7f, 0.2f);
+    public static void clearCaches() { SENTRY_DISPLAYS.clear(); }
+    public static void handleCasingProfiles(SentryCasingProfilesPacket packet){
+        euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.receive(packet.ammo());
+        euphy.upo.sentrymechanicalarm.client.CasingJeiBridge.refresh();
+        var mc=net.minecraft.client.Minecraft.getInstance();
+        if(mc.level!=null&&euphy.upo.sentrymechanicalarm.registry.SentryRegistry.CASINGS_TAB.isBound()){
+            var parameters=new net.minecraft.world.item.CreativeModeTab.ItemDisplayParameters(mc.level.enabledFeatures(),mc.player!=null&&mc.player.canUseGameMasterBlocks(),mc.level.registryAccess());
+            euphy.upo.sentrymechanicalarm.registry.SentryRegistry.CASINGS_TAB.get().buildContents(parameters);
+            net.minecraft.world.item.CreativeModeTabs.searchTab().buildContents(parameters);
+            if(mc.screen instanceof net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen)mc.screen.init(mc,mc.getWindow().getGuiScaledWidth(),mc.getWindow().getGuiScaledHeight());
         }
-
-        float armScale = 1.5f;
-        ps.scale(armScale, armScale, armScale);
-        ps.translate(0, 1.5f, 0);
-        ps.scale(-1.0f, -1.0f, 1.0f);
-
-        Vector3f displayScale = new Vector3f(1.0F, 1.0F, 1.0F);
-        if (display.getTransform() != null && display.getTransform().getScale() != null) {
-            Vector3f ts = display.getTransform().getScale().getThirdPerson();
-            if (ts != null) displayScale = ts;
-        }
-
-        if (handPath != null && !handPath.isEmpty()) {
-            ps.translate(0.0F, 1.5F, 0.0F);
-            for (int i = handPath.size() - 1; i >= 0; --i) {
-                BedrockPart t = handPath.get(i);
-                ps.mulPose(Axis.XN.rotation(t.xRot));
-                ps.mulPose(Axis.YN.rotation(t.yRot));
-                ps.mulPose(Axis.ZN.rotation(t.zRot));
-                if (t.getParent() != null) {
-                    ps.translate(-t.x * displayScale.x() / 16.0F, -t.y * displayScale.y() / 16.0F, -t.z * displayScale.z() / 16.0F);
-                } else {
-                    ps.translate(-t.x * displayScale.x() / 16.0F, (1.5F - t.y / 16.0F) * displayScale.y(), -t.z * displayScale.z() / 16.0F);
-                }
-            }
-            ps.translate(0.0F, -1.5F, 0.0F);
-        }
-
-        ps.translate(0.0F, 1.5F, 0.0F);
-        ps.scale(displayScale.x(), displayScale.y(), displayScale.z());
-        ps.translate(0.0F, -1.5F, 0.0F);
-
-        for (BedrockPart part : muzzlePath) {
-            part.translateAndRotateAndScale(ps);
-        }
-
-        Vector4f result = new Vector4f(0, 0, 0, 1);
-        ps.last().pose().transform(result);
-        return new Vec3(result.x(), result.y(), result.z());
+    }
+    public static void handleGunProfiles(SentryGunProfilesPacket packet) {
+        euphy.upo.sentrymechanicalarm.util.SentryGunProfiles.receive(packet.profiles());
+        clearCaches(); SentryTrailManager.clear();
     }
 
     private static void triggerSentryAnimation(ItemStack gunStack, String input) {
@@ -151,6 +95,13 @@ public class ClientPacketHandler {
         }
     }
 
+    private static void addCanonicalTrail(ItemStack gun,Vec3 start,Vec3 end) {
+        if (!euphy.upo.sentrymechanicalarm.util.SentryGunProfiles.needsSyntheticTracer(gun)
+                || !euphy.upo.sentrymechanicalarm.util.SentryGunGeometry.finite(start)
+                || !euphy.upo.sentrymechanicalarm.util.SentryGunGeometry.finite(end)) return;
+        Vec3 delta=end.subtract(start);
+        if (delta.lengthSqr()>1e-8) SentryTrailManager.addTracer(start,delta.normalize(),8.0,2.0,delta.length());
+    }
     public static void handleSentryShoot(SentryShootPacket msg) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
@@ -164,7 +115,7 @@ public class ClientPacketHandler {
         if (gunStack.isEmpty() || !(gunStack.getItem() instanceof IGun iGun)) return;
 
         Level level = mc.level;
-        Vec3 center = sentry.getBlockPos().getCenter();
+        Vec3 center = msg.realStart();
 
         Optional<GunDisplayInstance> displayOpt = TimelessAPI.getGunDisplay(gunStack);
         if (displayOpt.isEmpty()) return;
@@ -185,22 +136,7 @@ public class ClientPacketHandler {
                     ArmSoundHelper.playFireEffects(level, center, gunStack, index.getGunData())
                 );
 
-                Vec3 modelMuzzle = calculateExactMuzzle(sentry, gunStack);
-                Vec3 realStart = modelMuzzle != null ? modelMuzzle : msg.realStart();
-
-                if (!SentryFakePlayer.hasEntityBullet(gunStack)) {
-                    Vec3 direction = msg.realEnd().subtract(msg.realStart()).normalize();
-                    double totalDistance = realStart.distanceTo(msg.realEnd());
-                    double offsetDistance = 0.8;
-                    Vec3 adjustedStart = totalDistance > offsetDistance
-                            ? realStart.add(direction.scale(offsetDistance))
-                            : realStart;
-                    double adjustedDist = totalDistance > offsetDistance
-                            ? totalDistance - offsetDistance
-                            : totalDistance;
-
-                    SentryTrailManager.addTracer(adjustedStart, direction, 8.0, 2.0, adjustedDist);
-                }
+                addCanonicalTrail(gunStack,msg.realStart(),msg.realEnd());
             }
         }
     }
@@ -209,6 +145,17 @@ public class ClientPacketHandler {
         Minecraft mc = Minecraft.getInstance();
         Level level = mc.level;
         if (level == null) return;
+        if(msg.actionType()!=SentryShootPacket.ActionType.SHOOT){
+            TimelessAPI.getGunDisplay(msg.gunStack()).ifPresent(display->{
+                switch(msg.actionType()){
+                    case CHARGE -> {triggerSentryAnimation(msg.gunStack(),"bolt");ArmSoundHelper.playChargeSound(level,msg.realStart(),msg.gunStack(),display);}
+                    case BOLT -> ArmSoundHelper.playBoltSound(level,msg.realStart(),display);
+                    case RELOAD_EMPTY -> ArmSoundHelper.playReloadSound(level,msg.realStart(),display,true);
+                    case RELOAD_TACTICAL -> ArmSoundHelper.playReloadSound(level,msg.realStart(),display,false);
+                    default -> {}
+                }
+            });return;
+        }
 
         Entity entity = level.getEntity(msg.contraptionId());
         if (entity instanceof AbstractContraptionEntity ace) {
@@ -218,7 +165,6 @@ public class ClientPacketHandler {
                     if (actor.getKey().pos().equals(msg.localPos())) {
                         MovementContext context = actor.getValue();
                         SentryArmBlockEntity be = null;
-                        LOGGER.info("[ContraptionShellPacket] processing pos=({}) tempData={} blockData={}", context.localPos, context.temporaryData != null ? context.temporaryData.getClass().getSimpleName() : "null", context.blockEntityData != null ? "present" : "null");
                         if (context.temporaryData instanceof SentryArmBlockEntity s) {
                             be = s;
                         } else if (context.blockEntityData != null) {
@@ -237,18 +183,7 @@ public class ClientPacketHandler {
             }
         }
 
-        if (!SentryFakePlayer.hasEntityBullet(msg.gunStack())) {
-            Vec3 direction = msg.realEnd().subtract(msg.realStart()).normalize();
-            double totalDistance = msg.realStart().distanceTo(msg.realEnd());
-            double offsetDistance = 0.6;
-            Vec3 adjustedStart = totalDistance > offsetDistance
-                    ? msg.realStart().add(direction.scale(offsetDistance))
-                    : msg.realStart();
-            double adjustedDist = totalDistance > offsetDistance
-                    ? totalDistance - offsetDistance
-                    : totalDistance;
-            SentryTrailManager.addTracer(adjustedStart, direction, 8.0, 2.0, adjustedDist);
-        }
+        addCanonicalTrail(msg.gunStack(),msg.realStart(),msg.realEnd());
 
         if (msg.gunStack().getItem() instanceof IGun iGun) {
             triggerSentryAnimation(msg.gunStack(), "shoot");
