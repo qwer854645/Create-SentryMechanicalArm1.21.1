@@ -1,6 +1,6 @@
 # Create: Sentry Mechanical Arm（非官方移植）
 
-当前修复开发版本：**1.4.0-alpha.37**。目标环境：Minecraft 1.21.1 / NeoForge 21.1.228+ / Create 6.0.10 / TaCZ 1.2.0 / Java 21。当前本地开发运行环境使用 NeoForge 21.1.248 与 JEI 19.70.0.469。
+当前修复开发版本：**1.4.0-alpha.38**。目标环境：Minecraft 1.21.1 / NeoForge 21.1.228+ / Create 6.0.10 / TaCZ 1.2.0 / Java 21。当前本地开发运行环境使用 NeoForge 21.1.248 与 JEI 19.70.0.469。
 
 **当前完整玩法、配置、制造成本和兼容边界见 [模组完整介绍](docs/MOD_GUIDE.md)。** 各阶段文档保留开发历史；现行功能以该介绍与当前源码为准。
 

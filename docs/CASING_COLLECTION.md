@@ -54,3 +54,7 @@ players=false 仍表示完全不生成玩家弹壳，不等同于选择地面模
 ## alpha.37 材质更新
 
 收集器顶部直接引用 create:block/funnel/andesite_funnel 的 Back 面区域（UV 0,0–6,6）；其余五面及粒子统一引用 create:block/andesite_casing。按原模型的 UV 取背面部分，避免把漏斗整张拼接图铺到顶部。没有复制或内嵌 Create PNG。
+
+## alpha.38 侧向安装背面修正
+
+按用户澄清，顶部应使用安山漏斗侧向贴容器放置时的外背面。改用 Create 水平模型 block/funnel/block_horizontal 的 Back 元件 south 面，即同一 andesite_funnel 贴图的 UV 6,0–12,6；alpha.37 使用的 0,0–6,6 是该元件另一侧面。其他面保持安山机壳，继续仅引用 Create 资源。本次只编译打包，不运行检查、测试或重启客户端。
