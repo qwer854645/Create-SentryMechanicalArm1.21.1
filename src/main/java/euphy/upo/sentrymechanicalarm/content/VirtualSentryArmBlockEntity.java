@@ -21,6 +21,7 @@ public class VirtualSentryArmBlockEntity extends SentryArmBlockEntity {
     private float contraptionSpeed;
     private double range=16;
     public VirtualSentryArmBlockEntity(BlockPos pos,BlockState state){super(pos,state);}
+    public com.simibubi.create.content.contraptions.Contraption getOwningContraption(){return context==null?null:context.contraption;}
     public void bind(MovementContext context){this.context=context;this.level=context.world;}
     public void setVirtualLevel(Level level){this.level=level;}
     public void setContraptionSpeed(float speed){contraptionSpeed=speed;}

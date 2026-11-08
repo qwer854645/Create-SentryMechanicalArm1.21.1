@@ -1,6 +1,6 @@
 # Create: Sentry Mechanical Arm（非官方移植）
 
-当前修复开发版本：**1.4.0-alpha.34**。固定验证环境：Minecraft 1.21.1 / NeoForge 21.1.228 / Create 6.0.10 / TaCZ 1.2.0 / Java 21。
+当前修复开发版本：**1.4.0-alpha.35**。固定验证环境：Minecraft 1.21.1 / NeoForge 21.1.228 / Create 6.0.10 / TaCZ 1.2.0 / Java 21。
 
 两份第三方枪包的实测与限制见 [docs/GUNPACK_COMPATIBILITY.md](docs/GUNPACK_COMPATIBILITY.md)。
 
@@ -97,3 +97,5 @@ MIT © Euphy
 当前制造成本分摊见 [COST_ALLOCATION.md](docs/COST_ALLOCATION.md)：新壳补足主金属预算，回收壳省去制壳材料。
 
 自定义制造与抛壳统一入口见 [CUSTOM_MANUFACTURING.md](docs/CUSTOM_MANUFACTURING.md)，可直接启用的模板位于 [examples/manufacturing-rules](examples/manufacturing-rules)。明确自定义规则优先于自动推导；可配置掉落物、口径、数量及概率。
+
+弹壳输出可通过 [弹壳收集器与玩家背包收集](docs/CASING_COLLECTION.md) 自动入库：静态动力臂用相邻收集器，动态结构用同结构收集器；玩家可通过配置改为背包收集。

@@ -79,6 +79,15 @@ public final class SentryCasingDrops {
                 ||!shooterAllowed(shooter,before.ammo())||before.count()<=ammunition(shooter,before.gun(),before.ammo()))return;
         var rule=SentryCasingProfiles.drop(before.ammo());
         if(level.random.nextDouble()>=(rule.chance()==null?SMAServerConfig.CASING_CHANCE.get():rule.chance()))return;
+        var template=rule.template();int remaining=rule.count();
+        if(shooter instanceof FakePlayer fake){
+            var arm=SentryFakePlayer.getArmFromPlayer(fake);
+            var rest=arm==null?template.copyWithCount(remaining):CasingCollectors.insert(arm,template.copyWithCount(remaining));
+            if(rest.isEmpty())return;
+            remaining=rest.getCount();template=rest.copyWithCount(1);
+        }else if(shooter instanceof net.minecraft.server.level.ServerPlayer player&&SMAServerConfig.PLAYER_CASINGS_TO_INVENTORY.get()){
+            giveToInventory(player,template,remaining);return;
+        }
         Vec3 forward=shooter.getLookAngle().normalize();Vec3 origin=shooter.getEyePosition();
         if(shooter instanceof FakePlayer fp){var pose=SentryFakePlayer.getArmFromPlayer(fp).getGunPose();origin=pose.position();forward=pose.forward();}
         Vec3 right=forward.cross(new Vec3(0,1,0));if(right.lengthSqr()<1e-8)right=new Vec3(1,0,0);else right=right.normalize();
@@ -91,7 +100,6 @@ public final class SentryCasingDrops {
         int occupied=budgets.computeIfAbsent(key,k->level.getEntitiesOfClass(ItemEntity.class,chunkBox,
                 e->e.getItem().is(SentryRegistry.EMPTY_CASING.get())||e.getPersistentData().getBoolean("sentrymechanicalarm:casing_drop")).size());
         if(occupied>=cap)return;
-        var template=rule.template();int remaining=rule.count();
         while(remaining>0&&occupied<cap){
             int amount=Math.min(remaining,template.getMaxStackSize());
             var item=new ItemEntity(level,position.x,position.y,position.z,template.copyWithCount(amount));
@@ -102,4 +110,20 @@ public final class SentryCasingDrops {
             remaining-=amount;occupied++;budgets.put(key,occupied);
         }
     }
+    /** Vanilla /give insertion and overflow semantics, without creating a fake pickup entity on success. */
+    private static void giveToInventory(net.minecraft.server.level.ServerPlayer player,ItemStack template,int count){
+        while(count>0){
+            int amount=Math.min(count,template.getMaxStackSize());count-=amount;
+            var stack=template.copyWithCount(amount);player.getInventory().add(stack);
+            if(stack.getCount()<amount)player.level().playSound(null,player.getX(),player.getY(),player.getZ(),
+                    net.minecraft.sounds.SoundEvents.ITEM_PICKUP,net.minecraft.sounds.SoundSource.PLAYERS,.2f,
+                    ((player.getRandom().nextFloat()-player.getRandom().nextFloat())*.7f+1)*2);
+            if(!stack.isEmpty()){
+                var overflow=player.drop(stack,false);
+                if(overflow!=null){overflow.setNoPickUpDelay();overflow.setTarget(player.getUUID());overflow.getPersistentData().putBoolean("sentrymechanicalarm:casing_drop",true);}
+            }
+        }
+        player.getInventory().setChanged();player.containerMenu.broadcastChanges();
+    }
+
 }

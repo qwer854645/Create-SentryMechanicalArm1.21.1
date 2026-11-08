@@ -46,6 +46,12 @@ public class SentryRegistry {
     public static final DeferredHolder<Block, SentryArmBlock> SENTRY_ARM_BLOCK = BLOCKS.register("sentry_mechanical_arm",
             id -> new SentryArmBlock(id, BlockBehaviour.Properties.of()));
 
+    public static final DeferredHolder<Block,CasingCollectorBlock> CASING_COLLECTOR_BLOCK=BLOCKS.register("casing_collector",
+            ()->new CasingCollectorBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.5f).sound(net.minecraft.world.level.block.SoundType.METAL)));
+    public static final DeferredHolder<Item,BlockItem> CASING_COLLECTOR_ITEM=ITEMS.register("casing_collector",()->new BlockItem(CASING_COLLECTOR_BLOCK.get(),new Item.Properties()));
+    public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<CasingCollectorBlockEntity>> CASING_COLLECTOR_BE=BLOCK_ENTITIES.register("casing_collector",
+            ()->BlockEntityType.Builder.of(CasingCollectorBlockEntity::new,CASING_COLLECTOR_BLOCK.get()).build(null));
+
     public static final DeferredHolder<Item, ApplePieItem> APPLE_PIE = ITEMS.register("apple_pie",
             () -> new ApplePieItem(new Item.Properties().food(new FoodProperties.Builder().nutrition(8).saturationModifier(0.3f).build())));
 
@@ -95,6 +101,7 @@ public class SentryRegistry {
                         output.accept(new net.minecraft.world.item.ItemStack(FIRE_CONTROL_CLIPBOARD.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(APPLE_PIE.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(SENTRY_SCOPE.get(), 1));
+                        output.accept(CASING_COLLECTOR_ITEM.get());
                         if(CASING_MOLD.isBound())output.accept(new net.minecraft.world.item.ItemStack(CASING_MOLD.get()));
                     })
                     .build());

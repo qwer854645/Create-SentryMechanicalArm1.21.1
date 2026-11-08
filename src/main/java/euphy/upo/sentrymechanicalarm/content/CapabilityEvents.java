@@ -13,6 +13,7 @@ public class CapabilityEvents {
 
     @SubscribeEvent
     public static void registerCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK,SentryRegistry.CASING_COLLECTOR_BE.get(),(be,side)->be.getItemHandler());
         event.registerBlockEntity(
                 Capabilities.ItemHandler.BLOCK,
                 SentryRegistry.BLAZE_FIRE_CONTROL_BE.get(),

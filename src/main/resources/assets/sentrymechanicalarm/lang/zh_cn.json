@@ -128,5 +128,6 @@
   "screen.sentrymechanicalarm.casing_mold.search": "搜索名称或口径 ID",
   "screen.sentrymechanicalarm.casing_mold.empty": "没有可用的制壳配方",
   "fluid_type.sentrymechanicalarm.propellant": "流态火药",
-  "fluid.sentrymechanicalarm.propellant": "流态火药"
+  "fluid.sentrymechanicalarm.propellant": "流态火药",
+  "block.sentrymechanicalarm.casing_collector": "弹壳收集器"
 }

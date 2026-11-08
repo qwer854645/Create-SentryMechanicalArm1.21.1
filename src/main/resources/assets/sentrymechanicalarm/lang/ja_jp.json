@@ -96,5 +96,6 @@
   "screen.sentrymechanicalarm.casing_mold.search": "名前または口径IDで検索",
   "screen.sentrymechanicalarm.casing_mold.empty": "利用可能な薬莢製作レシピがありません",
   "fluid_type.sentrymechanicalarm.propellant": "流動火薬",
-  "fluid.sentrymechanicalarm.propellant": "流動火薬"
+  "fluid.sentrymechanicalarm.propellant": "流動火薬",
+  "block.sentrymechanicalarm.casing_collector": "薬莢回収器"
 }
