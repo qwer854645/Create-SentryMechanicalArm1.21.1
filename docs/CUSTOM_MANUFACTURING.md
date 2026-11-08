@@ -1,4 +1,4 @@
-# alpha.34：自定义制造与抛壳
+# 自定义制造与抛壳
 
 ## 文件入口
 
@@ -96,8 +96,6 @@ forming.enabled:false 可实现只回收、不制造新壳。制壳总开关和�
 
 统一规则跟随服务端数据资源重载，删除文件后恢复低优先级来源；旧开关保持兼容。简化再装填规则依然自动生成成本指纹，成本改变后旧在制品可单独合成取回壳再加工，已投入材料不退还。完整原生 Create 配方沿用其自身 ID 与在制品行为，作者更改成本时应同步管理旧在制品。
 
-## 本轮执行范围
+## 示例数据包
 
-已提供 examples/manufacturing-rules 模板目录及交付 zip，只有其中 data/tacz/sentry_manufacturing/9mm.json 默认生效，其他例子位于 examples/ 下，供复制参考。没有自动安装进任何世界。
-
-只执行 clean jar 编译打包，没有运行检查、测试、客户端或服务端，不声称新增自定义规则已通过游戏内验收。
+[examples/manufacturing-rules](../examples/manufacturing-rules) 中只有 data/tacz/sentry_manufacturing/9mm.json 默认生效；examples/ 下的文件供复制参考。数据包需要自行安装到世界 datapacks 目录。
