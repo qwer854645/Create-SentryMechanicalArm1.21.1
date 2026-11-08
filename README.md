@@ -1,6 +1,6 @@
 # Create: Sentry Mechanical Arm
 
-Create: Sentry Mechanical Arm 的非官方 Minecraft 1.21.1 NeoForge 修复分支。让哨戒动力臂装备 TaCZ 枪械自动防御，并将弹药制造、补给和弹壳回收接入 Create 物流。
+Create: Sentry Mechanical Arm 的非官方 Minecraft 1.21.1 NeoForge 修复分支。基于 [pihoue 的 1.21.1 移植版](https://github.com/pihoue/Create-SentryMechanicalArm1.21.1) 继续开发。让哨戒动力臂装备 TaCZ 枪械自动防御，并将弹药制造、补给和弹壳回收接入 Create 物流。
 
 当前版本：**1.4.0-alpha.41**，建议作为 Alpha 测试版使用。复杂枪包、多人同步和长期运行仍存在兼容边界。
 
