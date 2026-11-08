@@ -10,9 +10,19 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import java.util.List;
 
-public final class EmptyCasingItem extends Item {
+public class EmptyCasingItem extends Item {
     public EmptyCasingItem(Properties properties) { super(properties); }
-    public static ResourceLocation ammoId(ItemStack stack) { return stack.get(ModDataComponents.CASING_AMMO.get()); }
+    public static ResourceLocation ammoId(ItemStack stack) {
+        var ammo=stack.get(ModDataComponents.CASING_AMMO.get());if(ammo!=null)return ammo;
+        if(stack.getItem() instanceof ReloadingCasingItem){
+            var progress=stack.get(com.simibubi.create.AllDataComponents.SEQUENCED_ASSEMBLY);
+            if(progress!=null&&progress.id().getNamespace().equals("sentrymechanicalarm")&&progress.id().getPath().startsWith("casing_reloading/")){
+                String path=progress.id().getPath().substring("casing_reloading/".length());int version=path.lastIndexOf("/v_");if(version>=0)path=path.substring(0,version);
+                return ResourceLocation.tryParse(path.replaceFirst("/",":"));
+            }
+        }
+        return null;
+    }
     public static ItemStack create(ResourceLocation ammoId, int count) {
         if(!SentryRegistry.EMPTY_CASING.isBound())return ItemStack.EMPTY;
         var stack = new ItemStack(SentryRegistry.EMPTY_CASING.get(), count);

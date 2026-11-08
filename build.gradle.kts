@@ -109,9 +109,9 @@ neoForge {
                     programArgument("--world")
                     programArgument("disabled-alpha10")
                 }
-                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart", "reload", "gunpacks", "randompacks", "casingconfig")) suite else "true")
+                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart", "reload", "gunpacks", "randompacks", "casingconfig", "reloading")) suite else "true")
                 if (providers.gradleProperty("trainDepotSmoke").isPresent) systemProperty("sentry.trainDepot","true")
-                if (suite == "casingconfig") {
+                if (suite == "casingconfig" || suite == "reloading") {
                     programArgument("--universe")
                     programArgument(file("../casing-config-worlds").absolutePath)
                     programArgument("--world")

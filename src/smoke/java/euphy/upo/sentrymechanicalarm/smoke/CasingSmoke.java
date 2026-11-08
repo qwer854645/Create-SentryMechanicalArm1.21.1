@@ -27,7 +27,7 @@ public final class CasingSmoke {
     static final ResourceLocation AMMO=ResourceLocation.parse("tacz:9mm");
     static final List<ItemEntity> owned=new ArrayList<>();
     static final Map<ResourceLocation,Integer> expected=new HashMap<>(),actual=new HashMap<>();
-    static ServerLevel level;static ServerPlayer player;static int passed,failed,ticks,playerShots,spawned;static boolean observing;
+    static ServerLevel level;static ServerPlayer player;static int passed,failed,ticks,playerShots,spawned;static boolean observing;static int attempts;static long lastAttempt;
     interface Case{void run()throws Exception;}
     static void check(boolean ok,String message){if(!ok)throw new AssertionError(message);}
     static void test(String name,Case c){try{c.run();passed++;SentryMechanicalArm.LOGGER.info("CASING PASS {}",name);}catch(Throwable e){failed++;SentryMechanicalArm.LOGGER.error("CASING FAIL "+name,e);}}
@@ -63,7 +63,11 @@ public final class CasingSmoke {
         player.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND,gun());var op=IGunOperator.fromLivingEntity(player);op.initialData();op.draw(player::getMainHandItem);op.getDataHolder().drawTimestamp=com.tacz.guns.util.time.GunTime.nowMillis()-10000;
         observing=true;
     }
-    @SubscribeEvent public static void tick(ServerTickEvent.Post e){if(!observing)return;if(++ticks==20||ticks==40||ticks==60)IGunOperator.fromLivingEntity(player).shoot(()->0f,()->0f);}
+    @SubscribeEvent public static void tick(ServerTickEvent.Post e){
+        if(!observing)return;ticks++;long now=com.tacz.guns.util.time.GunTime.nowMillis();
+        // Server catch-up ticks can run faster than TaCZ's real-time firing cooldown.
+        if(ticks>=20&&attempts<3&&now-lastAttempt>=1000){lastAttempt=now;attempts++;var outcome=IGunOperator.fromLivingEntity(player).shoot(()->0f,()->0f);SentryMechanicalArm.LOGGER.info("CASING_PLAYER_ATTEMPT tick={} result={}",ticks,outcome);}
+    }
     @SubscribeEvent(priority=EventPriority.LOWEST)public static void post(GunFirePostEvent e){if(!observing||e.getLogicalSide()!=LogicalSide.SERVER)return;var api=IGun.getIGunOrNull(e.getGunItemStack());if(api==null)return;var id=TimelessAPI.getCommonGunIndex(api.getGunId(e.getGunItemStack())).orElseThrow().getGunData().getAmmoId();if(SentryCasingProfiles.enabled(id))expected.merge(id,1,Integer::sum);if(e.getShooter()==player)playerShots++;}
     @SubscribeEvent public static void item(EntityJoinLevelEvent e){if(Boolean.getBoolean("sentry.casingSmoke")&&SentryRegistry.EMPTY_CASING.isBound()&&!e.loadedFromDisk()&&!e.getLevel().isClientSide&&e.getEntity() instanceof ItemEntity item&&item.getItem().is(SentryRegistry.EMPTY_CASING.get())){owned.add(item);spawned+=item.getItem().getCount();if(observing)actual.merge(EmptyCasingItem.ammoId(item.getItem()),item.getItem().getCount(),Integer::sum);}}
     static void finish(){

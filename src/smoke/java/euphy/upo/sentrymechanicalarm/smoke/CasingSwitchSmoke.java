@@ -42,7 +42,7 @@ public final class CasingSwitchSmoke {
             check("12 Gauge Casings".equals(SentryCasingNames.fromAmmoName("12 Gauge Shells")),"English plural");
             check(SentryCasingNames.fromAmmoName("Custom Magic Charge")==null,"unknown names should use translated fallback");
         });
-        test("startup option controls real item registry",()->check(net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(id)==enabled,"wrong registry membership"));
+        test("startup option controls real item registry",()->check(net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(id)==enabled&&SentryRegistry.RELOADING_CASING.isBound()==enabled,"wrong registry membership"));
         test("creative tab builds safely with current registration",()->{var tab=SentryRegistry.SENTRY_TAB.get();tab.buildContents(new CreativeModeTab.ItemDisplayParameters(net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS,true,level.registryAccess()));check(tab.getDisplayItems().stream().anyMatch(x->x.getItem() instanceof EmptyCasingItem)==false,"creative content mismatch");});
         test("dedicated casing tab follows startup registration and contains only casings",()->{
             var tabId=ResourceLocation.parse("sentrymechanicalarm:casings");

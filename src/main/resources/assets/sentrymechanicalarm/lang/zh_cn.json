@@ -1,4 +1,6 @@
 {
+  "item.sentrymechanicalarm.reloading_casing": "再装填中的弹壳",
+  "item.sentrymechanicalarm.reloading_casing.named": "再装填中：%s",
   "itemGroup.sentrymechanicalarm.casings": "TAC | 弹壳",
   "itemGroup.sentrymechanicalarm": "机械动力：哨戒动力臂",
   "block.sentrymechanicalarm.sentry_mechanical_arm": "哨戒动力臂",

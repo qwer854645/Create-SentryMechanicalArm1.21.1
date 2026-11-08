@@ -5,7 +5,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class SMAServerConfig {
 
     public static final ModConfigSpec SPEC;
-    public static final ModConfigSpec.BooleanValue ENABLE_AMMO_CRAFTING;
+    public static final ModConfigSpec.BooleanValue ENABLE_AMMO_CRAFTING, ENABLE_RELOADING, AUTO_RELOADING;
     public static final ModConfigSpec.BooleanValue ENABLE_CASINGS, PLAYER_CASINGS, SENTRY_CASINGS, OTHER_CASINGS;
     public static final ModConfigSpec.DoubleValue CASING_CHANCE;
     public static final ModConfigSpec.IntValue CASING_ENTITY_LIMIT, CASING_LIFETIME;
@@ -34,6 +34,11 @@ public class SMAServerConfig {
                 .defineInRange("maxEntitiesPerChunk", 64, 0, 1024);
         CASING_LIFETIME = builder.comment("Casing item lifetime in game ticks.")
                 .defineInRange("lifetimeTicks", 1200, 20, 12000);
+        builder.pop();
+
+        builder.push("reloading");
+        ENABLE_RELOADING=builder.comment("Enable casing reloading; also requires casing registration and ammo manufacturing. Reload data packs after changing.").define("enabled",true);
+        AUTO_RELOADING=builder.comment("Conservatively derive per-round costs from simple vanilla-material TaCZ recipes; round up and do not refund metal.").define("autoFromTaCZ",true);
         builder.pop();
 
         builder.push("ammo_crafting");

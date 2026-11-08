@@ -54,6 +54,9 @@ public class SentryRegistry {
     public static final DeferredHolder<Item, EmptyCasingItem> EMPTY_CASING = euphy.upo.sentrymechanicalarm.SMAStartupConfig.ENABLE_CASINGS.get() ? ITEMS.register("empty_casing",
             () -> new EmptyCasingItem(new Item.Properties().stacksTo(64))) : DeferredHolder.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MODID,"empty_casing"));
 
+    public static final DeferredHolder<Item, EmptyCasingItem> RELOADING_CASING = euphy.upo.sentrymechanicalarm.SMAStartupConfig.ENABLE_CASINGS.get() ? ITEMS.register("reloading_casing",
+            () -> new ReloadingCasingItem(new Item.Properties().stacksTo(1))) : DeferredHolder.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MODID,"reloading_casing"));
+
     public static final DeferredHolder<Block, BlazeFireControlBlock> BLAZE_FIRE_CONTROL = BLOCKS.register("blaze_fire_control",
             id -> new BlazeFireControlBlock(BlockBehaviour.Properties.of()));
 

@@ -1,4 +1,6 @@
 {
+  "item.sentrymechanicalarm.reloading_casing": "Casing being reloaded",
+  "item.sentrymechanicalarm.reloading_casing.named": "Reloading: %s",
   "itemGroup.sentrymechanicalarm.casings": "TAC | Casings",
   "itemGroup.sentrymechanicalarm": "Create: Sentry Mechanical Arm",
   "block.sentrymechanicalarm.sentry_mechanical_arm": "Sentry Mechanical Arm",

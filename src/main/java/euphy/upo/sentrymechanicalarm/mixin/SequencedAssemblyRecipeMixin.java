@@ -17,6 +17,7 @@ public class SequencedAssemblyRecipeMixin {
 
     @Inject(method = "appliesTo", at = @At("HEAD"), cancellable = true)
     private void sentry$disableAmmoAssembly(ResourceLocation id, ItemStack input, CallbackInfoReturnable<Boolean> cir) {
+        if(id.getNamespace().equals(SentryMechanicalArm.MODID)&&id.getPath().startsWith("casing_reloading/")&&!euphy.upo.sentrymechanicalarm.recipe.ReloadingRecipes.enabled()){cir.setReturnValue(false);return;}
         if (!euphy.upo.sentrymechanicalarm.SMAServerConfig.ENABLE_AMMO_CRAFTING.get()
                 && id.getNamespace().equals(SentryMechanicalArm.MODID) && id.getPath().startsWith("ammo_assembly/")) {
             cir.setReturnValue(false);

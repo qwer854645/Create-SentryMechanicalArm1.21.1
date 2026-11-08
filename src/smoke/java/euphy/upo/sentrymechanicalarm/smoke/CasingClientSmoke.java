@@ -47,6 +47,16 @@ public final class CasingClientSmoke {
                 SentryMechanicalArm.LOGGER.info("CASING_CLIENT PASS 9mm tab icon and immediate placement next to TaCZ ammo");
             }catch(Throwable e){failures++;SentryMechanicalArm.LOGGER.error("CASING_CLIENT FAIL creative tab",e);}
             var renderer=new EmptyCasingRenderer();
+            try{
+                var holder=euphy.upo.sentrymechanicalarm.recipe.ReloadingRecipes.find(mc.level.getRecipeManager(),ResourceLocation.parse("tacz:9mm"));
+                if(holder.isPresent()){
+                    var recipe=(com.simibubi.create.content.processing.sequenced.SequencedAssemblyRecipe)holder.get().value();var progress=recipe.getTransitionalItem().copy();
+                    progress.set(com.simibubi.create.AllDataComponents.SEQUENCED_ASSEMBLY,new com.simibubi.create.content.processing.sequenced.SequencedAssemblyRecipe.SequencedAssembly(holder.get().id(),1,1f/recipe.getSequence().size()));
+                    if(!ResourceLocation.parse("tacz:9mm").equals(EmptyCasingItem.ammoId(progress)))throw new AssertionError("progress item lost ammo identity");
+                    for(var context:List.of(ItemDisplayContext.GUI,ItemDisplayContext.GROUND,ItemDisplayContext.FIRST_PERSON_RIGHT_HAND,ItemDisplayContext.THIRD_PERSON_RIGHT_HAND))renderer.renderByItem(progress,context,new PoseStack(),mc.renderBuffers().bufferSource(),15728880,net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
+                    SentryMechanicalArm.LOGGER.info("RELOADING_CLIENT PASS intermediate item caliber, name={}, four render contexts and recipe sync",progress.getHoverName().getString());
+                }
+            }catch(Throwable e){failures++;SentryMechanicalArm.LOGGER.error("RELOADING_CLIENT FAIL",e);}
             for(var entry:TimelessAPI.getAllClientAmmoIndex().stream().sorted(Map.Entry.comparingByKey()).toList()){
                 if(!euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.creativeEligible(entry.getKey()))continue;
                 var casing=EmptyCasingItem.create(entry.getKey(),1);samples.add(casing);

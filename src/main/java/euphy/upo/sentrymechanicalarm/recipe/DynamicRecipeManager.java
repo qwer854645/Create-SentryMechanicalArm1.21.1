@@ -40,6 +40,7 @@ public class DynamicRecipeManager {
 
     @SubscribeEvent
     public static void onServerAboutToStart(ServerAboutToStartEvent event) {
+        euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.rebuild(event.getServer());
         rebuild(event.getServer().getRecipeManager());
     }
 
@@ -48,6 +49,7 @@ public class DynamicRecipeManager {
         // Fired after TaCZ has initialized its recipes/tags and before vanilla recipe sync.
         // A single-player login must not invalidate active shooters or regenerate recipes.
         if (event.getPlayer() != null) return;
+        euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.rebuild(event.getPlayerList().getServer());
         rebuild(event.getPlayerList().getServer().getRecipeManager());
         euphy.upo.sentrymechanicalarm.util.SentryFakePlayer.invalidateGunData();
     }
@@ -81,6 +83,7 @@ public class DynamicRecipeManager {
         allNewRecipes.addAll(injectCuttingRecipes(recipeManager));
         allNewRecipes.addAll(injectSequencedAssemblyRecipes(recipeManager));
         allNewRecipes.addAll(injectPressingRecipes(recipeManager));
+        allNewRecipes.addAll(ReloadingRecipes.build(recipeManager));
 
         LinkedHashMap<ResourceLocation, RecipeHolder<?>> combined = new LinkedHashMap<>();
         base.forEach(holder -> combined.put(holder.id(), holder));
