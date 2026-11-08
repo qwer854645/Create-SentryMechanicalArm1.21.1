@@ -42,6 +42,11 @@ public final class CasingSwitchSmoke {
             check("12 Gauge Casings".equals(SentryCasingNames.fromAmmoName("12 Gauge Shells")),"English plural");
             check(SentryCasingNames.fromAmmoName("Custom Magic Charge")==null,"unknown names should use translated fallback");
         });
+        test("legacy casing item and recipes are removed",()->{
+            check(!net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse("sentrymechanicalarm:unfinished_ammo")),"legacy item registered");
+            check(!net.minecraft.core.registries.BuiltInRegistries.RECIPE_SERIALIZER.containsKey(ResourceLocation.parse("sentrymechanicalarm:ammo_template")),"legacy serializer registered");
+            check(level.getRecipeManager().getRecipes().stream().noneMatch(h->h.id().getNamespace().equals("sentrymechanicalarm")&&h.id().getPath().startsWith("ammo_")),"legacy recipes present");
+        });
         test("startup option controls real item registry",()->check(net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(id)==enabled&&SentryRegistry.RELOADING_CASING.isBound()==enabled,"wrong registry membership"));
         test("creative tab builds safely with current registration",()->{var tab=SentryRegistry.SENTRY_TAB.get();tab.buildContents(new CreativeModeTab.ItemDisplayParameters(net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS,true,level.registryAccess()));check(tab.getDisplayItems().stream().anyMatch(x->x.getItem() instanceof EmptyCasingItem)==false,"creative content mismatch");});
         test("dedicated casing tab follows startup registration and contains only casings",()->{

@@ -14,6 +14,7 @@ import java.util.Map;
 public final class SentryClientCaches {
     @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) {
         euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.receive(java.util.Set.of());
+        CasingJeiBridge.refresh();
         EmptyCasingRenderer.clear(); SentryGunProfiles.receive(Map.of()); ClientPacketHandler.clearCaches(); SentryTrailManager.clear();
     }
 }

@@ -84,7 +84,7 @@ neoForge {
                 if (providers.gradleProperty("gunpackClientSmoke").isPresent) systemProperty("sentry.gunpackClientSmoke", "true")
                 if (providers.gradleProperty("sentryClientReloadSmoke").isPresent) systemProperty("sentry.clientReloadSmoke", "true")
                 programArgument("--quickPlaySingleplayer")
-                programArgument("phase3-validation")
+                programArgument(providers.gradleProperty("clientSmokeWorld").getOrElse("phase3-validation"))
             }
         }
         register("server") {
@@ -102,14 +102,7 @@ neoForge {
                     require(casingWorld.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,79}")))
                     programArgument(casingWorld)
                 }
-                if (providers.gradleProperty("ammoCraftingDisabledSmoke").isPresent) {
-                    systemProperty("sentry.ammoCraftingDisabledSmoke", "true")
-                    programArgument("--universe")
-                    programArgument(file("../crafting-worlds").absolutePath)
-                    programArgument("--world")
-                    programArgument("disabled-alpha10")
-                }
-                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart", "reload", "gunpacks", "randompacks", "casingconfig", "reloading")) suite else "true")
+                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart", "gunpacks", "randompacks", "casingconfig", "reloading")) suite else "true")
                 if (providers.gradleProperty("trainDepotSmoke").isPresent) systemProperty("sentry.trainDepot","true")
                 if (suite == "casingconfig" || suite == "reloading") {
                     programArgument("--universe")
@@ -131,14 +124,6 @@ neoForge {
                     programArgument(file("../gunpack-worlds").absolutePath)
                     programArgument("--world")
                     programArgument("ars-applied-"+System.currentTimeMillis())
-                }
-                if (suite == "reload") {
-                    programArgument("--universe")
-                    programArgument(file("../reload-worlds").absolutePath)
-                    programArgument("--world")
-                    val reloadWorld = providers.gradleProperty("reloadWorld").getOrElse("reload-alpha9-validation")
-                    require(reloadWorld.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,79}"))) { "Use a simple reload world name without paths" }
-                    programArgument(reloadWorld)
                 }
                 if (suite == "restart") {
                     systemProperty("sentry.restartPhase",providers.gradleProperty("restartPhase").getOrElse("prepare"))
@@ -187,7 +172,7 @@ dependencies {
 
     // JEI
     compileOnly(libs.jei.api)
-    runtimeOnly(libs.jei.runtime)
+    if (!providers.gradleProperty("withoutJei").isPresent) runtimeOnly(libs.jei.runtime)
 
     // EMI - recipe viewer
     compileOnly(libs.emi)

@@ -7,7 +7,6 @@
   "block.sentrymechanicalarm.blaze_fire_control": "拉特兰火控台",
   "item.sentrymechanicalarm.fire_control_clipboard": "跨境追缉许可",
   "item.sentrymechanicalarm.apple_pie": "拉特兰苹果派",
-  "item.sentrymechanicalarm.unfinished_ammo": "待加工弹壳",
   "item.sentrymechanicalarm.seventh_chamber": "第七厅枢机",
   "item.sentrymechanicalarm.seventh_chamber.desc_1": "谁说轮椅不能在钢架上漂移的",
   "item.sentrymechanicalarm.seventh_chamber.desc_2": "2X2",
@@ -94,14 +93,6 @@
   "sentrymechanicalarm.ponder.sentry_arm_supply.text_4": "动力臂会自动取出打空的弹药盒。",
   "sentrymechanicalarm.ponder.sentry_arm_supply.text_5": "持有弹药的机械手会为下方的弹药盒装弹。",
   "sentrymechanicalarm.ponder.sentry_arm_supply.text_6": "如此，哨戒动力臂便有了源源不断的火力。",
-  "sentrymechanicalarm.ponder.sentry_arm_ammo.header": "子弹生产",
-  "sentrymechanicalarm.ponder.sentry_arm_ammo.text_1": "要生产子弹，你需要先获得子弹模板。",
-  "sentrymechanicalarm.ponder.sentry_arm_ammo.text_2": "将铜板放在置物台上，子弹放在机械手上……",
-  "sentrymechanicalarm.ponder.sentry_arm_ammo.text_3": "即可得到对应的子弹模板。",
-  "sentrymechanicalarm.ponder.sentry_arm_ammo.text_4": "你需要一个动力锯来处理原材料。",
-  "sentrymechanicalarm.ponder.sentry_arm_ammo.text_5": "把子弹模板放入列表过滤器，并勾选匹配物品属性，插入动力锯的过滤槽中。",
-  "sentrymechanicalarm.ponder.sentry_arm_ammo.text_6": "之后的铜板都会被加工成这种子弹模板。",
-  "sentrymechanicalarm.ponder.sentry_arm_ammo.text_7": "依次序列组装……",
   "sentrymechanicalarm.ponder.fire_control.header": "火控台",
   "sentrymechanicalarm.ponder.fire_control.text_1": "哨戒动力臂默认只会攻击敌对生物。",
   "sentrymechanicalarm.ponder.fire_control.text_2": "使用火控台，可以指定攻击特定的生物。",
@@ -127,5 +118,7 @@
   "sentry.supply.depot_mounted": "移动中的弹药库自动供弹；拆卸后可打开原生界面。",
   "item.sentrymechanicalarm.empty_casing": "弹壳",
   "item.sentrymechanicalarm.empty_casing.named": "%s 弹壳",
-  "item.sentrymechanicalarm.empty_casing.description": "回收的弹壳，再装填配方将在后续阶段加入。"
+  "item.sentrymechanicalarm.empty_casing.description": "回收的弹壳，可用于再装填。",
+  "item.sentrymechanicalarm.reloading_casing.description": "再装填中的弹壳。单独放入合成栏可取回弹壳，不退还材料。",
+  "item.sentrymechanicalarm.casing.ammo_id": "弹药 ID：%s"
 }

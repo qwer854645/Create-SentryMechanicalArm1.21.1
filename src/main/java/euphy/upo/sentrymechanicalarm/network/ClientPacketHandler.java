@@ -61,6 +61,7 @@ public class ClientPacketHandler {
     public static void clearCaches() { SENTRY_DISPLAYS.clear(); }
     public static void handleCasingProfiles(SentryCasingProfilesPacket packet){
         euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.receive(packet.ammo());
+        euphy.upo.sentrymechanicalarm.client.CasingJeiBridge.refresh();
         var mc=net.minecraft.client.Minecraft.getInstance();
         if(mc.level!=null&&euphy.upo.sentrymechanicalarm.registry.SentryRegistry.CASINGS_TAB.isBound()){
             var parameters=new net.minecraft.world.item.CreativeModeTab.ItemDisplayParameters(mc.level.enabledFeatures(),mc.player!=null&&mc.player.canUseGameMasterBlocks(),mc.level.registryAccess());

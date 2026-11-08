@@ -42,10 +42,9 @@ public class EmptyCasingItem extends Item {
         String casing=euphy.upo.sentrymechanicalarm.util.SentryCasingNames.fromAmmoName(ammoName.getString());
         return casing==null?Component.translatable("item.sentrymechanicalarm.empty_casing.named", ammoName):Component.literal(casing);
     }
+    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
     @Override public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        var id = ammoId(stack);
-        if (id != null) tooltip.add(Component.literal(id.toString()).withStyle(net.minecraft.ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("item.sentrymechanicalarm.empty_casing.description").withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
+        euphy.upo.sentrymechanicalarm.client.CasingTooltips.append(stack,tooltip,flag);
     }
     @SuppressWarnings("removal")
     @Override public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {

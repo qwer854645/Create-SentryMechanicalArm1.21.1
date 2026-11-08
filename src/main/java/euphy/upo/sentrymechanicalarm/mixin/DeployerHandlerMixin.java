@@ -1,7 +1,6 @@
 package euphy.upo.sentrymechanicalarm.mixin;
 
 import com.simibubi.create.AllBlocks;
-import com.simibubi.create.AllItems;
 import com.simibubi.create.content.kinetics.belt.behaviour.TransportedItemStackHandlerBehaviour;
 import com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack;
 import com.simibubi.create.content.kinetics.deployer.DeployerFakePlayer;
@@ -56,11 +55,6 @@ public class DeployerHandlerMixin {
                 if (foundValidTarget.get()) return TransportedItemStackHandlerBehaviour.TransportedResult.doNothing();
 
                 ItemStack stack = transported.stack;
-
-                if (euphy.upo.sentrymechanicalarm.SMAServerConfig.ENABLE_AMMO_CRAFTING.get()
-                        && stack.getItem() == AllItems.COPPER_SHEET.get()) {
-                    foundValidTarget.set(true);
-                }
 
                 if (!stack.isEmpty() && stack.getItem() instanceof IAmmoBox box) {
                     CompoundTag tag = ItemNBTHelper.getTag(stack);
@@ -117,36 +111,6 @@ public class DeployerHandlerMixin {
             if (processed.get()) return TransportedItemStackHandlerBehaviour.TransportedResult.doNothing();
 
             ItemStack stackOnBelt = transported.stack;
-
-            if (euphy.upo.sentrymechanicalarm.SMAServerConfig.ENABLE_AMMO_CRAFTING.get()
-                    && stackOnBelt.getItem() == AllItems.COPPER_SHEET.get()) {
-                ResourceLocation ammoId = ammoItem.getAmmoId(handStack);
-                if (ammoId != null) {
-                    int copperCount = stackOnBelt.getCount();
-                    int processCount = Math.min(copperCount, handStack.getCount());
-                    if (processCount == 0) {
-                        return TransportedItemStackHandlerBehaviour.TransportedResult.doNothing();
-                    }
-
-                    ItemStack unfinished = new ItemStack(euphy.upo.sentrymechanicalarm.registry.SentryRegistry.UNFINISHED_AMMO.get());
-                    CompoundTag tag = new CompoundTag();
-                    tag.putString("AmmoId", ammoId.toString());
-                    tag.putInt("CopperSheets", 0);
-                    tag.putBoolean("GunpowderAdded", false);
-                    ItemNBTHelper.setTag(unfinished, tag);
-                    unfinished.setCount(processCount);
-                    handStack.shrink(processCount);
-
-                    TransportedItemStack newTransported = transported.copy();
-                    newTransported.stack = unfinished;
-
-                    processed.set(true);
-                    if (processCount == copperCount) return TransportedItemStackHandlerBehaviour.TransportedResult.convertTo(newTransported);
-                    TransportedItemStack remainder = transported.copy();
-                    remainder.stack = stackOnBelt.copyWithCount(copperCount - processCount);
-                    return TransportedItemStackHandlerBehaviour.TransportedResult.convertTo(java.util.List.of(newTransported, remainder));
-                }
-            }
 
             if (stackOnBelt.getItem() instanceof IAmmoBox) {
                 ItemStack newBoxStack = stackOnBelt.copy();

@@ -19,7 +19,7 @@ import java.util.*;
 /** One casing always becomes exactly one round. No heuristic metal refunds or category fallbacks. */
 public final class ReloadingRecipes {
     private static final Set<Item> BASIC=Set.of(Items.COPPER_INGOT,Items.IRON_INGOT,Items.GOLD_INGOT,Items.IRON_NUGGET,Items.GOLD_NUGGET,Items.GUNPOWDER,Items.PAPER);
-    public static boolean enabled(){return SentryRegistry.EMPTY_CASING.isBound()&&SentryRegistry.RELOADING_CASING.isBound()&&SMAServerConfig.ENABLE_AMMO_CRAFTING.get()&&SMAServerConfig.ENABLE_DYNAMIC_RECIPES.get()&&SMAServerConfig.ENABLE_RELOADING.get();}
+    public static boolean enabled(){return SentryRegistry.EMPTY_CASING.isBound()&&SentryRegistry.RELOADING_CASING.isBound()&&SMAServerConfig.ENABLE_RELOADING.get();}
     public static ResourceLocation id(ResourceLocation ammo){return ResourceLocation.fromNamespaceAndPath(SentryMechanicalArm.MODID,"casing_reloading/"+ammo.getNamespace()+"/"+ammo.getPath());}
     public static Optional<RecipeHolder<?>> find(RecipeManager manager,ResourceLocation ammo){String prefix=id(ammo).getPath()+"/v_";return manager.getRecipes().stream().filter(h->h.id().getNamespace().equals(SentryMechanicalArm.MODID)&&h.id().getPath().startsWith(prefix)).findFirst();}
     private static JsonElement canonical(JsonElement value){
@@ -67,6 +67,7 @@ public final class ReloadingRecipes {
                 for(var ingredient:plan.steps())builder.addStep(DeployerApplicationRecipe::new,rb->rb.require(ingredient));
                 builder.addStep(PressingRecipe::new,rb->rb);
                 var built=builder.build();
+                ((euphy.upo.sentrymechanicalarm.mixin.SequencedAssemblyRecipeAccessor)(Object)built.value()).sentry$setTransition(new com.simibubi.create.content.processing.recipe.ProcessingOutput(SentryRegistry.RELOADING_CASING.get(),1,net.minecraft.core.component.DataComponentPatch.builder().set(euphy.upo.sentrymechanicalarm.registry.ModDataComponents.CASING_AMMO.get(),ammo).build(),1));
                 // Programmatic builders keep the transition item as step-zero input. Accept
                 // the spent case for the first step too; the outer ingredient still checks AmmoId.
                 built.value().getSequence().getFirst().getRecipe().getIngredients().set(0,Ingredient.of(SentryRegistry.EMPTY_CASING.get(),SentryRegistry.RELOADING_CASING.get()));

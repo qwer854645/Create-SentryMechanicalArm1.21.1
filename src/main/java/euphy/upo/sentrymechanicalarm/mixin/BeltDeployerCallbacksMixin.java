@@ -1,7 +1,5 @@
 package euphy.upo.sentrymechanicalarm.mixin;
 
-import com.simibubi.create.AllDataComponents;
-import com.simibubi.create.AllItems;
 import com.simibubi.create.content.kinetics.belt.behaviour.BeltProcessingBehaviour;
 import com.simibubi.create.content.kinetics.belt.behaviour.TransportedItemStackHandlerBehaviour;
 import com.simibubi.create.content.kinetics.belt.behaviour.TransportedItemStackHandlerBehaviour.TransportedResult;
@@ -10,13 +8,10 @@ import com.simibubi.create.content.kinetics.deployer.BeltDeployerCallbacks;
 import com.simibubi.create.content.kinetics.deployer.DeployerBlockEntity;
 import com.tacz.guns.api.item.IAmmo;
 import com.tacz.guns.api.item.IAmmoBox;
-import euphy.upo.sentrymechanicalarm.content.UnfinishedAmmoItem;
-import euphy.upo.sentrymechanicalarm.registry.SentryRegistry;
 import euphy.upo.sentrymechanicalarm.util.ItemNBTHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -53,19 +48,6 @@ public class BeltDeployerCallbacksMixin {
         ItemStack beltStack = transported.stack;
         if (beltStack.isEmpty()) return false;
 
-        boolean isCopper = handStack.getItem() == AllItems.COPPER_SHEET.get();
-        boolean isGunpowder = handStack.getItem() == Items.GUNPOWDER;
-
-        if (beltStack.getItem() == SentryRegistry.UNFINISHED_AMMO.get()) {
-            if (!euphy.upo.sentrymechanicalarm.SMAServerConfig.ENABLE_AMMO_CRAFTING.get()) return false;
-            if (beltStack.has(AllDataComponents.SEQUENCED_ASSEMBLY)) return false;
-
-            if (isCopper && UnfinishedAmmoItem.getCopperSheets(beltStack) >= UnfinishedAmmoItem.MAX_COPPER_SHEETS) return false;
-            if (isGunpowder && UnfinishedAmmoItem.hasGunpowder(beltStack)) return false;
-
-            if (isCopper || isGunpowder) return true;
-        }
-
         if (IAmmo.getIAmmoOrNull(handStack) != null && beltStack.getItem() instanceof IAmmoBox) {
             return true;
         }
@@ -81,21 +63,6 @@ public class BeltDeployerCallbacksMixin {
 
         ItemStack beltStack = transported.stack;
         long gameTime = deployer.getLevel().getGameTime();
-
-        if (handStack.is(AllItems.COPPER_SHEET.get()) || handStack.is(Items.GUNPOWDER)) {
-            if (!euphy.upo.sentrymechanicalarm.SMAServerConfig.ENABLE_AMMO_CRAFTING.get()) return BeltProcessingBehaviour.ProcessingResult.PASS;
-            var result = euphy.upo.sentrymechanicalarm.recipe.LegacyAmmoProcessing.apply(beltStack, handStack, gameTime);
-            if (result == null) return BeltProcessingBehaviour.ProcessingResult.HOLD;
-            TransportedItemStack output = transported.copy();
-            output.stack = result.processed();
-            if (result.remainder().isEmpty()) handler.handleProcessingOnItem(transported, TransportedResult.convertTo(output));
-            else {
-                TransportedItemStack remainder = transported.copy();
-                remainder.stack = result.remainder();
-                handler.handleProcessingOnItem(transported, TransportedResult.convertToAndLeaveHeld(java.util.List.of(output), remainder));
-            }
-            return BeltProcessingBehaviour.ProcessingResult.HOLD;
-        }
 
         IAmmo heldAmmo = IAmmo.getIAmmoOrNull(handStack);
         if (heldAmmo != null && beltStack.getItem() instanceof IAmmoBox) {

@@ -50,7 +50,6 @@
   "item.sentrymechanicalarm.fire_control_clipboard.tooltip.behaviour2": "Sentry Mechanical Arms controlled by this Fire Controller will only attack entities on the list.",
   "item.sentrymechanicalarm.fire_control_clipboard": "Cross-border Pursuit Permit",
   "item.sentrymechanicalarm.apple_pie": "Laterano Apple Pie",
-  "item.sentrymechanicalarm.unfinished_ammo": "Unfinished Ammo",
   "message.sentrymechanicalarm.distance_too_far": "Distance too far! Max 6 blocks.",
   "overlay.sentrymechanicalarm.right_click_connect": "Right-Click to Connect",
   "overlay.sentrymechanicalarm.invalid_target_type": "Invalid Target Type",
@@ -80,14 +79,6 @@
   "sentrymechanicalarm.ponder.sentry_arm_supply.text_4": "Mechanical Arms will automatically extract empty Ammo Boxes.",
   "sentrymechanicalarm.ponder.sentry_arm_supply.text_5": "A Deployer holding ammo can reload the Ammo Box beneath it.",
   "sentrymechanicalarm.ponder.sentry_arm_supply.text_6": "Thus, the Sentry Mechanical Arm receives a ceaseless stream of firepower.",
-  "sentrymechanicalarm.ponder.sentry_arm_ammo.header": "Ammo Production",
-  "sentrymechanicalarm.ponder.sentry_arm_ammo.text_1": "To produce ammo, you first need to obtain an Ammo Template.",
-  "sentrymechanicalarm.ponder.sentry_arm_ammo.text_2": "Place a Copper Sheet on a Depot and the ammo on a Deployer...",
-  "sentrymechanicalarm.ponder.sentry_arm_ammo.text_3": "This creates the corresponding Ammo Template.",
-  "sentrymechanicalarm.ponder.sentry_arm_ammo.text_4": "You need a Mechanical Saw to process the raw materials.",
-  "sentrymechanicalarm.ponder.sentry_arm_ammo.text_5": "Place the Ammo Template in a List Filter, check 'Respect Data Attributes', and insert it into the Saw's filter slot.",
-  "sentrymechanicalarm.ponder.sentry_arm_ammo.text_6": "Subsequent Copper Sheets will be processed into this type of Ammo Template.",
-  "sentrymechanicalarm.ponder.sentry_arm_ammo.text_7": "Proceed with Sequenced Assembly...",
   "sentrymechanicalarm.ponder.fire_control.header": "Fire Control Console",
   "sentrymechanicalarm.ponder.fire_control.text_1": "By default, the Sentry Mechanical Arm only attacks hostile mobs.",
   "sentrymechanicalarm.ponder.fire_control.text_2": "Using the Fire Control Console, you can specify specific targets.",
@@ -130,5 +121,7 @@
   "sentry.supply.depot_mounted": "Mounted depot supplies ammunition automatically; disassemble to open its native menu.",
   "item.sentrymechanicalarm.empty_casing": "Casing",
   "item.sentrymechanicalarm.empty_casing.named": "%s Casing",
-  "item.sentrymechanicalarm.empty_casing.description": "Recovered casing. Reloading recipes are not yet available."
+  "item.sentrymechanicalarm.empty_casing.description": "Recovered casing for reloading.",
+  "item.sentrymechanicalarm.reloading_casing.description": "Partially reloaded casing. Craft alone to recover the casing without refunding materials.",
+  "item.sentrymechanicalarm.casing.ammo_id": "Ammo ID: %s"
 }

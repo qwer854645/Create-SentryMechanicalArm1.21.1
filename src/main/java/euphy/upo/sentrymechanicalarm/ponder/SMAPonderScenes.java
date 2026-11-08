@@ -13,7 +13,6 @@ public class SMAPonderScenes {
         helper.forComponents(SentryRegistry.SENTRY_ARM_BLOCK.getId())
                 .addStoryBoard("introduce", SentryMechanicalArmScene::introducing, AllCreatePonderTags.KINETIC_APPLIANCES)
                 .addStoryBoard("supply", SentryMechanicalArmScene::supplying, AllCreatePonderTags.KINETIC_APPLIANCES)
-                .addStoryBoard("ammo", SentryMechanicalArmScene::ammo, AllCreatePonderTags.KINETIC_APPLIANCES)
                 .addStoryBoard("movement", SentryMechanicalArmScene::movement, AllCreatePonderTags.KINETIC_APPLIANCES);
 
         helper.forComponents(SentryRegistry.BLAZE_FIRE_CONTROL.getId())
