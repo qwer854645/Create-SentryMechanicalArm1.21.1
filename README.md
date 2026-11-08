@@ -1,46 +1,107 @@
 # Create: Sentry Mechanical Arm
 
-Create: Sentry Mechanical Arm 的非官方 Minecraft 1.21.1 NeoForge 修复分支。基于 [pihoue 的 1.21.1 移植版](https://github.com/pihoue/Create-SentryMechanicalArm1.21.1) 继续开发。让哨戒动力臂装备 TaCZ 枪械自动防御，并将弹药制造、补给和弹壳回收接入 Create 物流。
+Equip mechanical arms with TaCZ firearms and connect automated defense, ammunition production, and spent casing recovery to Create logistics.
 
-当前版本：**1.4.0-alpha.41**，建议作为 Alpha 测试版使用。复杂枪包、多人同步和长期运行仍存在兼容边界。
+This is an unofficial repair and extension of [pihoue's Minecraft 1.21.1 port](https://github.com/pihoue/Create-SentryMechanicalArm1.21.1). It builds on that port rather than porting the original 1.20.1 mod again.
 
-## 运行环境
+**Current version: 1.4.0-alpha.41 · Minecraft 1.21.1 · NeoForge**
 
-- Minecraft 1.21.1、Java 21、NeoForge 21.1.228 或以上。
-- Create **6.0.10**、官方 TaCZ **1.2.0**，当前依赖声明固定这两个版本。
-- JEI 可选；Create JEI Compat 1.0.3 仅放客户端，不能放独立服务端。
-- Sable／Create: Aeronautics 可选；Sable Companion 1.6.0 已内嵌。
+## Features
 
-客户端与服务端均需安装本模组，使用相同版本。详情见 [安装与升级](docs/RELEASE_INSTALL.md)。
+### Automated defense and supply
 
-## 功能
+- Sentry arms use TaCZ firearms to acquire, aim at, and engage targets. They require rotational power.
+- Supply ammunition through ammo boxes, adjacent inventories, and TaCZ ammo depots.
+- Coordinate sentries with the fire control block, target lists, and sentry scope.
+- Supports dye colors and operation on Create contraptions, trains, and Sable structures.
 
-- 哨戒动力臂自动索敌，支持 TaCZ 枪械模式、弹药盒与弹药库补给。
-- 火控台、目标名单及哨戒瞄准镜提供协同攻击。
-- 支持 Create 移动结构、列车，以及 Sable 结构中的射击与同结构收集。
-- 按枪包数据识别弹壳与口径，使用模具制壳、流态火药装药和单发再装填。
-- 动力臂将射后产物优先送入相邻或同结构收集器，玩家默认存入背包。
-- 数据包可覆盖制造、抛壳类型、数量及概率，自定义优先于自动推导。
+### Casings, manufacturing, and reloading
 
-持枪对准动力臂，使用 TaCZ 交互键（默认 O）装枪。完整操作、配置及边界见 [模组使用说明](docs/MOD_GUIDE.md)。
+- Identify recoverable ammunition from loaded gunpack data without registering a separate set of casing items for every pack.
+- Casings retain their ammunition identity, use cropped ammunition textures by default, and appear in a dedicated creative tab.
+- Make new casings with caliber molds, then reload individual rounds using fluid propellant, solid materials, and pressing.
+- Automatic recipes derive material costs from the original ammunition recipes. Recovered casings save the materials needed to make a new case.
+- JEI distinguishes casing, mold, and unfinished ammunition variants for recipe lookup.
 
-## 文档
+### Casing collection
 
-- [制造成本规则](docs/COST_ALLOCATION.md)
-- [自定义制造与抛壳](docs/CUSTOM_MANUFACTURING.md)
-- [数据包示例](examples/manufacturing-rules)
-- [构建与测试入口](docs/BUILDING.md)
+- **Sentries:** send shot byproducts to an adjacent Casing Collector, or one on the same moving structure. If no collector is available or storage is full, the remainder follows the ground-drop rules.
+- **Players:** shot byproducts enter the inventory by default. Overflow drops using vanilla `/give` behavior. Direct ground drops can be enabled through configuration.
+- The collector has 27 slots, supports hoppers and Create logistics, and can also receive custom shot byproducts defined by data packs.
 
-## 构建
+### Data pack customization
 
-使用 Java 21：
+Override manufacturing materials, fluid propellant amounts, new casing yields, and the type, quantity, and chance of shot byproducts.
+
+**Explicit custom rules take priority over automatic derivation.** New casing manufacturing, reloading, and casing drops can each be disabled for individual ammunition types without editing the gunpack itself.
+
+## Requirements
+
+Required:
+
+- Minecraft **1.21.1**
+- Java **21**
+- NeoForge **21.1.228 or newer**
+- Create **6.0.10**
+- Official TaCZ **1.2.0**
+
+The current dependency declarations require these exact Create and TaCZ versions.
+
+Optional:
+
+- **JEI:** recipe display and lookup.
+- **Create JEI Compat:** pagination for longer sequenced assembly recipes. **Version 1.0.3 is client-only; do not install it on a dedicated server.**
+- **Sable / Create: Aeronautics:** physics structure gameplay. The tested environment used Sable 2.0.3 and Aeronautics 1.3.2.
+
+Sable Companion 1.6.0 is bundled; no separate installation of that library is needed. Stationary sentries do not require Sable or Aeronautics.
+
+## Installation and quick start
+
+1. Install the required dependencies and place this mod's JAR in `mods`.
+2. Install the same version on both client and server. Remove the old JAR when updating.
+3. Supply rotational power to a sentry arm.
+4. Hold a firearm, aim at the arm, and use the **TaCZ interaction key (O by default)** to equip it. Supply matching ammunition.
+5. Open the relevant items' Ponder scenes for operation and production guidance. Use the current JEI recipes for exact materials and quantities.
+
+Create, TaCZ, Aeronautics, and test gunpacks are not included. See the [installation guide](docs/RELEASE_INSTALL.md) and [full user guide](docs/MOD_GUIDE.md) for details. The detailed guides are currently in Chinese.
+
+## Configuration and compatibility
+
+Configuration covers casing registration, shot byproducts by shooter type, player inventory collection, automatic casing manufacturing, reloading, and material costs.
+
+Startup configuration is stored in `config/sentrymechanicalarm-startup.toml`. World configuration is stored in the world's `serverconfig/sentrymechanicalarm-server.toml`. Disabling registration unregisters the related items, requires a restart, and must match on both sides. Existing related items cannot be retained while their registration is disabled.
+
+Gunpack support uses generic rules. Energy ammunition, caseless ammunition, and ammunition with custom scripts may not be suitable for recovery or automatic manufacturing. Use explicit data pack rules when a recipe cannot be reliably derived. Compatibility with every gunpack is not guaranteed.
+
+**This is an Alpha release.** Validation with two independent clients, extended sessions, and complex multi-ship scenarios is still incomplete. VS2 has not been tested and is not listed as verified support. Installing other casing-drop mods may produce duplicate byproducts.
+
+## Documentation
+
+The detailed documentation is currently in Chinese:
+
+- [User guide and configuration](docs/MOD_GUIDE.md)
+- [Installation and upgrading](docs/RELEASE_INSTALL.md)
+- [Manufacturing cost rules](docs/COST_ALLOCATION.md)
+- [Custom manufacturing and shot byproducts](docs/CUSTOM_MANUFACTURING.md)
+- [Example data pack](examples/manufacturing-rules)
+- [Building and test entry points](docs/BUILDING.md)
+
+## Building from source
+
+Use Java 21 and run from the repository root:
 
 ```sh
 ./gradlew build
 ```
 
-输出位于 build/libs/。源码仓库保留必要的模型、贴图、思索结构、测试源码和构建工具；运行目录、依赖缓存、发布产物及开发记录不纳入版本控制。
+On Windows, use `gradlew.bat build`. Output is written to `build/libs/`. Normal builds do not include the integration test code.
 
-## 许可
+## AI assistance
 
-MIT，详见 [LICENSE](LICENSE)。
+Parts of this fork's code, textures, and documentation were created with AI assistance. The maintainer guides the design and participates in testing.
+
+## Credits and license
+
+This fork inherits the upstream port's code and original content, with additional fixes and features. Thanks to the original mod author, the port author, and the Create and TaCZ developers.
+
+Licensed under the **MIT License**, retaining the upstream copyright notice. See [LICENSE](LICENSE). Third-party mods and gunpacks are not distributed with this project.
