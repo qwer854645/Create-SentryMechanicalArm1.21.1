@@ -22,9 +22,9 @@ final class CountedReloadingSmoke {
     static final BlockPos POS=DEPOT.offset(0,0,4);
     static DepotBlockEntity depot;static DeployerBlockEntity machine;static ItemStack initial;static int start=-1;static boolean finished;
     static void verify(){
-        test("shotgun sequence has proportional fluid and no fractional iron",()->{
+        test("shotgun sequence has proportional fluid and retained projectile iron",()->{
             var holder=ReloadingRecipes.find(level.getRecipeManager(),SHOT).orElseThrow();var seq=(SequencedAssemblyRecipe)holder.value();
-            check(seq.getSequence().size()==3,"wrong shotgun stages");
+            check(seq.getSequence().size()==4,"wrong shotgun stages");
             check(((FillingRecipe)seq.getSequence().get(0).getRecipe()).getRequiredFluid().amount()==334,"wrong shotgun fluid");
             var copper=seq.getSequence().get(1).getRecipe().getIngredients().get(1);
             check(CountedDeployerIngredient.amount(copper)==4&&copper.getItems()[0].getCount()==4,"copper quantity lost");
@@ -59,8 +59,9 @@ final class CountedReloadingSmoke {
         if(machine!=null){machine.setSpeed(256);if(machine.getPlayer()==null)return;if(start<0){start=ticks;machine.getPlayer().setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(AllItems.COPPER_NUGGET.get(),3));}}
         if(start<0)return;int elapsed=ticks-start;
         if(elapsed==120){test("insufficient metal neither consumes stock nor advances WIP",()->{check(ItemStack.matches(depot.getHeldItem(),initial),"underpaid WIP advanced");check(machine.getPlayer().getMainHandItem().getCount()==3,"partial stock consumed");});machine.getPlayer().setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(AllItems.COPPER_NUGGET.get(),7));}
-        if(elapsed==240){test("counted metal consumes four nuggets exactly",()->{check(machine.getPlayer().getMainHandItem().getCount()==3,"wrong metal debit");check(depot.getHeldItem().get(AllDataComponents.SEQUENCED_ASSEMBLY).step()==2,"wrong progress");});machine=null;level.setBlock(POS.above(2),AllBlocks.MECHANICAL_PRESS.get().defaultBlockState(),3);}
-        if(elapsed>=241&&elapsed<=420&&level.getBlockEntity(POS.above(2)) instanceof MechanicalPressBlockEntity press)press.setSpeed(256);
-        if(elapsed==420){test("fluid shotgun sequence outputs one correct round",()->{var output=depot.getHeldItem();var api=IAmmo.getIAmmoOrNull(output);check(api!=null&&SHOT.equals(api.getAmmoId(output))&&output.getCount()==1,"wrong output");});finished=true;}
+        if(elapsed==240){test("counted metal consumes four nuggets exactly",()->{check(machine.getPlayer().getMainHandItem().getCount()==3,"wrong metal debit");check(depot.getHeldItem().get(AllDataComponents.SEQUENCED_ASSEMBLY).step()==2,"wrong progress");});machine.getPlayer().setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.IRON_NUGGET,1));}
+        if(elapsed==360){test("projectile iron retains its native one-nugget charge",()->check(machine.getPlayer().getMainHandItem().isEmpty()&&depot.getHeldItem().get(AllDataComponents.SEQUENCED_ASSEMBLY).step()==3,"wrong projectile charge"));machine=null;level.setBlock(POS.above(2),AllBlocks.MECHANICAL_PRESS.get().defaultBlockState(),3);}
+        if(elapsed>=361&&elapsed<=540&&level.getBlockEntity(POS.above(2)) instanceof MechanicalPressBlockEntity press)press.setSpeed(256);
+        if(elapsed==540){test("fluid shotgun sequence outputs one correct round",()->{var output=depot.getHeldItem();var api=IAmmo.getIAmmoOrNull(output);check(api!=null&&SHOT.equals(api.getAmmoId(output))&&output.getCount()==1,"wrong output");});finished=true;}
     }
 }

@@ -14,7 +14,7 @@ import net.minecraft.world.item.crafting.*;
 import java.math.*;
 import java.util.*;
 
-/** Shell metal is independent of payload analysis; generic copper fallback is an explicit policy. */
+/** New cases pay the remaining native main-metal budget; recovered cases avoid that cost. */
 public final class CasingFormingRecipes {
     public static final String PREFIX = "casing_forming/";
     public static boolean enabled() { return SentryRegistry.CASING_MOLD.isBound() && SMAServerConfig.ENABLE_CASING_FORMING.get(); }
@@ -27,35 +27,44 @@ public final class CasingFormingRecipes {
     }
     public record Plan(Item metal, int yield) {}
     public static Optional<Plan> plan(GunSmithTableRecipe original) {
-        var steps = ReloadingCosts.derive(original, SMAServerConfig.RELOADING_METAL_FACTOR.get());
-        if (original.getOutput().getCount() <= 0) return Optional.empty();
-        var nativeMetals = new LinkedHashMap<Item, BigDecimal>();
-        for (var material : original.getInputs()) {
-            var candidates = material.getIngredient().getItems();
-            if (material.getCount() <= 0 || candidates.length == 0 || !material.getIngredient().isSimple()) continue;
-            Item input = candidates[0].getItem();
-            if (Arrays.stream(candidates).anyMatch(s -> s.getItem() != input || !s.getComponentsPatch().isEmpty() || s.hasCraftingRemainingItem())) continue;
-            Item nugget = input == Items.COPPER_INGOT ? AllItems.COPPER_NUGGET.get()
-                    : input == Items.IRON_INGOT ? Items.IRON_NUGGET : input == Items.GOLD_INGOT ? Items.GOLD_NUGGET : input;
-            if (nugget != AllItems.COPPER_NUGGET.get() && nugget != Items.IRON_NUGGET && nugget != Items.GOLD_NUGGET) continue;
-            var units = BigDecimal.valueOf(material.getCount()).multiply(BigDecimal.valueOf(input == nugget ? 1 : 9));
-            nativeMetals.merge(nugget, units, BigDecimal::add);
+        var automatic=ReloadingCosts.derive(original,SMAServerConfig.RELOADING_METAL_FACTOR.get());
+        return plan(original,automatic.map(CasingFormingRecipes::solidMetalCosts).orElse(Map.of()));
+    }
+    private static Map<Item,BigDecimal> solidMetalCosts(List<Ingredient> ingredients){
+        var totals=new HashMap<Item,BigDecimal>();
+        for(var ingredient:ingredients){
+            var candidates=ingredient.getItems();if(candidates.length==0)return Map.of();
+            Item metal=AmmoMetalCosts.canonical(candidates[0].getItem());int units=AmmoMetalCosts.units(candidates[0].getItem());
+            if(Arrays.stream(candidates).anyMatch(s->AmmoMetalCosts.canonical(s.getItem())!=metal||AmmoMetalCosts.units(s.getItem())!=units))return Map.of();
+            if(AmmoMetalCosts.isMetal(metal))totals.merge(metal,BigDecimal.valueOf((long)CountedDeployerIngredient.amount(ingredient)*units),BigDecimal::add);
         }
-        var rounds = BigDecimal.valueOf(original.getOutput().getCount());
-        for (Item metal : List.of(AllItems.COPPER_NUGGET.get(), Items.IRON_NUGGET, Items.GOLD_NUGGET)) {
-            var nativeUnits = nativeMetals.get(metal); if (nativeUnits == null) continue;
-            var shellShare = nativeUnits.multiply(BigDecimal.ONE.subtract(BigDecimal.valueOf(SMAServerConfig.RELOADING_METAL_FACTOR.get())));
-            var budget = shellShare;
-            if (steps.isPresent()) {
-                long direct = steps.get().stream().filter(i -> i.test(new ItemStack(metal))).count();
-                var reloading = BigDecimal.valueOf(direct);
-                budget = budget.min(nativeUnits.subtract(reloading.multiply(rounds)));
-            }
-            if (budget.signum() <= 0) continue;
-            var count = rounds.divide(budget, 0, RoundingMode.CEILING).max(BigDecimal.ONE);
-            if (count.compareTo(BigDecimal.valueOf(64)) <= 0) return Optional.of(new Plan(metal, count.intValueExact()));
+        return Map.copyOf(totals);
+    }
+    private static Optional<Plan> plan(GunSmithTableRecipe original,Map<Item,BigDecimal> reloading){
+        if(original.getOutput().getCount()<1)return Optional.empty();
+        var nativeMetals=AmmoMetalCosts.nativeTotals(original);var primary=AmmoMetalCosts.primary(nativeMetals);
+        if(primary.isEmpty())return Optional.empty();
+        Item metal=primary.get();var rounds=BigDecimal.valueOf(original.getOutput().getCount());
+        // All main-metal cost omitted by rounding or discount belongs to a NEW case.
+        var budget=nativeMetals.get(metal).subtract(reloading.getOrDefault(metal,BigDecimal.ZERO).multiply(rounds));
+        // Explicitly expensive reloads cannot make manufacture free; conservatively price the whole native metal share.
+        if(budget.signum()<=0)budget=nativeMetals.get(metal);
+        Plan best=null;int bestUnits=0;
+        for(var denomination:AmmoMetalCosts.denominations(metal)){
+            var yield=BigDecimal.valueOf(denomination.units()).multiply(rounds).divide(budget,0,RoundingMode.FLOOR).min(BigDecimal.valueOf(64));
+            if(yield.signum()<=0)continue;
+            int count=yield.intValueExact();
+            // Smallest overpayment; ties keep the smaller denomination. floor guarantees no underpricing.
+            if(best==null||(long)denomination.units()*best.yield()<(long)bestUnits*count){best=new Plan(denomination.item(),count);bestUnits=denomination.units();}
         }
-        return Optional.empty();
+        return Optional.ofNullable(best);
+    }
+    private static Optional<Map<Item,BigDecimal>> actualReloading(RecipeManager manager,ResourceLocation ammo){
+        var holder=ReloadingRecipes.find(manager,ammo);if(holder.isEmpty())return Optional.empty();
+        var sequence=(com.simibubi.create.content.processing.sequenced.SequencedAssemblyRecipe)holder.get().value();
+        var materials=sequence.getSequence().stream().filter(step->step.getRecipe() instanceof DeployerApplicationRecipe)
+                .map(step->step.getRecipe().getIngredients().get(1)).toList();
+        return Optional.of(solidMetalCosts(materials));
     }
     public static List<RecipeHolder<?>> build(RecipeManager manager) {
         if (!enabled()) return List.of();
@@ -72,14 +81,15 @@ public final class CasingFormingRecipes {
         int nativeCount = 0, fallbackCount = 0;
         for (var ammo : SentryCasingProfiles.eligible().stream().sorted().toList()) {
             var originals = sources.getOrDefault(ammo, List.of());
-            // Full automatic reloading still selects its first understood recipe. Other
-            // casing types may use a metal-only budget without understanding their payload.
-            var understood = originals.stream().filter(r -> ReloadingCosts.derive(r, SMAServerConfig.RELOADING_METAL_FACTOR.get()).isPresent()).findFirst();
-            Optional<Plan> plan = understood.isPresent() ? plan(understood.get()) : originals.stream().map(CasingFormingRecipes::plan).flatMap(Optional::stream).findFirst();
-            if (plan.isPresent()) nativeCount++;
-            else if (SMAServerConfig.GENERIC_CASING_FORMING.get()) {
-                plan = Optional.of(new Plan(AllItems.COPPER_NUGGET.get(), SMAServerConfig.DEFAULT_CASING_YIELD.get())); fallbackCount++;
-            } else continue;
+            // Use the same automatic source, and deduct the actual active recipe rather than a theoretical discount.
+            var understood=originals.stream().filter(r->ReloadingCosts.derive(r,SMAServerConfig.RELOADING_METAL_FACTOR.get()).isPresent()).findFirst();
+            var source=understood.isPresent()?understood:originals.stream().filter(r->!AmmoMetalCosts.nativeTotals(r).isEmpty()).findFirst();
+            var actual=actualReloading(manager,ammo);
+            Optional<Plan> plan=source.flatMap(original->actual.isPresent()?plan(original,actual.get()):plan(original));
+            if(plan.isPresent())nativeCount++;
+            else if(source.isEmpty()&&SMAServerConfig.GENERIC_CASING_FORMING.get()){
+                plan=Optional.of(new Plan(AllItems.COPPER_NUGGET.get(),SMAServerConfig.DEFAULT_CASING_YIELD.get()));fallbackCount++;
+            }else continue;
             var p = plan.get();
             var recipe = new ItemApplicationRecipe.Builder<>(DeployerApplicationRecipe::new, id(ammo))
                     .require(p.metal()).require(new MoldIngredient(ammo)).output(EmptyCasingItem.create(ammo, p.yield())).toolNotConsumed().build();

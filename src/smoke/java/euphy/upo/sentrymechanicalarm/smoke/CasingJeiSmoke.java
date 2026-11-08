@@ -76,11 +76,11 @@ public final class CasingJeiSmoke {
         check(visibleRows==1,"mold selector search failed");
         euphy.upo.sentrymechanicalarm.SentryMechanicalArm.LOGGER.info("MOLD_CLIENT PASS unique variants, case forming JEI recipe, model, {} synchronized choices and selector search",euphy.upo.sentrymechanicalarm.recipe.CasingFormingRecipes.choices(mc.level.getRecipeManager()).size());
         var shot=(SequencedAssemblyRecipe)ReloadingRecipes.find(mc.level.getRecipeManager(),ResourceLocation.parse("tacz:12g")).orElseThrow().value();
-        check(shot.getSequence().size()==3,"client retained the long shotgun sequence");
+        check(shot.getSequence().size()==4,"client retained the long shotgun sequence");
         var charge=(com.simibubi.create.content.fluids.transfer.FillingRecipe)shot.getSequence().getFirst().getRecipe();
         check(charge.getRequiredFluid().amount()==334,"client/JEI lost proportional fluid quantity");
         check(new java.util.HashSet<>(euphy.upo.sentrymechanicalarm.recipe.CasingFormingRecipes.choices(mc.level.getRecipeManager())).equals(euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.clientSnapshot()),"client mold list excludes eligible cases");
-        euphy.upo.sentrymechanicalarm.SentryMechanicalArm.LOGGER.info("FLUID_CLIENT PASS primerless shotgun three stages, 334 mB full charge and all eligible molds");
+        euphy.upo.sentrymechanicalarm.SentryMechanicalArm.LOGGER.info("FLUID_CLIENT PASS primerless shotgun four stages, 334 mB full charge and all eligible molds");
         var normal=new ArrayList<net.minecraft.network.chat.Component>();a.getItem().appendHoverText(a,Item.TooltipContext.of(mc.level),normal,TooltipFlag.NORMAL);
         check(normal.stream().noneMatch(c->c.getString().contains("tacz:9mm")||c.getString().contains("后续阶段")),"debug ID or stale description in ordinary tooltip");
         var pack=com.tacz.guns.client.resource.ClientAssetsManager.INSTANCE.getPackInfo(ResourceLocation.parse("tacz:9mm"));check(pack!=null&&normal.stream().anyMatch(c->c.getString().equals(net.minecraft.network.chat.Component.translatable(pack.getName()).getString())&&c.getStyle().isItalic()),"missing TaCZ-style pack source");

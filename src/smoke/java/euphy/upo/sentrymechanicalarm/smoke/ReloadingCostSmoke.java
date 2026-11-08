@@ -46,7 +46,7 @@ final class ReloadingCostSmoke {
             var rifle=ReloadingCosts.deriveFluid(original("tacz:556x45"),.5).orElseThrow();
             check(counts(rifle.materials()).equals(Map.of(AllItems.COPPER_NUGGET.get(),2))&&rifle.propellant()==67,"wrong rifle ratio");
             var shot=ReloadingCosts.deriveFluid(original("tacz:12g"),.5).orElseThrow();
-            check(counts(shot.materials()).equals(Map.of(AllItems.COPPER_NUGGET.get(),4))&&shot.propellant()==334,"fractional iron retained or fluid rounded incorrectly");
+            check(counts(shot.materials()).equals(Map.of(AllItems.COPPER_NUGGET.get(),4,Items.IRON_NUGGET,1))&&shot.propellant()==334,"projectile iron discounted or fluid rounded incorrectly");
         });
         test("equal metal and powder entries merge before rounding", () -> {
             var merged=synthetic(50,material(Items.IRON_INGOT,10),material(Items.GUNPOWDER,2));

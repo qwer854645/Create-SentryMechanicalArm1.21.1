@@ -1,5 +1,7 @@
 # alpha.25：口径模具与新制弹壳
 
+> alpha.33 已更新主金属分摊与制壳投入规格，现行成本见 [COST_ALLOCATION.md](COST_ALLOCATION.md)。
+
 > alpha.30 已删除底火与少量火药，并恢复可转换的旧原生弹药配方；现行说明见 [PRIMERLESS_AND_LEGACY_RECIPES.md](PRIMERLESS_AND_LEGACY_RECIPES.md)。下文为历史记录。
 
 > alpha.29 已改为无水流体与比例装药，取消六档并省略微量金属；现行规则见 [FLUID_PROPELLANT.md](FLUID_PROPELLANT.md)。本文件保留历史说明。

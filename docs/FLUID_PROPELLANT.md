@@ -1,5 +1,7 @@
 # alpha.29：无水流态火药与比例装药
 
+> alpha.33 已更新主金属分摊与制壳投入规格，现行成本见 [COST_ALLOCATION.md](COST_ALLOCATION.md)。
+
 > alpha.30 已删除底火与少量火药，并恢复可转换的旧原生弹药配方；现行说明见 [PRIMERLESS_AND_LEGACY_RECIPES.md](PRIMERLESS_AND_LEGACY_RECIPES.md)。下文为历史记录。
 
 本版把正常生产改为流体装药，取消六档规则，不新增小型弹芯或轻型底火。

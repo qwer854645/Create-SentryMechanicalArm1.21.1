@@ -28,11 +28,11 @@ final class CasingFormingSmoke {
         test("forming budgets include casing metal and direct projectile metal", () -> {
             var nativeRecipe = ReloadingCostSmoke.original("tacz:9mm");
             var plan = CasingFormingRecipes.plan(nativeRecipe).orElseThrow();
-            check(plan.metal() == AllItems.COPPER_NUGGET.get() && plan.yield() == 2, "9mm must fit two shells per nugget");
+            check(plan.metal() == Items.COPPER_INGOT && plan.yield() == 5, "9mm must use one copper ingot for five shells");
             // Independent fixed references: native 9mm 1.8 nuggets/round, 5.56 3 nuggets/round.
-            check(1.0 / plan.yield() <= 1.8, "fresh 9mm exceeds native copper budget");
+            check(9.0 / plan.yield() == 1.8, "fresh 9mm underprices native main metal");
             var rifle = CasingFormingRecipes.plan(ReloadingCostSmoke.original("tacz:556x45")).orElseThrow();
-            check(rifle.yield() == 2 && 1.0 / rifle.yield() + 2 <= 3, "fresh 5.56 exceeds native copper budget");
+            check(rifle.metal() == AllItems.COPPER_NUGGET.get() && rifle.yield() == 1 && 1.0 / rifle.yield() + 2 == 3, "fresh 5.56 exceeds native copper budget");
             check(new java.util.HashSet<>(CasingFormingRecipes.choices(level.getRecipeManager())).equals(euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.eligible()), "eligible cases missing mold recipes");
             var complex=ReloadingCostSmoke.synthetic(10, ReloadingCostSmoke.material(Items.COPPER_INGOT,2),ReloadingCostSmoke.material(Items.DIAMOND,1));
             check(CasingFormingRecipes.plan(complex).isPresent(),"payload material blocked shell-metal extraction");
@@ -52,7 +52,7 @@ final class CasingFormingSmoke {
                 SMAServerConfig.GENERIC_CASING_FORMING.set(true);SMAServerConfig.DEFAULT_CASING_YIELD.set(3);DynamicRecipeManager.rebuild(level.getRecipeManager());
                 var changed=CasingFormingRecipes.find(level.getRecipeManager(),fallback.iterator().next()).orElseThrow().value().getResultItem(level.registryAccess());
                 check(changed.getCount()==3,"fallback yield config ignored");
-                check(CasingFormingRecipes.find(level.getRecipeManager(),AMMO).orElseThrow().value().getResultItem(level.registryAccess()).getCount()==2,"fallback config changed a native budget");
+                check(CasingFormingRecipes.find(level.getRecipeManager(),AMMO).orElseThrow().value().getResultItem(level.registryAccess()).getCount()==5,"fallback config changed a native budget");
             }finally{SMAServerConfig.RESTORE_LEGACY_AMMO_RECIPES.set(restore);SMAServerConfig.LEGACY_RELOADING_SOURCES.set(legacy);SMAServerConfig.GENERIC_CASING_FORMING.set(previous);SMAServerConfig.DEFAULT_CASING_YIELD.set(yield);DynamicRecipeManager.rebuild(level.getRecipeManager());}
         });
         test("mold identity recipe codecs and reusable tool flag", () -> {
@@ -60,7 +60,7 @@ final class CasingFormingSmoke {
             var recipe = (DeployerApplicationRecipe) holder.value();
             check(recipe.shouldKeepHeldItem(), "mold is consumed");
             var inv = new net.neoforged.neoforge.items.ItemStackHandler(2);
-            inv.setStackInSlot(0, new ItemStack(AllItems.COPPER_NUGGET.get()));
+            inv.setStackInSlot(0, new ItemStack(Items.COPPER_INGOT));
             inv.setStackInSlot(1, CasingMoldItem.create(AMMO));
             var wrapper = new net.neoforged.neoforge.items.wrapper.RecipeWrapper(inv);
             check(recipe.matches(wrapper, level), "correct mold rejected");
@@ -118,9 +118,9 @@ final class CasingFormingSmoke {
             moldHand.getPlayer().setItemInHand(InteractionHand.MAIN_HAND, CasingMoldItem.create(AMMO)); configured = true;
         }
     }
-    static boolean ready() { return formed != null && formed.getHeldItem().is(SentryRegistry.EMPTY_CASING.get()) && AMMO.equals(EmptyCasingItem.ammoId(formed.getHeldItem())) && formed.getHeldItem().getCount() == 2; }
+    static boolean ready() { return formed != null && formed.getHeldItem().is(SentryRegistry.EMPTY_CASING.get()) && AMMO.equals(EmptyCasingItem.ammoId(formed.getHeldItem())) && formed.getHeldItem().getCount() == 5; }
     static ItemStack take() {
-        test("real mold forms two stack-compatible cases without tool wear", () -> {
+        test("real mold forms five stack-compatible cases without tool wear", () -> {
             check(ready(), "wrong fresh case yield");
             check(ItemStack.isSameItemSameComponents(formed.getHeldItem(), casing(AMMO, 1)), "fresh and recovered cases do not stack");
             check(ItemStack.matches(moldHand.getPlayer().getMainHandItem(), CasingMoldItem.create(AMMO)), "mold consumed or changed");

@@ -29,6 +29,8 @@ public final class DynamicRecipeManager {
         manager.replaceRecipes(combined.values());
         euphy.upo.sentrymechanicalarm.SentryMechanicalArm.LOGGER.info("Restored {} legacy native TaCZ ammo recipes",restored);
         for(var h:ReloadingRecipes.build(manager))if(combined.putIfAbsent(h.id(),h)==null)owned.put(h.id(),h);
+        // Forming prices must see this rebuild's real reloading recipes, including explicit data-pack costs.
+        manager.replaceRecipes(combined.values());
         for(var h:CasingFormingRecipes.build(manager))if(combined.putIfAbsent(h.id(),h)==null)owned.put(h.id(),h);
         manager.replaceRecipes(combined.values());GENERATED.put(manager,owned);
     }

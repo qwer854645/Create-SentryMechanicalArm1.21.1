@@ -14,7 +14,7 @@ public final class ReloadingCosts {
     public record Cost(List<Ingredient> materials, int propellant) {}
     private ReloadingCosts() {}
     private static boolean metal(Item item) {
-        return item == AllItems.COPPER_NUGGET.get() || item == Items.IRON_NUGGET || item == Items.GOLD_NUGGET;
+        return AmmoMetalCosts.isMetal(item);
     }
     /** Direct solid materials, excluding the separate fluid charge. */
     public static Optional<List<Ingredient>> derive(GunSmithTableRecipe recipe, double metalFactor) {
@@ -36,9 +36,8 @@ public final class ReloadingCosts {
                         || !candidate.getComponentsPatch().isEmpty() || candidate.hasCraftingRemainingItem()) return Optional.empty();
             var units = BigDecimal.valueOf(material.getCount());
             if (input == Items.GUNPOWDER) { nativePowder = nativePowder.add(units); continue; }
-            Item output = input == Items.COPPER_INGOT ? AllItems.COPPER_NUGGET.get()
-                    : input == Items.IRON_INGOT ? Items.IRON_NUGGET : input == Items.GOLD_INGOT ? Items.GOLD_NUGGET : input;
-            if (output != input) units = units.multiply(BigDecimal.valueOf(9));
+            Item output = AmmoMetalCosts.canonical(input);
+            units = units.multiply(BigDecimal.valueOf(AmmoMetalCosts.units(input)));
             nativeTotals.merge(output, units, BigDecimal::add);
         }
         if (nativePowder.signum() <= 0) return Optional.empty();
@@ -48,10 +47,11 @@ public final class ReloadingCosts {
         if (powderAmount.compareTo(BigDecimal.valueOf((long) MAX_ASSEMBLY_STEPS * PropellantAmounts.MAX_FILL)) > 0) return Optional.empty();
         int fluid = powderAmount.intValueExact();
         var solids = new ArrayList<Ingredient>();
+        var primary = AmmoMetalCosts.primary(nativeTotals).orElse(null);
         boolean savesMaterial = false;
         for (var entry : nativeTotals.entrySet()) {
             boolean isMetal = metal(entry.getKey());
-            var allocated = isMetal ? entry.getValue().multiply(BigDecimal.valueOf(metalFactor)) : entry.getValue();
+            var allocated = entry.getKey()==primary ? entry.getValue().multiply(BigDecimal.valueOf(metalFactor)) : entry.getValue();
             // Only fractional direct metal is omitted; special payload ingredients are always retained.
             var count = isMetal && allocated.compareTo(BigDecimal.valueOf(rounds)) < 0 ? BigDecimal.ZERO
                     : allocated.divide(BigDecimal.valueOf(rounds), 0, RoundingMode.CEILING);

@@ -28,7 +28,7 @@ public class SMAServerConfig {
         builder.push("reloading");
         ENABLE_RELOADING=builder.comment("Enable casing reloading; requires casing registration. Reload data packs after changing.").define("enabled",true);
         AUTO_RELOADING=builder.comment("Derive single-round metal, proportional fluid propellant and retained solid payload costs from TaCZ material recipes.").define("autoFromTaCZ",true);
-        RELOADING_METAL_FACTOR=builder.comment("Metal share used for automatic reloading costs, after converting ingots to nuggets.", "Default 0.5 is a balance policy, not inferred casing composition. Direct metal below one nugget per round is omitted; other costs round up.", "Only automatic costs change; explicit data-pack costs are used exactly. Reload data packs after changing.").defineInRange("metalCostMultiplier",0.5,0.01,1.0);
+        RELOADING_METAL_FACTOR=builder.comment("Main-metal share used for automatic reloading, after converting ingots and blocks to nuggets.", "Default 0.5 applies only to the case main metal (copper, else iron, else gold). Other projectile metals retain native costs. Direct metal below one nugget per round is omitted; other costs round up.", "Only automatic costs change; explicit data-pack costs are used exactly. Reload data packs after changing.").defineInRange("metalCostMultiplier",0.5,0.01,1.0);
         LEGACY_RELOADING_SOURCES=builder.comment("Read simple legacy TaCZ recipes/ material data from active packs when modern recipes are absent. Does not register native recipes.", "Conditional, NBT, component and complex legacy sources are skipped; modern resources always win. Reload after changing.").define("readLegacyMaterialRecipes",true);
         builder.pop();
 
@@ -37,8 +37,8 @@ public class SMAServerConfig {
         builder.pop();
 
         builder.push("casingManufacturing");
-        ENABLE_CASING_FORMING=builder.comment("Enable mold-based casing manufacture from understood native TaCZ costs. Reload data packs after changing.").define("enabled",true);
-        GENERIC_CASING_FORMING=builder.comment("Allow every eligible physical casing to use the generic copper-nugget forming rule if no native metal budget is available. Does not grant live-ammo reloading recipes.").define("allowGenericCopperFallback",true);
+        ENABLE_CASING_FORMING=builder.comment("Enable mold-based casing manufacture priced from native main metal minus actual reloading metal. Reload data packs after changing.").define("enabled",true);
+        GENERIC_CASING_FORMING=builder.comment("Allow every eligible physical casing to use the generic copper-nugget forming rule only if no native metal source is available, never to bypass an unrepresentable known cost. Does not grant live-ammo reloading recipes.").define("allowGenericCopperFallback",true);
         DEFAULT_CASING_YIELD=builder.comment("Cases per copper nugget for generic fallback only; native-budget yields remain automatic.").defineInRange("fallbackCasesPerCopperNugget",1,1,64);
         builder.pop();
 
