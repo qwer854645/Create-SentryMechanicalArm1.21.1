@@ -14,7 +14,8 @@
     "SequencedAssemblyRecipeMixin",
     "SpyglassZoomMixin",
     "SequencedAssemblyRecipeAccessor",
-    "CountedDeployerMixin"
+    "CountedDeployerMixin",
+    "TaczEntityUtilMixin"
   ],
   "client": [
     "GunDisplayInstanceAccessor",

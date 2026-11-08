@@ -8,10 +8,9 @@ import com.simibubi.create.content.kinetics.deployer.DeployerHandler;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.tacz.guns.api.item.IAmmo;
 import com.tacz.guns.api.item.IAmmoBox;
-import euphy.upo.sentrymechanicalarm.util.ItemNBTHelper;
+import euphy.upo.sentrymechanicalarm.util.DeployerAmmoCooldowns;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -29,9 +28,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Mixin(DeployerHandler.class)
 public class DeployerHandlerMixin {
 
-    @Unique
-    private static final long FILL_COOLDOWN = 60L;
-
     @Inject(method = "shouldActivate", at = @At("HEAD"), cancellable = true, remap = false)
     private static void universalScan(ItemStack held, Level world, BlockPos targetPos, Direction facing, CallbackInfoReturnable<Boolean> cir) {
         if (held.isEmpty() || IAmmo.getIAmmoOrNull(held) == null) return;
@@ -47,8 +43,6 @@ public class DeployerHandlerMixin {
         if (behaviour != null) {
             AtomicBoolean foundValidTarget = new AtomicBoolean(false);
 
-            long posHash = targetPos.asLong();
-            long gameTime = world.getGameTime();
             boolean isDepot = AllBlocks.DEPOT.has(world.getBlockState(targetPos));
 
             behaviour.handleCenteredProcessingOnAllItems(0.9f, transported -> {
@@ -57,15 +51,9 @@ public class DeployerHandlerMixin {
                 ItemStack stack = transported.stack;
 
                 if (!stack.isEmpty() && stack.getItem() instanceof IAmmoBox box) {
-                    CompoundTag tag = ItemNBTHelper.getTag(stack);
-                    if (!isDepot) {
-                        if (tag != null && tag.contains("DeployerCooldownPos") && tag.getLong("DeployerCooldownPos") == posHash) {
-                            long unlockTime = tag.getLong("DeployerCooldownTime");
-                            if (gameTime < unlockTime) {
-                                return TransportedItemStackHandlerBehaviour.TransportedResult.doNothing();
-                            }
-                        }
-                    }
+                    DeployerAmmoCooldowns.removeLegacyData(stack);
+                    if (!isDepot && DeployerAmmoCooldowns.cooling(world, transported, targetPos))
+                        return TransportedItemStackHandlerBehaviour.TransportedResult.doNothing();
 
                     if (box.getAmmoCount(stack) >= getMaxAmmoCount(box, stack)) {
                         return TransportedItemStackHandlerBehaviour.TransportedResult.doNothing();
@@ -104,8 +92,6 @@ public class DeployerHandlerMixin {
         if (behaviour == null) return;
 
         AtomicBoolean processed = new AtomicBoolean(false);
-        long posHash = clickedPos.asLong();
-        long cooldownTime = level.getGameTime() + FILL_COOLDOWN;
 
         behaviour.handleCenteredProcessingOnAllItems(0.9f, transported -> {
             if (processed.get()) return TransportedItemStackHandlerBehaviour.TransportedResult.doNothing();
@@ -113,7 +99,11 @@ public class DeployerHandlerMixin {
             ItemStack stackOnBelt = transported.stack;
 
             if (stackOnBelt.getItem() instanceof IAmmoBox) {
+                if (!AllBlocks.DEPOT.has(level.getBlockState(clickedPos))
+                        && DeployerAmmoCooldowns.cooling(level, transported, clickedPos))
+                    return TransportedItemStackHandlerBehaviour.TransportedResult.doNothing();
                 ItemStack newBoxStack = stackOnBelt.copy();
+                DeployerAmmoCooldowns.removeLegacyData(newBoxStack);
                 IAmmoBox boxItem = (IAmmoBox) newBoxStack.getItem();
 
                 ResourceLocation boxId = boxItem.getAmmoId(newBoxStack);
@@ -140,10 +130,7 @@ public class DeployerHandlerMixin {
                 int toAdd = Math.min(space, handCount);
 
                 boxItem.setAmmoCount(newBoxStack, currentCount + toAdd);
-                CompoundTag tag = ItemNBTHelper.getOrCreateTag(newBoxStack);
-                tag.putLong("DeployerCooldownPos", posHash);
-                tag.putLong("DeployerCooldownTime", cooldownTime);
-                ItemNBTHelper.setTag(newBoxStack, tag);
+
 
                 if (!player.isCreative()) {
                     handStack.shrink(toAdd);
@@ -152,6 +139,7 @@ public class DeployerHandlerMixin {
 
                 TransportedItemStack newTransported = transported.copy();
                 newTransported.stack = newBoxStack;
+                DeployerAmmoCooldowns.filled(level, newTransported, clickedPos);
                 return TransportedItemStackHandlerBehaviour.TransportedResult.convertTo(newTransported);
             }
 

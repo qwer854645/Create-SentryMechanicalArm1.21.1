@@ -44,9 +44,15 @@ public class SentryEventHandler {
     public static void onBulletSpawn(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent event) {
         if (!event.getLevel().isClientSide && event.getEntity() instanceof com.tacz.guns.entity.EntityKineticBullet bullet
                 && bullet.getOwner() instanceof FakePlayer fp && SentryFakePlayer.getArmFromPlayer(fp) != null) {
+            euphy.upo.sentrymechanicalarm.util.SentryBulletOwnership.remember(bullet, fp);
             boolean first = SentryFakePlayer.rememberShot(fp,bullet.position(),bullet.getDeltaMovement());
             SentryFakePlayer.markFired(fp);
-            SentryFakePlayer.getArmFromPlayer(fp).onSentryBulletSpawn(fp,first);
+            var arm = SentryFakePlayer.getArmFromPlayer(fp);
+            arm.onSentryBulletSpawn(fp,first);
+            // Native tracer weapons already synchronize every real projectile.
+            // Only supplemental pellets need extra visual packets; never repeat firing effects.
+            if (!first && euphy.upo.sentrymechanicalarm.util.SentryGunProfiles.needsSyntheticTracer(arm.getHeldItem()))
+                arm.sendPelletTracer(fp, bullet.position(), bullet.getDeltaMovement());
         }
     }
 
