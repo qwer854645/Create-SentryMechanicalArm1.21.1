@@ -5,7 +5,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class SMAServerConfig {
 
     public static final ModConfigSpec SPEC;
-    public static final ModConfigSpec.BooleanValue ENABLE_RELOADING, AUTO_RELOADING;
+    public static final ModConfigSpec.BooleanValue ENABLE_RELOADING, AUTO_RELOADING, ENABLE_CASING_FORMING;
     public static final ModConfigSpec.BooleanValue ENABLE_CASINGS, PLAYER_CASINGS, SENTRY_CASINGS, OTHER_CASINGS;
     public static final ModConfigSpec.DoubleValue CASING_CHANCE, RELOADING_METAL_FACTOR;
     public static final ModConfigSpec.IntValue CASING_ENTITY_LIMIT, CASING_LIFETIME;
@@ -29,6 +29,10 @@ public class SMAServerConfig {
         ENABLE_RELOADING=builder.comment("Enable casing reloading; requires casing registration. Reload data packs after changing.").define("enabled",true);
         AUTO_RELOADING=builder.comment("Derive single-round nugget and small-gunpowder costs from simple TaCZ material recipes.").define("autoFromTaCZ",true);
         RELOADING_METAL_FACTOR=builder.comment("Metal share used for automatic reloading costs, after converting ingots to nuggets.", "Default 0.5 is a balance policy, not inferred casing composition. Each material rounds up per round.", "Only automatic costs change; explicit data-pack costs are used exactly. Reload data packs after changing.").defineInRange("metalCostMultiplier",0.5,0.01,1.0);
+        builder.pop();
+
+        builder.push("casingManufacturing");
+        ENABLE_CASING_FORMING=builder.comment("Enable mold-based casing manufacture from understood native TaCZ costs. Reload data packs after changing.").define("enabled",true);
         builder.pop();
 
         SPEC = builder.build();

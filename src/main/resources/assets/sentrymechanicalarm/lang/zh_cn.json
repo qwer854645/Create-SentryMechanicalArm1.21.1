@@ -125,5 +125,11 @@
   "item.sentrymechanicalarm.primer": "通用底火",
   "item.sentrymechanicalarm.primer.description": "底火壳由机械手加入一份少量火药制成，用于各口径再装填。",
   "item.sentrymechanicalarm.primer_cup": "底火壳",
-  "item.sentrymechanicalarm.primer_cup.description": "一粒铜粒可冲压成八个底火壳。由机械手加入少量火药，制成通用底火。"
+  "item.sentrymechanicalarm.primer_cup.description": "一粒铜粒可冲压成八个底火壳。由机械手加入少量火药，制成通用底火。",
+  "item.sentrymechanicalarm.casing_mold": "弹壳口径模具",
+  "item.sentrymechanicalarm.casing_mold.description": "右键选择可制造的口径。机械手持模具加工金属粒；模具不消耗。",
+  "item.sentrymechanicalarm.casing_mold.selected": "已选：%s",
+  "screen.sentrymechanicalarm.casing_mold": "选择弹壳口径",
+  "screen.sentrymechanicalarm.casing_mold.search": "搜索名称或口径 ID",
+  "screen.sentrymechanicalarm.casing_mold.empty": "没有可用的制壳配方"
 }

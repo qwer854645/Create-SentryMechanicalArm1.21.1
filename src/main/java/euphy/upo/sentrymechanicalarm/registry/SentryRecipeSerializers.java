@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 
 public class SentryRecipeSerializers {
     public static final DeferredRegister<IngredientType<?>> INGREDIENTS=DeferredRegister.create(NeoForgeRegistries.INGREDIENT_TYPES,"sentrymechanicalarm");
+    public static final Supplier<IngredientType<MoldIngredient>> MOLD=INGREDIENTS.register("casing_mold",()->new IngredientType<>(MoldIngredient.CODEC));
     public static final Supplier<IngredientType<CasingIngredient>> CASING=INGREDIENTS.register("casing",()->new IngredientType<>(CasingIngredient.CODEC));
     public static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS=DeferredRegister.create(Registries.RECIPE_SERIALIZER,"sentrymechanicalarm");
     public static final DeferredHolder<RecipeSerializer<?>,RecipeSerializer<ClipboardCopyRecipe>> CLIPBOARD_COPY=SERIALIZERS.register("clipboard_copy",()->new SimpleCraftingRecipeSerializer<>(ClipboardCopyRecipe::new));

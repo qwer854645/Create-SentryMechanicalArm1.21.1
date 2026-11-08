@@ -93,5 +93,11 @@
   "item.sentrymechanicalarm.primer": "汎用雷管",
   "item.sentrymechanicalarm.primer.description": "雷管カップに少量の火薬1個を組み込み、各口径の再装填に使用します。",
   "item.sentrymechanicalarm.primer_cup": "雷管カップ",
-  "item.sentrymechanicalarm.primer_cup.description": "銅塊1個をプレスして8個製作。デプロイヤーで少量の火薬を組み込み、汎用雷管を作ります。"
+  "item.sentrymechanicalarm.primer_cup.description": "銅塊1個をプレスして8個製作。デプロイヤーで少量の火薬を組み込み、汎用雷管を作ります。",
+  "item.sentrymechanicalarm.casing_mold": "薬莢金型",
+  "item.sentrymechanicalarm.casing_mold.description": "右クリックで口径を選択。デプロイヤーで金属塊を加工します。金型は消費しません。",
+  "item.sentrymechanicalarm.casing_mold.selected": "選択：%s",
+  "screen.sentrymechanicalarm.casing_mold": "薬莢口径の選択",
+  "screen.sentrymechanicalarm.casing_mold.search": "名前または口径IDで検索",
+  "screen.sentrymechanicalarm.casing_mold.empty": "利用可能な薬莢製作レシピがありません"
 }

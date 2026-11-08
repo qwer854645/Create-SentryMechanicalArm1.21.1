@@ -26,6 +26,7 @@ public final class CasingJeiPlugin implements IModPlugin {
     };
     public ResourceLocation getPluginUid(){return ResourceLocation.parse("sentrymechanicalarm:casings");}
     public void registerItemSubtypes(ISubtypeRegistration registration){
+        if(SentryRegistry.CASING_MOLD.isBound())registration.registerSubtypeInterpreter(VanillaTypes.ITEM_STACK,SentryRegistry.CASING_MOLD.get(),SUBTYPE);
         if(SentryRegistry.EMPTY_CASING.isBound())registration.registerSubtypeInterpreter(VanillaTypes.ITEM_STACK,SentryRegistry.EMPTY_CASING.get(),SUBTYPE);
         if(SentryRegistry.RELOADING_CASING.isBound())registration.registerSubtypeInterpreter(VanillaTypes.ITEM_STACK,SentryRegistry.RELOADING_CASING.get(),SUBTYPE);
     }
@@ -41,5 +42,14 @@ public final class CasingJeiPlugin implements IModPlugin {
         Set<ResourceLocation> present=new HashSet<>();for(var s:all)if(!invalid.contains(s))present.add(EmptyCasingItem.ammoId(s));
         var missing=SentryCasingProfiles.clientSnapshot().stream().filter(id->!present.contains(id)).sorted().map(id->EmptyCasingItem.create(id,1)).toList();
         if(!missing.isEmpty())manager.addIngredientsAtRuntime(VanillaTypes.ITEM_STACK,missing);
+        var level=net.minecraft.client.Minecraft.getInstance().level;
+        if(SentryRegistry.CASING_MOLD.isBound()){
+            var choices=level==null?java.util.List.<ResourceLocation>of():euphy.upo.sentrymechanicalarm.recipe.CasingFormingRecipes.choices(level.getRecipeManager());
+            var molds=manager.getAllIngredients(VanillaTypes.ITEM_STACK).stream().filter(s->s.is(SentryRegistry.CASING_MOLD.get())).toList();
+            var stale=molds.stream().filter(s->EmptyCasingItem.ammoId(s)!=null&&!choices.contains(EmptyCasingItem.ammoId(s))).toList();
+            if(!stale.isEmpty())manager.removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK,stale);
+            var add=choices.stream().filter(id->molds.stream().noneMatch(s->id.equals(EmptyCasingItem.ammoId(s)))).map(CasingMoldItem::create).toList();
+            if(!add.isEmpty())manager.addIngredientsAtRuntime(VanillaTypes.ITEM_STACK,add);
+        }
     }
 }

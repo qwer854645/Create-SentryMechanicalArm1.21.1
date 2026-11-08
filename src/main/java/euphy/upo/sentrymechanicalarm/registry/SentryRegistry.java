@@ -49,6 +49,9 @@ public class SentryRegistry {
     public static final DeferredHolder<Item, ApplePieItem> APPLE_PIE = ITEMS.register("apple_pie",
             () -> new ApplePieItem(new Item.Properties().food(new FoodProperties.Builder().nutrition(8).saturationModifier(0.3f).build())));
 
+    public static final DeferredHolder<Item, CasingMoldItem> CASING_MOLD = euphy.upo.sentrymechanicalarm.SMAStartupConfig.ENABLE_CASINGS.get() ? ITEMS.register("casing_mold",
+            () -> new CasingMoldItem(new Item.Properties().stacksTo(1))) : DeferredHolder.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MODID,"casing_mold"));
+
     public static final DeferredHolder<Item, PrimerItem> PRIMER_CUP = ITEMS.register("primer_cup",
             () -> new PrimerItem(new Item.Properties()));
 
@@ -104,6 +107,7 @@ public class SentryRegistry {
                         output.accept(new net.minecraft.world.item.ItemStack(SMALL_GUNPOWDER.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(PRIMER_CUP.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(PRIMER.get(), 1));
+                        if(CASING_MOLD.isBound())output.accept(new net.minecraft.world.item.ItemStack(CASING_MOLD.get()));
                     })
                     .build());
 
