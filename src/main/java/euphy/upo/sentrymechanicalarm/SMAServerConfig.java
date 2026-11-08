@@ -5,6 +5,8 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class SMAServerConfig {
 
     public static final ModConfigSpec SPEC;
+    public static final ModConfigSpec.IntValue SENTRY_RELOAD_DELAY;
+    public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> EXTRA_TARGETS;
     public static final ModConfigSpec.BooleanValue ENABLE_RELOADING, AUTO_RELOADING, LEGACY_RELOADING_SOURCES, RESTORE_LEGACY_AMMO_RECIPES, ENABLE_CASING_FORMING, GENERIC_CASING_FORMING;
     public static final ModConfigSpec.BooleanValue ENABLE_CASINGS, PLAYER_CASINGS, SENTRY_CASINGS, OTHER_CASINGS, PLAYER_CASINGS_TO_INVENTORY;
     public static final ModConfigSpec.DoubleValue CASING_CHANCE, RELOADING_METAL_FACTOR;
@@ -12,6 +14,12 @@ public class SMAServerConfig {
 
     static {
         var builder = new ModConfigSpec.Builder();
+        builder.push("sentry");
+        SENTRY_RELOAD_DELAY = builder.comment("Reload delay in game ticks. -1 uses the gun's empty reload feed and cooldown time; 0 disables the added delay.")
+                .defineInRange("reloadDelayTicks", -1, -1, 72000);
+        EXTRA_TARGETS = builder.comment("Additional default targets, alongside hostile mobs: entity type IDs or exact display names. Explicit fire-control safety lists still apply.")
+                .defineListAllowEmpty("extraTargets", java.util.List.<String>of(), () -> "minecraft:wandering_trader", value -> value instanceof String);
+        builder.pop();
         builder.push("casings");
         ENABLE_CASINGS = builder.comment("Legacy runtime drop gate. Registration master is casings.enabled in config/sentrymechanicalarm-startup.toml.")
                 .define("enabled", true);

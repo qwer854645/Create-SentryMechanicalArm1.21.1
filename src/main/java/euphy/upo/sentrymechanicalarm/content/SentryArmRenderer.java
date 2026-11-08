@@ -243,14 +243,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
 
         ms.scale(flashScale, flashScale, flashScale);
 
-        VertexConsumer consumerBg = buffer.getBuffer(RenderType.entityTranslucent(muzzleFlash.getTexture()));
-        drawCrossQuad(ms, consumerBg, 1.0f);
-
-        VertexConsumer consumerFg = buffer.getBuffer(RenderType.entityTranslucent(muzzleFlash.getTexture()));
-        ms.pushPose();
-        ms.scale(0.5f, 0.5f, 0.5f);
-        drawCrossQuad(ms, consumerFg, 1.0f);
-        ms.popPose();
+        renderFlashQuads(ms, muzzleFlash.getTexture(), false);
 
         ms.popPose();
     }
@@ -780,8 +773,9 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
             viewStack.scale(s, s, s);
         }
  
-        MultiBufferSource.BufferSource cleanBuffer = Minecraft.getInstance().renderBuffers().bufferSource();
-        try {
+        // Never flush the world's shared buffer while Create still holds its consumers.
+        try (var scratch = new com.mojang.blaze3d.vertex.ByteBufferBuilder(1536)) {
+            MultiBufferSource.BufferSource cleanBuffer = MultiBufferSource.immediate(scratch);
             Minecraft.getInstance().getItemRenderer().renderStatic(
                     heldItem,
                     isGun ? ItemDisplayContext.THIRD_PERSON_RIGHT_HAND : ItemDisplayContext.FIXED,
@@ -915,14 +909,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
         ms.mulPose(Axis.ZP.rotationDegrees(randomRotate));
         ms.scale(flashScale, flashScale, flashScale);
 
-        VertexConsumer consumerBg = buffer.getBuffer(RenderType.entityTranslucent(muzzleFlash.getTexture()));
-        drawCrossQuadStatic(ms, consumerBg);
-
-        VertexConsumer consumerFg = buffer.getBuffer(RenderType.energySwirl(muzzleFlash.getTexture(), 0, 0));
-        ms.pushPose();
-        ms.scale(0.5f, 0.5f, 0.5f);
-        drawCrossQuadStatic(ms, consumerFg);
-        ms.popPose();
+        renderFlashQuads(ms, muzzleFlash.getTexture(), true);
 
         ms.popPose();
     }
@@ -953,6 +940,23 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
             poseStack.translate(0.0F, 1.5F, 0.0F);
             poseStack.scale(scale.x(), scale.y(), scale.z());
             poseStack.translate(0.0F, -1.5F, 0.0F);
+        }
+    }
+
+    private static void renderFlashQuads(PoseStack ms, ResourceLocation texture, boolean glow) {
+        // Third-party renderers may flush shared buffers. Flash vertices never retain a
+        // consumer belonging to that shared source, nor flush its pending geometry.
+        try (var scratch = new com.mojang.blaze3d.vertex.ByteBufferBuilder(1536)) {
+            var flashes = MultiBufferSource.immediate(scratch);
+            drawCrossQuadStatic(ms, flashes.getBuffer(RenderType.entityTranslucent(texture)));
+            var foreground = flashes.getBuffer(glow ? RenderType.energySwirl(texture, 0, 0)
+                    : RenderType.entityTranslucent(texture));
+            ms.pushPose();
+            try {
+                ms.scale(0.5f, 0.5f, 0.5f);
+                drawCrossQuadStatic(ms, foreground);
+            } finally { ms.popPose(); }
+            flashes.endBatch();
         }
     }
 

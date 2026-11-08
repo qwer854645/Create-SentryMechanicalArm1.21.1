@@ -53,6 +53,7 @@ public class SentryShellManager {
     }
 
     public static void addShell(ResourceLocation ammoId, Vec3 pos, Vector3f velocity, Vector3f angularVel, Vector3f acceleration, double lifeTime) {
+        if (!euphy.upo.sentrymechanicalarm.SMAClientConfig.SHELL_ANIMATIONS.get()) return;
         shells.add(new Shell(
                 ammoId,
                 pos,
@@ -65,6 +66,7 @@ public class SentryShellManager {
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
+        if (!euphy.upo.sentrymechanicalarm.SMAClientConfig.SHELL_ANIMATIONS.get()) { shells.clear(); return; }
         if (!Minecraft.getInstance().isPaused()) {
             Iterator<Shell> it = shells.iterator();
             while (it.hasNext()) {
@@ -85,7 +87,7 @@ public class SentryShellManager {
     @SubscribeEvent
     public static void onRenderWorld(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
-        if (shells.isEmpty()) return;
+        if (!euphy.upo.sentrymechanicalarm.SMAClientConfig.SHELL_ANIMATIONS.get() || shells.isEmpty()) return;
 
         PoseStack ms = event.getPoseStack();
         MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();

@@ -66,7 +66,7 @@ public class VirtualSentryArmBlockEntity extends SentryArmBlockEntity {
                 && eligible(focus,center,false) && getBestTargetPos(focus)!=null) target=focus;
         if(target==null) target=level.getEntitiesOfClass(LivingEntity.class,new AABB(center,center).inflate(range),e->{
             if(!eligible(e,center,true)) return false;
-            if(fc==null || fc.displayItem.isEmpty()) return e instanceof Enemy;
+            if(fc==null || fc.displayItem.isEmpty()) return SentryTargeting.defaultTarget(e);
             boolean listed=fc.targetList.contains(e.getName().getString())
                     || fc.targetList.contains(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).toString());
             return fc.isWhitelist ? !listed : listed;
@@ -76,6 +76,14 @@ public class VirtualSentryArmBlockEntity extends SentryArmBlockEntity {
     private boolean eligible(LivingEntity e,Vec3 center,boolean excludeCreative){
         return e.isAlive() && !e.isSpectator() && !(e instanceof FakePlayer) && e.distanceToSqr(center)<=range*range
                 && (!excludeCreative || !(e instanceof net.minecraft.world.entity.player.Player p) || !p.isCreative());
+    }
+    @Override public void sendPelletTracer(FakePlayer player, Vec3 origin, Vec3 velocity) {
+        if (velocity.lengthSqr() < 1e-10) return;
+        var hit = level.clip(new net.minecraft.world.level.ClipContext(origin, origin.add(velocity.normalize().scale(100)),
+                net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, player));
+        PacketDistributor.sendToPlayersTrackingEntity(context.contraption.entity, new SentryContraptionShootPacket(
+                context.contraption.entity.getId(), getBlockPos(), origin, hit.getLocation(), getHeldItem().copy(),
+                SentryShootPacket.ActionType.TRACER));
     }
     @Override protected void sendShootPacket(FakePlayer player){
         var shot=SentryFakePlayer.lastShot(player);var pose=getGunPose();

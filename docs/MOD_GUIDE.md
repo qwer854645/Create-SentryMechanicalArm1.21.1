@@ -1,6 +1,6 @@
 # 当前模组完整介绍
 
-适用于 **1.4.0-alpha.41**。本文介绍现行玩法、操作、配置与兼容边界。
+适用于 **1.4.0-alpha.42**。本文介绍现行玩法、操作、配置与兼容边界。
 
 ## 1. 定位与运行环境
 
@@ -162,7 +162,7 @@ JEI 已按口径组件区分弹壳、半成品与模具，避免所有口径被�
 
 流程是直接存入本次射后产物，不会先生成地面实体再吸走，也不会吸取附近已有物品。自定义的其他射后物品同样可以存入，数据组件予以保留。查找不会强制加载远方区块。
 
-Create 移动库存使用专门的 MountedStorage 类型接入保存、便携式存储接口及拆卸回写，射击只写当前移动库存。该部分已完成实现，仍需当前版本游戏内验收。
+Create 移动库存使用专门的 MountedStorage 类型接入保存、便携式存储接口及拆卸回写，射击只写当前移动库存。射击产物直接写入所属结构库存。
 
 收集器外观为完整安山机壳加顶部漏斗背面薄面板。选框和碰撞覆盖机壳与薄面板。贴图继续只引用 Create 资源，没有复制 PNG。
 
@@ -229,6 +229,10 @@ false 时直接不注册弹壳、半成品、模具及弹壳标签页，并关�
 文件为当前存档的 `serverconfig/sentrymechanicalarm-server.toml`。单人位于对应 `saves/<世界>/serverconfig/`，独立服务器位于实际世界目录的 `serverconfig/`。以下为当前默认值：
 
 ```toml
+[sentry]
+reloadDelayTicks = -1
+extraTargets = []
+
 [casings]
 enabled = true
 players = true
@@ -254,6 +258,21 @@ allowGenericCopperFallback = true
 fallbackCasesPerCopperNugget = 1
 ```
 
+`sentry.reloadDelayTicks` 控制动力臂补弹后的等待时间：默认 -1 使用枪械空仓装填与冷却时间之和，0 关闭额外等待，正整数使用指定游戏刻数。射击本身仍遵守 TaCZ 的射击冷却。
+
+`sentry.extraTargets` 在默认敌对目标之外增加目标，可填写实体类型 ID 或精确显示名，例如 `["minecraft:wandering_trader"]`。静态动力臂与 Create 动态动力臂共用该列表；显式火控名单保持自身的筛选语义。
+
+### 客户端视觉配置
+
+文件：`config/sentrymechanicalarm-client.toml`。
+
+```toml
+[effects]
+shellAnimations = true
+```
+
+`effects.shellAnimations` 只控制动力臂的视觉抛壳，关闭后清除已有视觉弹壳。实际弹壳物品、回收及掉落仍由服务端配置管理。
+
 服务器 `casings.enabled` 是运行输出开关，与启动注册开关不同。再装填与制壳各有总开关；关闭自动推导不影响仍被允许的显式规则，关闭相应制造总开关则停止本模组生成的该类配方。配方相关配置更改后执行服务端 `/reload`。
 
 早期 `ammo_crafting`、`dynamic_recipes` 与 `powderBands` 等方案不在当前 `SMAServerConfig` 中，不能照历史文档继续配置。本模组的制造开关也不用于删除 TaCZ 原生配方或第三方自行编写的完整原生配方。
@@ -266,6 +285,6 @@ fallbackCasesPerCopperNugget = 1
 
 这套玩法已经自行实现，不要求安装 createimmersivetacz 或 Shots Fired。没有因此承诺与它们同时安装时不会重复抛壳或改变经济性。
 
-当前网络协议为 14，客户端与服务端应一起更新。自动识别、制造与模型回退不保证任意第三方枪包完全兼容。
+当前网络协议为 15，客户端与服务端应一起更新。自动识别、制造与模型回退不保证任意第三方枪包完全兼容。
 
 当前建议作为 Alpha 公开测试版交付；稳定版仍需补两个独立客户端连接服务端的同步、重载、容器交互与长期运行验收。

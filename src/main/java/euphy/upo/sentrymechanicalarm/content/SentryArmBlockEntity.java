@@ -272,6 +272,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
     }
 
     private static void clearDepletedAmmoId(ItemStack stack) {
+        euphy.upo.sentrymechanicalarm.util.DeployerAmmoCooldowns.removeLegacyData(stack);
         if (stack.getItem() instanceof IAmmoBox box && !box.isCreative(stack)
                 && !box.isAllTypeCreative(stack) && box.getAmmoCount(stack) <= 0) {
             box.setAmmoId(stack, com.tacz.guns.api.DefaultAssets.EMPTY_AMMO_ID);
@@ -741,7 +742,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
             if (!e.isAlive() || e.isSpectator()) return false;
             if (finalStrict) {
                 if (finalList == null || finalList.isEmpty()) {
-                    return finalWhitelistMode && (e instanceof Enemy);
+                    return finalWhitelistMode && euphy.upo.sentrymechanicalarm.util.SentryTargeting.defaultTarget(e);
                 }
                 String name = e.getName().getString();
                 boolean inList = false;
@@ -757,7 +758,7 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
                     return inList;
                 }
             } else {
-                return (e instanceof Enemy);
+                return euphy.upo.sentrymechanicalarm.util.SentryTargeting.defaultTarget(e);
             }
         });
 
@@ -1061,8 +1062,13 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
     private void handleNoAmmo(FireContext ctx) {
         boolean reloaded = performInstantReload(ctx.player, ctx.iGunFake, ctx.fakeHeldItem);
         if (reloaded) {
-            this.shootDelayAccumulator = 2.0f;
+            int configured = euphy.upo.sentrymechanicalarm.SMAServerConfig.SENTRY_RELOAD_DELAY.get();
+            var reload = ctx.gunIndex.map(index -> index.getGunData().getReloadData()).orElse(null);
+            double seconds = reload == null ? 0 : reload.getFeed().getEmptyTime() + reload.getCooldown().getEmptyTime();
+            this.shootDelayAccumulator = configured >= 0 ? configured
+                    : (float) Math.ceil(Math.clamp(Double.isFinite(seconds) ? seconds * 20 : 0, 0, 72000));
             setStatus(SentryStatus.RELOADING);
+            sendActionPacket(SentryShootPacket.ActionType.RELOAD_EMPTY);
         } else {
             this.shootDelayAccumulator = 40.0f;
             setStatus(SentryStatus.NO_AMMO);
@@ -1276,6 +1282,15 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
                 new SentryShootPacket(
                         this.worldPosition, -1, ItemNBTHelper.getOrCreateTag(heldItem), realStart, hitResult.getLocation(), SentryShootPacket.ActionType.SHOOT),
                 this.level, BlockPos.containing(getActualMuzzlePos()));
+    }
+
+    public void sendPelletTracer(FakePlayer player, Vec3 origin, Vec3 velocity) {
+        if (velocity.lengthSqr() < 1e-10) return;
+        var hit = level.clip(new ClipContext(origin, origin.add(velocity.normalize().scale(100)),
+                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+        NetworkHandler.sendToNearby(new SentryShootPacket(worldPosition, -1,
+                ItemNBTHelper.getOrCreateTag(heldItem), origin, hit.getLocation(), SentryShootPacket.ActionType.TRACER),
+                level, BlockPos.containing(origin));
     }
 
     public void onSentryBulletSpawn(FakePlayer player, boolean firstPellet) {

@@ -31,6 +31,7 @@ public class SentryMechanicalArm
         SentryArmInteractionPointTypes.register(modEventBus);
         ModDataComponents.register(modEventBus);
         modContainer.registerConfig(ModConfig.Type.SERVER, SMAServerConfig.SPEC);
+        modContainer.registerConfig(ModConfig.Type.CLIENT, SMAClientConfig.SPEC);
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(DataGenerators::gatherData);
         

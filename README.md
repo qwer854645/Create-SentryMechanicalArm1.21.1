@@ -4,7 +4,7 @@ Equip mechanical arms with TaCZ firearms and connect automated defense, ammuniti
 
 This is an unofficial repair and extension of [pihoue's Minecraft 1.21.1 port](https://github.com/pihoue/Create-SentryMechanicalArm1.21.1). It builds on that port rather than porting the original 1.20.1 mod again.
 
-**Current version: 1.4.0-alpha.41 · Minecraft 1.21.1 · NeoForge**
+**Current version: 1.4.0-alpha.42 · Minecraft 1.21.1 · NeoForge**
 
 ## Features
 
@@ -14,6 +14,8 @@ This is an unofficial repair and extension of [pihoue's Minecraft 1.21.1 port](h
 - Supply ammunition through ammo boxes, adjacent inventories, and TaCZ ammo depots.
 - Coordinate sentries with the fire control block, target lists, and sentry scope.
 - Supports dye colors and operation on Create contraptions, trains, and Sable structures.
+- Uses configurable reload delays and supports additional default targets by entity type or name.
+- Provides a separate client switch for cosmetic shell ejection.
 
 ### Casings, manufacturing, and reloading
 

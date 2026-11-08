@@ -109,6 +109,10 @@ public class ClientPacketHandler {
         BlockEntity be = mc.level.getBlockEntity(msg.pos());
         if (!(be instanceof SentryArmBlockEntity sentry)) return;
 
+        if (msg.actionType() == SentryShootPacket.ActionType.TRACER) {
+            addCanonicalTrail(sentry.getHeldItem(), msg.realStart(), msg.realEnd());
+            return;
+        }
         sentry.updateAmmoFromPacket(msg.slotIndex(), msg.itemTag());
         ItemStack gunStack = sentry.getHeldItem();
 
@@ -145,6 +149,10 @@ public class ClientPacketHandler {
         Minecraft mc = Minecraft.getInstance();
         Level level = mc.level;
         if (level == null) return;
+        if (msg.actionType() == SentryShootPacket.ActionType.TRACER) {
+            addCanonicalTrail(msg.gunStack(), msg.realStart(), msg.realEnd());
+            return;
+        }
         if(msg.actionType()!=SentryShootPacket.ActionType.SHOOT){
             TimelessAPI.getGunDisplay(msg.gunStack()).ifPresent(display->{
                 switch(msg.actionType()){

@@ -39,7 +39,7 @@ public record SentryShootPacket(BlockPos pos, int slotIndex, CompoundTag itemTag
     };
 
     public enum ActionType {
-        SHOOT, CHARGE, BOLT, RELOAD_TACTICAL, RELOAD_EMPTY
+        SHOOT, CHARGE, BOLT, RELOAD_TACTICAL, RELOAD_EMPTY, TRACER
     }
 
     @Override
