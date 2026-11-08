@@ -1,0 +1,15 @@
+{
+  "type": "create:milling",
+  "ingredients": [
+    {
+      "item": "minecraft:gunpowder"
+    }
+  ],
+  "results": [
+    {
+      "id": "sentrymechanicalarm:small_gunpowder",
+      "count": 32
+    }
+  ],
+  "processingTime": 50
+}

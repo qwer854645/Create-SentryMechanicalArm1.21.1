@@ -49,6 +49,9 @@ public class SentryRegistry {
     public static final DeferredHolder<Item, ApplePieItem> APPLE_PIE = ITEMS.register("apple_pie",
             () -> new ApplePieItem(new Item.Properties().food(new FoodProperties.Builder().nutrition(8).saturationModifier(0.3f).build())));
 
+    public static final DeferredHolder<Item, Item> SMALL_GUNPOWDER = ITEMS.register("small_gunpowder",
+            () -> new Item(new Item.Properties()));
+
     public static final DeferredHolder<Item, EmptyCasingItem> EMPTY_CASING = euphy.upo.sentrymechanicalarm.SMAStartupConfig.ENABLE_CASINGS.get() ? ITEMS.register("empty_casing",
             () -> new EmptyCasingItem(new Item.Properties().stacksTo(64))) : DeferredHolder.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MODID,"empty_casing"));
 
@@ -92,6 +95,7 @@ public class SentryRegistry {
                         output.accept(new net.minecraft.world.item.ItemStack(FIRE_CONTROL_CLIPBOARD.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(APPLE_PIE.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(SENTRY_SCOPE.get(), 1));
+                        output.accept(new net.minecraft.world.item.ItemStack(SMALL_GUNPOWDER.get(), 1));
                     })
                     .build());
 

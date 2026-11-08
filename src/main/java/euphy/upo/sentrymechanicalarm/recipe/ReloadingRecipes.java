@@ -16,9 +16,8 @@ import net.minecraft.world.item.*;
 import net.minecraft.world.item.crafting.*;
 import java.util.*;
 
-/** One casing always becomes exactly one round. No heuristic metal refunds or category fallbacks. */
+/** One casing always becomes exactly one round; explicit data-pack costs are never rescaled. */
 public final class ReloadingRecipes {
-    private static final Set<Item> BASIC=Set.of(Items.COPPER_INGOT,Items.IRON_INGOT,Items.GOLD_INGOT,Items.IRON_NUGGET,Items.GOLD_NUGGET,Items.GUNPOWDER,Items.PAPER);
     public static boolean enabled(){return SentryRegistry.EMPTY_CASING.isBound()&&SentryRegistry.RELOADING_CASING.isBound()&&SMAServerConfig.ENABLE_RELOADING.get();}
     public static ResourceLocation id(ResourceLocation ammo){return ResourceLocation.fromNamespaceAndPath(SentryMechanicalArm.MODID,"casing_reloading/"+ammo.getNamespace()+"/"+ammo.getPath());}
     public static Optional<RecipeHolder<?>> find(RecipeManager manager,ResourceLocation ammo){String prefix=id(ammo).getPath()+"/v_";return manager.getRecipes().stream().filter(h->h.id().getNamespace().equals(SentryMechanicalArm.MODID)&&h.id().getPath().startsWith(prefix)).findFirst();}
@@ -77,15 +76,7 @@ public final class ReloadingRecipes {
         SentryMechanicalArm.LOGGER.info("Reloading recipes: {} eligible plans",result.size());return result;
     }
     private static Plan fromRecipe(GunSmithTableRecipe recipe){
-        var output=recipe.getOutput();int rounds=output.getCount();if(rounds<1||recipe.getInputs().isEmpty())return null;
-        var steps=new ArrayList<Ingredient>();boolean powder=false;
-        for(var material:recipe.getInputs()){
-            var ingredient=material.getIngredient();var candidates=ingredient.getItems();if(material.getCount()<1||!ingredient.isSimple()||candidates.length==0)return null;
-            for(var candidate:candidates){if(!BASIC.contains(candidate.getItem())||!candidate.getComponentsPatch().isEmpty()||candidate.hasCraftingRemainingItem())return null;}
-            powder|=Arrays.stream(candidates).allMatch(x->x.is(Items.GUNPOWDER));
-            long count=((long)material.getCount()+rounds-1)/rounds;if(count>16||steps.size()+count>16)return null;
-            for(int i=0;i<count;i++)steps.add(ingredient);
-        }
-        return !powder||steps.isEmpty()?null:new Plan(steps,output.copyWithCount(1));
+        return ReloadingCosts.derive(recipe, SMAServerConfig.RELOADING_METAL_FACTOR.get())
+                .map(steps -> new Plan(steps, recipe.getOutput().copyWithCount(1))).orElse(null);
     }
 }

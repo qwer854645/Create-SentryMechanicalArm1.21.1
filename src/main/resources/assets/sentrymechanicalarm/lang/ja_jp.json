@@ -88,5 +88,6 @@
   "message.sentrymechanicalarm.whitelist_warn": "リストに自分自身を追加することを忘れないでください",
   "message.sentrymechanicalarm.blacklist": "ブラックリスト (攻撃リスト)",
   "message.sentrymechanicalarm.blacklist_des": "リスト上のエンティティに対してのみ射撃します",
-  "message.sentrymechanicalarm.can_mark": "[左クリックでマーク]"
+  "message.sentrymechanicalarm.can_mark": "[左クリックでマーク]",
+  "item.sentrymechanicalarm.small_gunpowder": "少量の火薬"
 }

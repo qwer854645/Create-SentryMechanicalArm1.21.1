@@ -123,5 +123,6 @@
   "item.sentrymechanicalarm.empty_casing.named": "%s Casing",
   "item.sentrymechanicalarm.empty_casing.description": "Recovered casing for reloading.",
   "item.sentrymechanicalarm.reloading_casing.description": "Partially reloaded casing. Craft alone to recover the casing without refunding materials.",
-  "item.sentrymechanicalarm.casing.ammo_id": "Ammo ID: %s"
+  "item.sentrymechanicalarm.casing.ammo_id": "Ammo ID: %s",
+  "item.sentrymechanicalarm.small_gunpowder": "Small Gunpowder Portion"
 }

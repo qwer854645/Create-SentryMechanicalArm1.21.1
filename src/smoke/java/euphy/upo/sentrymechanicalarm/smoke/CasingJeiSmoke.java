@@ -35,6 +35,18 @@ public final class CasingJeiSmoke {
         var matches=runtime.getRecipeManager().createRecipeLookup(type).limitFocus(List.of(focus)).get().toList();int count=0;
         for(var value:matches){Object unwrapped=value instanceof net.minecraft.world.item.crafting.RecipeHolder<?> h?h.value():value;if(unwrapped instanceof SequencedAssemblyRecipe seq){var output=seq.getResultItem(mc.level.registryAccess());var api=com.tacz.guns.api.item.IAmmo.getIAmmoOrNull(output);if(api!=null){check(ResourceLocation.parse("tacz:9mm").equals(api.getAmmoId(output)),"JEI returns a wrong-caliber recipe");count++;}}}
         check(count==1,"JEI 9mm usage lookup returned "+count+" ammo recipes");
+        var powder=new ItemStack(euphy.upo.sentrymechanicalarm.registry.SentryRegistry.SMALL_GUNPOWDER.get());
+        check(manager.getAllIngredients(VanillaTypes.ITEM_STACK).stream().anyMatch(s->s.is(powder.getItem())),"small powder missing from JEI");
+        var powderFocus=runtime.getJeiHelpers().getFocusFactory().createFocus(RecipeIngredientRole.OUTPUT,VanillaTypes.ITEM_STACK,powder);
+        for(String recipeType:List.of("minecraft:crafting","create:milling")){
+            var conversionType=runtime.getRecipeManager().getRecipeType(ResourceLocation.parse(recipeType)).orElseThrow();
+            check(runtime.getRecipeManager().createRecipeLookup(conversionType).limitFocus(List.of(powderFocus)).get().findAny().isPresent(),"powder conversion missing from JEI: "+recipeType);
+        }
+        var powderModel=mc.getItemRenderer().getModel(powder,mc.level,null,0);
+        check(powderModel!=mc.getModelManager().getMissingModel(),"small powder missing item model");
+        var materials=recipe.getSequence().stream().filter(s->s.getRecipe() instanceof com.simibubi.create.content.kinetics.deployer.DeployerApplicationRecipe).map(s->s.getRecipe().getIngredients().get(1)).toList();
+        check(materials.size()==3&&materials.get(0).test(new ItemStack(com.simibubi.create.AllItems.COPPER_NUGGET.get()))&&materials.get(1).test(powder)&&materials.get(2).test(powder),"client recipe retained old costs");
+        euphy.upo.sentrymechanicalarm.SentryMechanicalArm.LOGGER.info("POWDER_CLIENT PASS item model, JEI crafting/milling conversions and single-round nugget/powder recipe");
         var normal=new ArrayList<net.minecraft.network.chat.Component>();a.getItem().appendHoverText(a,Item.TooltipContext.of(mc.level),normal,TooltipFlag.NORMAL);
         check(normal.stream().noneMatch(c->c.getString().contains("tacz:9mm")||c.getString().contains("后续阶段")),"debug ID or stale description in ordinary tooltip");
         var pack=com.tacz.guns.client.resource.ClientAssetsManager.INSTANCE.getPackInfo(ResourceLocation.parse("tacz:9mm"));check(pack!=null&&normal.stream().anyMatch(c->c.getString().equals(net.minecraft.network.chat.Component.translatable(pack.getName()).getString())&&c.getStyle().isItalic()),"missing TaCZ-style pack source");

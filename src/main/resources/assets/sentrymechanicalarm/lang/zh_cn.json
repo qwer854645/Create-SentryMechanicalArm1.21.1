@@ -120,5 +120,6 @@
   "item.sentrymechanicalarm.empty_casing.named": "%s 弹壳",
   "item.sentrymechanicalarm.empty_casing.description": "回收的弹壳，可用于再装填。",
   "item.sentrymechanicalarm.reloading_casing.description": "再装填中的弹壳。单独放入合成栏可取回弹壳，不退还材料。",
-  "item.sentrymechanicalarm.casing.ammo_id": "弹药 ID：%s"
+  "item.sentrymechanicalarm.casing.ammo_id": "弹药 ID：%s",
+  "item.sentrymechanicalarm.small_gunpowder": "少量火药"
 }
