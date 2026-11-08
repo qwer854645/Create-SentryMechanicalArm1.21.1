@@ -69,7 +69,7 @@ repositories {
 }
 
 neoForge {
-    version = "${libs.versions.neoforge.get()}"
+    version = providers.gradleProperty("devNeoForgeVersion").getOrElse(libs.versions.neoforge.get())
 
     runs {
         configureEach {
@@ -172,7 +172,11 @@ dependencies {
 
     // JEI
     compileOnly(libs.jei.api)
-    if (!providers.gradleProperty("withoutJei").isPresent) runtimeOnly(libs.jei.runtime)
+    if (!providers.gradleProperty("withoutJei").isPresent) {
+        val devJeiJar = providers.gradleProperty("devJeiJar")
+        if (devJeiJar.isPresent && file(devJeiJar.get()).isFile) runtimeOnly(files(devJeiJar.get()))
+        else runtimeOnly(libs.jei.runtime)
+    }
 
     // EMI - recipe viewer
     compileOnly(libs.emi)
