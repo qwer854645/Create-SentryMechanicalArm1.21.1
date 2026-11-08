@@ -34,7 +34,7 @@ final class PrimerSmoke {
                 var sequence = (SequencedAssemblyRecipe) holder.value();
                 var output = sequence.getResultItem(level.registryAccess());
                 var ammo = IAmmo.getIAmmoOrNull(output).getAmmoId(output);
-                var original = level.getRecipeManager().getRecipes().stream().sorted(Comparator.comparing(RecipeHolder::id))
+                var original = AmmoMaterialSources.collect(level.getRecipeManager(),level.getServer()).stream()
                         .map(RecipeHolder::value).filter(GunSmithTableRecipe.class::isInstance).map(GunSmithTableRecipe.class::cast)
                         .filter(r -> {var api = IAmmo.getIAmmoOrNull(r.getOutput()); return api != null && ammo.equals(api.getAmmoId(r.getOutput()));})
                         .map(r -> ReloadingCosts.derive(r, SMAServerConfig.RELOADING_METAL_FACTOR.get()))

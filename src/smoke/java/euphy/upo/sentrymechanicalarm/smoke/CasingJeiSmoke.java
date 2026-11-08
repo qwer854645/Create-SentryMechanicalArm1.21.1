@@ -31,6 +31,21 @@ public final class CasingJeiSmoke {
         var p1=progress.copy();var p2=progress.copy();p1.set(com.simibubi.create.AllDataComponents.SEQUENCED_ASSEMBLY,new SequencedAssemblyRecipe.SequencedAssembly(holder.id(),1,.3f));p2.set(com.simibubi.create.AllDataComponents.SEQUENCED_ASSEMBLY,new SequencedAssemblyRecipe.SequencedAssembly(holder.id(),2,.6f));
         check(!helper.getUniqueId(p1,UidContext.Ingredient).equals(helper.getUniqueId(p2,UidContext.Ingredient)),"WIP progress identity lost");check(helper.getUniqueId(p1,UidContext.Recipe).equals(helper.getUniqueId(progress,UidContext.Recipe)),"WIP recipe search is step-specific");
         var type=runtime.getRecipeManager().getRecipeType(ResourceLocation.parse("create:sequenced_assembly")).orElseThrow();
+        int covered=0;
+        for(var casing:entries){
+            var ammo=EmptyCasingItem.ammoId(casing);var expected=ReloadingRecipes.find(mc.level.getRecipeManager(),ammo);
+            if(expected.isEmpty()){check(ammo.equals(ResourceLocation.parse("tacz:22wmr")),"client lacks expected reloading "+ammo);continue;}
+            var caliberFocus=runtime.getJeiHelpers().getFocusFactory().createFocus(RecipeIngredientRole.INPUT,VanillaTypes.ITEM_STACK,casing);
+            int found=0;
+            for(var value:runtime.getRecipeManager().createRecipeLookup(type).limitFocus(List.of(caliberFocus)).get().toList()){
+                Object unwrapped=value instanceof net.minecraft.world.item.crafting.RecipeHolder<?> h?h.value():value;
+                if(unwrapped instanceof SequencedAssemblyRecipe sequence){var output=sequence.getResultItem(mc.level.registryAccess());var api=com.tacz.guns.api.item.IAmmo.getIAmmoOrNull(output);
+                    check(api!=null&&ammo.equals(api.getAmmoId(output))&&output.getCount()==1,"JEI caliber leaked into another recipe "+ammo);found++;}
+            }
+            check(found==1,"JEI missing or duplicates recipe for "+ammo+": "+found);covered++;
+        }
+        check(covered==36,"client recipe coverage "+covered);
+        euphy.upo.sentrymechanicalarm.SentryMechanicalArm.LOGGER.info("FULL_RELOADING_JEI PASS 36 synchronized caliber-specific assembly lookups");
         var focus=runtime.getJeiHelpers().getFocusFactory().createFocus(RecipeIngredientRole.INPUT,VanillaTypes.ITEM_STACK,a);
         var matches=runtime.getRecipeManager().createRecipeLookup(type).limitFocus(List.of(focus)).get().toList();int count=0;
         for(var value:matches){Object unwrapped=value instanceof net.minecraft.world.item.crafting.RecipeHolder<?> h?h.value():value;if(unwrapped instanceof SequencedAssemblyRecipe seq){var output=seq.getResultItem(mc.level.registryAccess());var api=com.tacz.guns.api.item.IAmmo.getIAmmoOrNull(output);if(api!=null){check(ResourceLocation.parse("tacz:9mm").equals(api.getAmmoId(output)),"JEI returns a wrong-caliber recipe");count++;}}}
@@ -45,7 +60,7 @@ public final class CasingJeiSmoke {
         var powderModel=mc.getItemRenderer().getModel(powder,mc.level,null,0);
         check(powderModel!=mc.getModelManager().getMissingModel(),"small powder missing item model");
         var materials=recipe.getSequence().stream().filter(s->s.getRecipe() instanceof com.simibubi.create.content.kinetics.deployer.DeployerApplicationRecipe).map(s->s.getRecipe().getIngredients().get(1)).toList();
-        check(materials.size()==3&&materials.get(0).test(new ItemStack(euphy.upo.sentrymechanicalarm.registry.SentryRegistry.PRIMER.get()))&&materials.get(1).test(powder)&&materials.get(2).test(new ItemStack(com.simibubi.create.AllItems.COPPER_NUGGET.get())),"client recipe retained old costs");
+        check(materials.size()==2&&materials.get(0).test(new ItemStack(euphy.upo.sentrymechanicalarm.registry.SentryRegistry.PRIMER.get()))&&materials.get(1).test(new ItemStack(com.simibubi.create.AllItems.COPPER_NUGGET.get())),"client recipe retained old costs");
         euphy.upo.sentrymechanicalarm.SentryMechanicalArm.LOGGER.info("POWDER_CLIENT PASS item model, JEI crafting/milling conversions and single-round nugget/powder recipe");
         var primer=new ItemStack(euphy.upo.sentrymechanicalarm.registry.SentryRegistry.PRIMER.get());
         check(manager.getAllIngredients(VanillaTypes.ITEM_STACK).stream().anyMatch(s->s.is(primer.getItem())),"primer missing from JEI");
@@ -80,9 +95,9 @@ public final class CasingJeiSmoke {
         var shot=(SequencedAssemblyRecipe)ReloadingRecipes.find(mc.level.getRecipeManager(),ResourceLocation.parse("tacz:12g")).orElseThrow().value();
         check(shot.getSequence().size()==5,"client retained the long shotgun sequence");
         var charge=shot.getSequence().get(1).getRecipe().getIngredients().get(1);
-        check(euphy.upo.sentrymechanicalarm.recipe.CountedDeployerIngredient.amount(charge)==10&&charge.getItems()[0].getCount()==10,"client/JEI lost combined charge quantity");
+        check(euphy.upo.sentrymechanicalarm.recipe.CountedDeployerIngredient.amount(charge)==3&&charge.getItems()[0].getCount()==3,"client/JEI lost combined charge quantity");
         check(new java.util.HashSet<>(euphy.upo.sentrymechanicalarm.recipe.CasingFormingRecipes.choices(mc.level.getRecipeManager())).equals(euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.clientSnapshot()),"client mold list excludes eligible cases");
-        euphy.upo.sentrymechanicalarm.SentryMechanicalArm.LOGGER.info("COMPACT_CLIENT PASS shotgun five stages, ten-portion ingredient and all eligible molds");
+        euphy.upo.sentrymechanicalarm.SentryMechanicalArm.LOGGER.info("COMPACT_CLIENT PASS shotgun five stages, three-portion banded charge and all eligible molds");
         var normal=new ArrayList<net.minecraft.network.chat.Component>();a.getItem().appendHoverText(a,Item.TooltipContext.of(mc.level),normal,TooltipFlag.NORMAL);
         check(normal.stream().noneMatch(c->c.getString().contains("tacz:9mm")||c.getString().contains("后续阶段")),"debug ID or stale description in ordinary tooltip");
         var pack=com.tacz.guns.client.resource.ClientAssetsManager.INSTANCE.getPackInfo(ResourceLocation.parse("tacz:9mm"));check(pack!=null&&normal.stream().anyMatch(c->c.getString().equals(net.minecraft.network.chat.Component.translatable(pack.getName()).getString())&&c.getStyle().isItalic()),"missing TaCZ-style pack source");

@@ -48,9 +48,14 @@ public record CountedDeployerIngredient(Ingredient ingredient, int count) implem
             var material = materials.get(i); int end = i + 1;
             while (end < materials.size() && equivalent(material, materials.get(end))) end++;
             int count = end - i;
-            if (count > 1 && count <= 64 && material.isSimple() && material.getItems().length > 0
-                    && Arrays.stream(material.getItems()).allMatch(s -> safe(s, count))) {
-                result.add(new CountedDeployerIngredient(material, count).toVanilla());
+            var samples = material.getItems();
+            if (material.isSimple() && samples.length > 0 && Arrays.stream(samples).allMatch(s -> safe(s, 1))) {
+                int limit = Math.min(64, Arrays.stream(samples).mapToInt(ItemStack::getMaxStackSize).min().orElse(1));
+                while (count > 0) {
+                    int batch = Math.min(count, limit);
+                    result.add(batch == 1 ? material : new CountedDeployerIngredient(material, batch).toVanilla());
+                    count -= batch;
+                }
             } else result.addAll(materials.subList(i, end));
             i = end;
         }

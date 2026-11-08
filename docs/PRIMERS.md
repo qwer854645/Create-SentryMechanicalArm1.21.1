@@ -1,5 +1,7 @@
 # alpha.24：底火零件生产与单枚再装填
 
+> alpha.28 已更新装药分档、特殊配料和旧格式来源读取；现行规则见 [POWDER_BANDS.md](POWDER_BANDS.md)。
+
 > alpha.26 已接入自有物品贴图，见 [ART_DIRECTION.md](ART_DIRECTION.md)。下文为 alpha.24 功能记录。
 
 环境：Minecraft 1.21.1 / NeoForge 21.1.228 / Create 6.0.10 / 官方 TaCZ 1.2.0 / Java 21；开发客户端使用 JEI 19.21.0.247。

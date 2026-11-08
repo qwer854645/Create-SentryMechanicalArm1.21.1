@@ -42,7 +42,9 @@ final class CasingFormingSmoke {
         test("generic fallback can be disabled and only changes unknown-cost yields", () -> {
             var all=new java.util.HashSet<>(CasingFormingRecipes.choices(level.getRecipeManager()));
             boolean previous=SMAServerConfig.GENERIC_CASING_FORMING.get();int yield=SMAServerConfig.DEFAULT_CASING_YIELD.get();
+            boolean legacy=SMAServerConfig.LEGACY_RELOADING_SOURCES.get();
             try {
+                SMAServerConfig.LEGACY_RELOADING_SOURCES.set(false);
                 SMAServerConfig.GENERIC_CASING_FORMING.set(false);DynamicRecipeManager.rebuild(level.getRecipeManager());
                 var nativeOnly=new java.util.HashSet<>(CasingFormingRecipes.choices(level.getRecipeManager()));
                 var fallback=new java.util.HashSet<>(all);fallback.removeAll(nativeOnly);
@@ -51,7 +53,7 @@ final class CasingFormingSmoke {
                 var changed=CasingFormingRecipes.find(level.getRecipeManager(),fallback.iterator().next()).orElseThrow().value().getResultItem(level.registryAccess());
                 check(changed.getCount()==3,"fallback yield config ignored");
                 check(CasingFormingRecipes.find(level.getRecipeManager(),AMMO).orElseThrow().value().getResultItem(level.registryAccess()).getCount()==2,"fallback config changed a native budget");
-            }finally{SMAServerConfig.GENERIC_CASING_FORMING.set(previous);SMAServerConfig.DEFAULT_CASING_YIELD.set(yield);DynamicRecipeManager.rebuild(level.getRecipeManager());}
+            }finally{SMAServerConfig.LEGACY_RELOADING_SOURCES.set(legacy);SMAServerConfig.GENERIC_CASING_FORMING.set(previous);SMAServerConfig.DEFAULT_CASING_YIELD.set(yield);DynamicRecipeManager.rebuild(level.getRecipeManager());}
         });
         test("mold identity recipe codecs and reusable tool flag", () -> {
             var holder = CasingFormingRecipes.find(level.getRecipeManager(), AMMO).orElseThrow();

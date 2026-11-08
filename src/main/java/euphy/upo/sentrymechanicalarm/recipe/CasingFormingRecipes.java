@@ -64,8 +64,8 @@ public final class CasingFormingRecipes {
         var inputs = net.minecraft.core.NonNullList.of(Ingredient.EMPTY, Ingredient.of(Items.IRON_INGOT), Ingredient.of(Items.IRON_INGOT), Ingredient.of(Items.STICK));
         result.add(new RecipeHolder<>(ResourceLocation.parse("sentrymechanicalarm:casing_mold"), new ShapelessRecipe("", CraftingBookCategory.MISC, new ItemStack(SentryRegistry.CASING_MOLD.get()), inputs)));
         var sources = new LinkedHashMap<ResourceLocation, List<GunSmithTableRecipe>>();
-        for (var holder : manager.getRecipes().stream().sorted(Comparator.comparing(RecipeHolder::id)).toList()) {
-            if (!(holder.value() instanceof GunSmithTableRecipe original)) continue;
+        for (var holder : AmmoMaterialSources.collect(manager,net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer())) {
+            var original = holder.value();
             var api = IAmmo.getIAmmoOrNull(original.getOutput()); if (api == null) continue;
             var ammo = api.getAmmoId(original.getOutput());
             sources.computeIfAbsent(ammo, key -> new ArrayList<>()).add(original);

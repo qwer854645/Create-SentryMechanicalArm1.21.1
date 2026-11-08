@@ -1,5 +1,7 @@
 # alpha.25：口径模具与新制弹壳
 
+> alpha.28 已更新装药分档、特殊配料和旧格式来源读取；现行规则见 [POWDER_BANDS.md](POWDER_BANDS.md)。
+
 > alpha.27 已将制壳与整发配料解析解耦，并增加通用铜壳规则，现行说明见 [RECIPE_COMPACTION.md](RECIPE_COMPACTION.md)。四图标采用 alpha.26 自有资源。下文保留 alpha.25 历史记录。
 
 环境：Minecraft 1.21.1 / NeoForge 21.1.228 / Create 6.0.10 / 官方 TaCZ 1.2.0 / Java 21；开发客户端 JEI 19.21.0.247。

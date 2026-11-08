@@ -40,11 +40,11 @@ final class ReloadingCostSmoke {
     static void verify() {
         test("single-round 9mm and 5.56 costs use nuggets and fractional powder", () -> {
             check(counts(ReloadingCosts.derive(original("tacz:9mm"), .5).orElseThrow()).equals(
-                    Map.of(AllItems.COPPER_NUGGET.get(), 1, SentryRegistry.SMALL_GUNPOWDER.get(), 2)), "wrong 9mm costs");
+                    Map.of(AllItems.COPPER_NUGGET.get(), 1, SentryRegistry.SMALL_GUNPOWDER.get(), 1)), "wrong 9mm costs");
             check(counts(ReloadingCosts.derive(original("tacz:556x45"), .5).orElseThrow()).equals(
-                    Map.of(AllItems.COPPER_NUGGET.get(), 2, SentryRegistry.SMALL_GUNPOWDER.get(), 3)), "wrong 5.56 costs");
+                    Map.of(AllItems.COPPER_NUGGET.get(), 2, SentryRegistry.SMALL_GUNPOWDER.get(), 2)), "wrong 5.56 costs");
             check(counts(ReloadingCosts.derive(original("tacz:12g"), .5).orElseThrow()).equals(
-                    Map.of(AllItems.COPPER_NUGGET.get(), 4, Items.IRON_NUGGET, 1, SentryRegistry.SMALL_GUNPOWDER.get(), 11)), "wrong shotgun costs");
+                    Map.of(AllItems.COPPER_NUGGET.get(), 4, Items.IRON_NUGGET, 1, SentryRegistry.SMALL_GUNPOWDER.get(), 4)), "wrong shotgun costs");
         });
         test("material splitting and ingot nugget mixtures round only after aggregation", () -> {
             var merged = synthetic(50, material(Items.IRON_INGOT, 10), material(Items.GUNPOWDER, 2));
@@ -54,14 +54,57 @@ final class ReloadingCostSmoke {
                     counts(ReloadingCosts.derive(split, .5).orElseThrow())), "split entries inflate costs");
         });
         test("complex materials invalid factors and excessive costs are rejected", () -> {
-            check(ReloadingCosts.derive(synthetic(1, material(Items.DIAMOND, 1), material(Items.GUNPOWDER, 1)), .5).isEmpty(), "guessed complex cost");
-            check(ReloadingCosts.derive(synthetic(1, material(Items.GUNPOWDER, Integer.MAX_VALUE)), .5).isEmpty(), "overflow or step budget bypass");
+            check(counts(ReloadingCosts.derive(synthetic(1, material(Items.DIAMOND, 1), material(Items.GUNPOWDER, 1)), .5).orElseThrow()).get(Items.DIAMOND)==1, "solid payload was discarded or discounted");
+            check(ReloadingCosts.derive(synthetic(1, material(Items.COPPER_INGOT, Integer.MAX_VALUE), material(Items.GUNPOWDER, 1)), .5).isEmpty(), "overflow or step budget bypass");
             for (double factor : new double[]{0, -1, Double.NaN, Double.POSITIVE_INFINITY, 2})
                 check(ReloadingCosts.derive(original("tacz:9mm"), factor).isEmpty(), "accepted invalid factor");
         });
         test("rounding cannot create a strictly uneconomic automatic recipe", () -> {
             check(ReloadingCosts.derive(synthetic(100, material(Items.COPPER_INGOT, 10), material(Items.GUNPOWDER, 2)), .5).isEmpty(), "one nugget and one portion would exceed both native costs");
-            check(ReloadingCosts.derive(original("tacz:9mm"), 1).isEmpty(), "no-saving cost should require manual override");
+            check(counts(ReloadingCosts.derive(original("tacz:9mm"), 1).orElseThrow()).get(AllItems.COPPER_NUGGET.get())==2, "factor one incorrectly discounts metal");
+        });
+        test("all eligible native or legacy material sources reload except uneconomic tiny caliber", () -> {
+            var eligible=euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.eligible();
+            var missing=eligible.stream().filter(a->ReloadingRecipes.find(level.getRecipeManager(),a).isEmpty()).collect(java.util.stream.Collectors.toSet());
+            check(missing.equals(Set.of(ResourceLocation.parse("tacz:22wmr"))),"unexplained missing reloading "+missing);
+            check(eligible.size()==37,"unexpected test pack coverage");
+            var nativeIds=level.getRecipeManager().getRecipes().stream().filter(h->h.value() instanceof GunSmithTableRecipe).map(RecipeHolder::id).collect(java.util.stream.Collectors.toSet());
+            var all=AmmoMaterialSources.collect(level.getRecipeManager(),level.getServer());
+            check(all.stream().filter(h->h.id().getPath().startsWith("legacy_materials/")).count()==10,"missing legacy sources");
+            check(all.stream().filter(h->{var api=IAmmo.getIAmmoOrNull(h.value().getOutput());return api!=null&&ResourceLocation.parse("tacz:9mm").equals(api.getAmmoId(h.value().getOutput()));}).count()==1,"legacy duplicates modern recipe");
+            boolean previous=SMAServerConfig.LEGACY_RELOADING_SOURCES.get();
+            try{SMAServerConfig.LEGACY_RELOADING_SOURCES.set(false);DynamicRecipeManager.rebuild(level.getRecipeManager());
+                check(ReloadingRecipes.find(level.getRecipeManager(),ResourceLocation.parse("re:40sw")).isEmpty(),"legacy switch ignored");
+                check(ReloadingRecipes.find(level.getRecipeManager(),ResourceLocation.parse("tacz:338")).isPresent(),"legacy switch removed modern source");
+            }finally{SMAServerConfig.LEGACY_RELOADING_SOURCES.set(previous);DynamicRecipeManager.rebuild(level.getRecipeManager());}
+            check(nativeIds.equals(level.getRecipeManager().getRecipes().stream().filter(h->h.value() instanceof GunSmithTableRecipe).map(RecipeHolder::id).collect(java.util.stream.Collectors.toSet())),"native gunpack recipes modified");
+        });
+        test("powder bands use exact inclusive boundaries and reject invalid tables", () -> {
+            var rules=SMAServerConfig.RELOADING_POWDER_BANDS.get();
+            for(var sample:Map.of("0.05",1,"0.0500001",2,"0.10",2,"0.100001",3,"0.20",3,"0.40",4,"0.80",5,"0.800001",6).entrySet())
+                check(PowderChargeBands.portions(new java.math.BigDecimal(sample.getKey()),1,rules)==sample.getValue(),"wrong boundary "+sample.getKey());
+            check(PowderChargeBands.portions(java.math.BigDecimal.valueOf(5),100,rules)==1,"ratio not normalized by output count");
+            for(var invalid:List.of(List.of("0.1=1"),List.of("0.2=2","0.1=1","*=3"),List.of("*=1","0.1=2"),List.of("0.1=0","*=2"))){
+                boolean rejected=false;try{PowderChargeBands.portions(java.math.BigDecimal.ONE,1,invalid);}catch(IllegalArgumentException expected){rejected=true;}
+                check(rejected,"invalid bands accepted "+invalid);
+            }
+        });
+        test("powder config rebuild changes recipe fingerprint and restores cleanly", () -> {
+            var old=ReloadingRecipes.find(level.getRecipeManager(),ResourceLocation.parse("tacz:12g")).orElseThrow();
+            var previous=SMAServerConfig.RELOADING_POWDER_BANDS.get();
+            try{SMAServerConfig.RELOADING_POWDER_BANDS.set(List.of("*=2"));DynamicRecipeManager.rebuild(level.getRecipeManager());
+                var changed=ReloadingRecipes.find(level.getRecipeManager(),ResourceLocation.parse("tacz:12g")).orElseThrow();
+                check(!changed.id().equals(old.id())&&level.getRecipeManager().byKey(old.id()).isEmpty(),"band change retained old WIP identity");
+            }finally{SMAServerConfig.RELOADING_POWDER_BANDS.set(previous);DynamicRecipeManager.rebuild(level.getRecipeManager());}
+            check(ReloadingRecipes.find(level.getRecipeManager(),ResourceLocation.parse("tacz:12g")).orElseThrow().id().equals(old.id()),"band restore unstable");
+        });
+        test("payload and oversized metal groups keep amounts within stack capacity", () -> {
+            var costs=counts(ReloadingCosts.derive(original("tacz:338"),.5).orElseThrow());
+            check(costs.get(Items.LAPIS_LAZULI)==1&&costs.get(SentryRegistry.SMALL_GUNPOWDER.get())==5,"special payload or heavy band lost");
+            var compact=CountedDeployerIngredient.compact(java.util.Collections.nCopies(135,Ingredient.of(AllItems.COPPER_NUGGET.get())));
+            check(compact.size()==3&&CountedDeployerIngredient.amount(compact.get(0))==64&&CountedDeployerIngredient.amount(compact.get(1))==64&&CountedDeployerIngredient.amount(compact.get(2))==7,"oversized stack failed to split");
+            check(ReloadingCosts.derive(synthetic(1,material(Items.MILK_BUCKET,1),material(Items.GUNPOWDER,1)),.5).isEmpty(),"container payload lost return semantics");
+            check(ReloadingCosts.derive(synthetic(1,material(Items.IRON_PICKAXE,1),material(Items.GUNPOWDER,1)),.5).isEmpty(),"damageable payload accepted");
         });
         test("powder crafting and milling each output exactly 32 portions", () -> {
             var crafting = level.getRecipeManager().byKey(ResourceLocation.parse("sentrymechanicalarm:small_gunpowder")).orElseThrow();

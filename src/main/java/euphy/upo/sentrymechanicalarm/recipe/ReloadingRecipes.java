@@ -35,8 +35,11 @@ public final class ReloadingRecipes {
     public static List<RecipeHolder<?>> build(RecipeManager manager){
         var server=net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
         if(server==null||!enabled())return List.of();
-        var recipes=manager.getRecipes().stream().sorted(Comparator.comparing(RecipeHolder::id)).map(RecipeHolder::value).filter(GunSmithTableRecipe.class::isInstance).map(GunSmithTableRecipe.class::cast).toList();
+        var recipes=AmmoMaterialSources.collect(manager,server).stream().map(RecipeHolder::value).toList();
         var result=new ArrayList<RecipeHolder<?>>();
+        boolean automatic=SMAServerConfig.AUTO_RELOADING.get();
+        if(automatic)try{PowderChargeBands.portions(java.math.BigDecimal.ONE,1,SMAServerConfig.RELOADING_POWDER_BANDS.get());}
+        catch(IllegalArgumentException error){automatic=false;SentryMechanicalArm.LOGGER.warn("Automatic reloading disabled for this rebuild: invalid powderBands: {}",error.getMessage());}
         for(var entry:TimelessAPI.getAllCommonAmmoIndex().stream().sorted(Map.Entry.comparingByKey()).toList()){
             var ammo=entry.getKey();if(!SentryCasingProfiles.enabled(ammo))continue;
             try{
@@ -49,7 +52,7 @@ public final class ReloadingRecipes {
                         var steps=new ArrayList<Ingredient>();
                         for(var raw:json.getAsJsonArray("materials")){
                             var material=raw.getAsJsonObject();int count=material.has("count")?material.get("count").getAsBigDecimal().intValueExact():1;
-                            if(count<1||count>16||steps.size()+count>16)throw new IllegalArgumentException("Material count must total 1..16");
+                            if(count<1||count>ReloadingCosts.MAX_MATERIAL_UNITS||steps.size()+count>ReloadingCosts.MAX_MATERIAL_UNITS)throw new IllegalArgumentException("Material count must total 1..1024");
                             var ingredient=Ingredient.CODEC.parse(server.registryAccess().createSerializationContext(JsonOps.INSTANCE),material.get("ingredient")).getOrThrow();
                             if(ingredient.getItems().length==0||ingredient.test(ItemStack.EMPTY)||Arrays.stream(ingredient.getItems()).anyMatch(ItemStack::isEmpty))throw new IllegalArgumentException("Empty material ingredient");
                             for(int i=0;i<count;i++)steps.add(ingredient);
@@ -58,11 +61,12 @@ public final class ReloadingRecipes {
                         var nativeOutput=recipes.stream().map(GunSmithTableRecipe::getOutput).filter(stack->{var api=IAmmo.getIAmmoOrNull(stack);return api!=null&&ammo.equals(api.getAmmoId(stack));}).findFirst().map(stack->stack.copyWithCount(1)).orElseGet(()->com.tacz.guns.api.item.builder.AmmoItemBuilder.create().setId(ammo).setCount(1).build());
                         plan=new Plan(steps,nativeOutput);
                     }
-                }else if(SMAServerConfig.AUTO_RELOADING.get()){
+                }else if(automatic){
                     for(var recipe:recipes){var output=recipe.getOutput();var api=IAmmo.getIAmmoOrNull(output);if(api==null||!ammo.equals(api.getAmmoId(output)))continue;plan=fromRecipe(recipe);if(plan!=null)break;}
                 }
-                if(plan==null)continue;
+                if(plan==null){SentryMechanicalArm.LOGGER.debug("No automatic reloading cost for {}; requires a usable powder-bearing material recipe or explicit override",ammo);continue;}
                 plan=new Plan(CountedDeployerIngredient.compact(plan.steps()),plan.output());
+                if(plan.steps().size()+1>ReloadingCosts.MAX_ASSEMBLY_STEPS)throw new IllegalArgumentException("Too many assembly stages after grouping");
                 var builder=new SequencedAssemblyRecipeBuilder(versionedId(ammo,plan,server)).require(new CasingIngredient(ammo).toVanilla()).transitionTo(SentryRegistry.RELOADING_CASING.get()).addOutput(plan.output(),1).loops(1);
                 for(var ingredient:plan.steps())builder.addStep(DeployerApplicationRecipe::new,rb->rb.require(ingredient));
                 builder.addStep(PressingRecipe::new,rb->rb);

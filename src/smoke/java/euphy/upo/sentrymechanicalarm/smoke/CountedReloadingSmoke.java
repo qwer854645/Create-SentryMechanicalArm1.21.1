@@ -27,17 +27,17 @@ final class CountedReloadingSmoke {
     static boolean finished;
 
     static void verify() {
-        test("12g assembly is five stages with unchanged full material counts", () -> {
+        test("12g assembly is five stages with banded charge and retained metal counts", () -> {
             var seq = (SequencedAssemblyRecipe) ReloadingRecipes.find(level.getRecipeManager(), SHOT).orElseThrow().value();
             check(seq.getSequence().size() == 5, "shotgun recipe still expands each material unit");
             var materials = seq.getSequence().stream().filter(s -> s.getRecipe() instanceof DeployerApplicationRecipe)
                     .map(s -> s.getRecipe().getIngredients().get(1)).toList();
-            check(CountedDeployerIngredient.amount(materials.get(1)) == 10, "powder charge count lost");
+            check(CountedDeployerIngredient.amount(materials.get(1)) == 3, "powder charge count lost");
             check(CountedDeployerIngredient.amount(materials.get(2)) == 4, "copper count lost");
-            check(materials.get(1).getItems()[0].getCount() == 10, "recipe viewer sample lost quantity");
+            check(materials.get(1).getItems()[0].getCount() == 3, "recipe viewer sample lost quantity");
             var ops = level.registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
             var copy = (SequencedAssemblyRecipe) Recipe.CODEC.parse(ops, Recipe.CODEC.encodeStart(ops, seq).getOrThrow()).getOrThrow();
-            check(CountedDeployerIngredient.amount(copy.getSequence().get(1).getRecipe().getIngredients().get(1)) == 10, "JSON lost charge count");
+            check(CountedDeployerIngredient.amount(copy.getSequence().get(1).getRecipe().getIngredients().get(1)) == 3, "JSON lost charge count");
             var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), level.registryAccess());
             try { RecipeHolder.STREAM_CODEC.encode(buffer, ReloadingRecipes.find(level.getRecipeManager(), SHOT).orElseThrow());
                 var restored = (SequencedAssemblyRecipe) RecipeHolder.STREAM_CODEC.decode(buffer).value();
@@ -53,7 +53,29 @@ final class CountedReloadingSmoke {
                 for(var step:seq.getSequence())if(step.getRecipe() instanceof DeployerApplicationRecipe){var ingredient=step.getRecipe().getIngredients().get(1);var material=new com.google.gson.JsonObject();material.addProperty("item",net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(ingredient.getItems()[0].getItem()).toString());material.addProperty("count",CountedDeployerIngredient.amount(ingredient));materials.add(material);}
                 row.add("materials",materials);report.add(row);
             }
-            check(!report.isEmpty(),"no compact recipes audited");java.nio.file.Files.writeString(java.nio.file.Path.of("../../evidence/alpha27-recipes.json"),new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(report));
+            var resourceReport=new com.google.gson.JsonObject();
+            var oldResources=level.getServer().getResourceManager().listResources("recipes",id->id.getPath().endsWith(".json"));
+            resourceReport.addProperty("oldResourceCount",oldResources.size());var oldIds=new com.google.gson.JsonArray();
+            for(var id:oldResources.keySet()){var row=new com.google.gson.JsonObject();row.addProperty("id",id.toString());row.addProperty("modernCounterpart",level.getServer().getResourceManager().getResource(ResourceLocation.fromNamespaceAndPath(id.getNamespace(),"recipe/"+id.getPath().substring(8))).isPresent());oldIds.add(row);}
+            resourceReport.add("resources",oldIds);
+            resourceReport.addProperty("legacyEnabled",euphy.upo.sentrymechanicalarm.SMAServerConfig.LEGACY_RELOADING_SOURCES.get());
+            java.nio.file.Files.writeString(java.nio.file.Path.of("../../evidence/alpha28-source-resources.json"),new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(resourceReport));
+            var coverage=new com.google.gson.JsonArray();
+            for(var ammo:euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.eligible().stream().sorted().toList()){
+                var row=new com.google.gson.JsonObject();row.addProperty("ammo",ammo.toString());
+                row.addProperty("reloading",ReloadingRecipes.find(level.getRecipeManager(),ammo).isPresent());
+                var sources=new com.google.gson.JsonArray();
+                for(var source:AmmoMaterialSources.collect(level.getRecipeManager(),level.getServer())){var nativeRecipe=source.value();
+                    var api=IAmmo.getIAmmoOrNull(nativeRecipe.getOutput());if(api==null||!ammo.equals(api.getAmmoId(nativeRecipe.getOutput())))continue;
+                    var nativeRow=new com.google.gson.JsonObject();nativeRow.addProperty("recipe",source.id().toString());nativeRow.addProperty("rounds",nativeRecipe.getOutput().getCount());
+                    nativeRow.addProperty("derivable",ReloadingCosts.derive(nativeRecipe,.5).isPresent());var materials=new com.google.gson.JsonArray();
+                    for(var input:nativeRecipe.getInputs()){var m=new com.google.gson.JsonObject();m.addProperty("count",input.getCount());m.addProperty("simple",input.getIngredient().isSimple());var candidates=new com.google.gson.JsonArray();for(var item:input.getIngredient().getItems())candidates.add(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item.getItem()).toString());m.add("candidates",candidates);materials.add(m);}
+                    nativeRow.add("materials",materials);sources.add(nativeRow);
+                }
+                row.add("sources",sources);coverage.add(row);
+            }
+            java.nio.file.Files.writeString(java.nio.file.Path.of("../../evidence/alpha28-coverage.json"),new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(coverage));
+            check(!report.isEmpty(),"no compact recipes audited");java.nio.file.Files.writeString(java.nio.file.Path.of("../../evidence/alpha28-recipes.json"),new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(report));
         });
         test("ordinary recipes and reusable molds do not acquire counted consumption", () -> {
             var ordinary = (DeployerApplicationRecipe) level.getRecipeManager().byKey(ResourceLocation.parse("sentrymechanicalarm:deploying_primer")).orElseThrow().value();
@@ -85,20 +107,20 @@ final class CountedReloadingSmoke {
         if (machine != null) {
             machine.setSpeed(256);
             if (machine.getPlayer() == null) return;
-            if (start < 0) { start = ticks; machine.getPlayer().setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(SentryRegistry.SMALL_GUNPOWDER.get(), 3)); }
+            if (start < 0) { start = ticks; machine.getPlayer().setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(SentryRegistry.SMALL_GUNPOWDER.get(), 2)); }
         }
         if (start < 0) return;
         int elapsed = ticks - start;
         if (elapsed == 120) {
             test("insufficient charge waits without consuming powder or advancing the case", () -> {
                 check(ItemStack.matches(depot.getHeldItem(), initial), "underpaid assembly advanced");
-                check(machine.getPlayer().getMainHandItem().getCount() == 3, "partial stock consumed");
+                check(machine.getPlayer().getMainHandItem().getCount() == 2, "partial stock consumed");
             });
-            machine.getPlayer().setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(SentryRegistry.SMALL_GUNPOWDER.get(), 13));
+            machine.getPlayer().setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(SentryRegistry.SMALL_GUNPOWDER.get(), 6));
         }
         if (elapsed == 240) {
-            test("one real mechanical charge consumes ten portions exactly", () -> {
-                check(machine.getPlayer().getMainHandItem().getCount() == 3, "charge was not ten portions");
+            test("one real mechanical charge consumes three portions exactly", () -> {
+                check(machine.getPlayer().getMainHandItem().getCount() == 3, "charge was not three portions");
                 check(depot.getHeldItem().get(AllDataComponents.SEQUENCED_ASSEMBLY).step() == 2, "charge did not advance once");
             });
             machine.getPlayer().setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(AllItems.COPPER_NUGGET.get(), 7));
