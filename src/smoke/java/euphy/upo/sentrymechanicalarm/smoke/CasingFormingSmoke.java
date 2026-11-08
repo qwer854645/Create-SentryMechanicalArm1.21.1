@@ -115,6 +115,7 @@ final class CasingFormingSmoke {
         if (suppliedAt < 0) { suppliedAt = ticks; moldHand.getPlayer().setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(SentryRegistry.CASING_MOLD.get())); }
         if (!configured && ticks - suppliedAt >= 40) {
             test("blank mold leaves metal untouched on a real depot", () -> check(formed.getHeldItem().is(AllItems.COPPER_NUGGET.get()) && formed.getHeldItem().getCount() == 1, "unconfigured tool processed metal"));
+            formed.setHeldItem(new ItemStack(Items.COPPER_INGOT));
             moldHand.getPlayer().setItemInHand(InteractionHand.MAIN_HAND, CasingMoldItem.create(AMMO)); configured = true;
         }
     }

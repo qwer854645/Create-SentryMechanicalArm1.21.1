@@ -16,6 +16,7 @@ import org.joml.Vector4f;
 
 @EventBusSubscriber(modid=SentryMechanicalArm.MODID,value=Dist.CLIENT)
 public final class ClientGeometrySmoke {
+    static int extraFailures;
     private static int ticks;
     private static boolean done;
     private static java.util.concurrent.CompletableFuture<Void> reload;
@@ -51,7 +52,8 @@ public final class ClientGeometrySmoke {
         }
         if(Boolean.getBoolean("sentry.casingClientSmoke")){try{if(!CasingJeiSmoke.verify())return;}catch(Throwable e){reloadFailures++;SentryMechanicalArm.LOGGER.error("JEI_CASING FAIL",e);}}
         if(Boolean.getBoolean("sentry.casingClientSmoke") && !CasingClientSmoke.preview()) return;
-        done=true; int passed=0,failed=reloadFailures+CasingClientSmoke.failures,skipped=0; double maxError=0;
+        if(Boolean.getBoolean("sentry.ponderSmoke")&&!PonderRenderSmoke.run())return;
+        done=true; int passed=0,failed=reloadFailures+CasingClientSmoke.failures+extraFailures,skipped=0; double maxError=0;
         if(Boolean.getBoolean("sentry.gunpackClientSmoke")) for(String id:java.util.List.of("ars_armorer:mortar_source_thrower","applied_armorer:niklas_pistol_double_win_win")) SentryMechanicalArm.LOGGER.info("GUNPACK_CLIENT PROFILE {} {}",id,SentryGunProfiles.get(net.minecraft.resources.ResourceLocation.parse(id)));
         for (var entry:TimelessAPI.getAllClientGunIndex()) {
             var profile=SentryGunProfiles.get(entry.getKey());
@@ -82,9 +84,45 @@ public final class ClientGeometrySmoke {
         catch(Throwable e){failed++;SentryMechanicalArm.LOGGER.error("COG_CLIENT FAIL renderer frame",e);}
         try{verifyDepotClient();SentryMechanicalArm.LOGGER.info("DEPOT_CLIENT PASS mounted ledger codec, supply state and translations");}
         catch(Throwable e){failed++;SentryMechanicalArm.LOGGER.error("DEPOT_CLIENT FAIL",e);}
+        try{verifyDyeSprites();SentryMechanicalArm.LOGGER.info("DYE_CLIENT PASS 16 colors: baked source sprites and shifted UV bounds");}
+        catch(Throwable e){failed++;SentryMechanicalArm.LOGGER.error("DYE_CLIENT FAIL",e);}
         SentryMechanicalArm.LOGGER.info("PHASE3_CLIENT RESULT passed={} failed={} skipped={} maxModelError={} receivedProfiles={}",
                 passed,failed,skipped,maxError,SentryGunProfiles.clientSnapshot().size());
         mc.stop();
+    }
+    private static void verifyDyeSprites() {
+        var parts=euphy.upo.sentrymechanicalarm.registry.SentryPartialModels.class;
+        for(var color:net.minecraft.world.item.DyeColor.values()) {
+            var shifts=euphy.upo.sentrymechanicalarm.util.SentrySpriteShifts.ARM_TEXTURES;
+            verifyDyeShift(shifts.get(color),java.util.List.of(
+                    euphy.upo.sentrymechanicalarm.registry.SentryPartialModels.ARM_LOWER_BODY,
+                    euphy.upo.sentrymechanicalarm.registry.SentryPartialModels.ARM_UPPER_BODY,
+                    euphy.upo.sentrymechanicalarm.registry.SentryPartialModels.ARM_CLAW_BASE,
+                    euphy.upo.sentrymechanicalarm.registry.SentryPartialModels.ARM_CLAW_GRIP_UPPER,
+                    euphy.upo.sentrymechanicalarm.registry.SentryPartialModels.ARM_CLAW_GRIP_LOWER));
+            verifyDyeShift(euphy.upo.sentrymechanicalarm.util.SentrySpriteShifts.BASE_TEXTURES.get(color),
+                    java.util.List.of(euphy.upo.sentrymechanicalarm.registry.SentryPartialModels.SENTRU_BASE));
+            verifyDyeShift(euphy.upo.sentrymechanicalarm.util.SentrySpriteShifts.COG_TEXTURES.get(color),
+                    java.util.List.of(euphy.upo.sentrymechanicalarm.registry.SentryPartialModels.SENTRU_COG));
+        }
+    }
+    private static void verifyDyeShift(net.createmod.catnip.render.SpriteShiftEntry shift,
+            java.util.List<dev.engine_room.flywheel.lib.model.baked.PartialModel> parts) {
+        var target=shift.getTarget();
+        if(target==null||target.contents().name().equals(net.minecraft.client.renderer.texture.MissingTextureAtlasSprite.getLocation()))
+            throw new AssertionError("Missing colored sprite");
+        var sides=new java.util.ArrayList<net.minecraft.core.Direction>();sides.add(null);sides.addAll(java.util.List.of(net.minecraft.core.Direction.values()));
+        for(var part:parts)for(var side:sides)for(var quad:part.get().getQuads(null,side,net.minecraft.util.RandomSource.create(0))) {
+            if(!quad.getSprite().contents().name().equals(shift.getOriginal().contents().name()))
+                throw new AssertionError("UV source mismatch "+part.modelLocation()+" uses "+quad.getSprite().contents().name()+" shift assumes "+shift.getOriginal().contents().name());
+            var vertices=quad.getVertices();int stride=vertices.length/4;
+            for(int vertex=0;vertex<4;vertex++) {
+                float u=shift.getTargetU(Float.intBitsToFloat(vertices[vertex*stride+4]));
+                float v=shift.getTargetV(Float.intBitsToFloat(vertices[vertex*stride+5]));
+                if(u<target.getU0()-1e-5||u>target.getU1()+1e-5||v<target.getV0()-1e-5||v>target.getV1()+1e-5)
+                    throw new AssertionError("Shift samples outside colored sprite "+part.modelLocation());
+            }
+        }
     }
     private static void verifyMovingMount() throws Exception {
         var mc=Minecraft.getInstance();

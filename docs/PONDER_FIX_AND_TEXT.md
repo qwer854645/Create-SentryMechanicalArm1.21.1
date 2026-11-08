@@ -1,5 +1,7 @@
 # alpha.40：修复空白思索、面板模型与文案
 
+> 本文保留 alpha.40 的历史记录。alpha.41 已继续修复方块实体、旧物品数据、染色与枪焰渲染，并完成九段思索的客户端验证；现行结论见 [发布前检查](RELEASE_READINESS.md)。
+
 ## 空白思索
 
 alpha.39 的新结构只有 y=0 地板，依赖脚本在 y=1–3 临时放机器。Ponder 1.0.82 的 `ReplaceBlocksInstruction.runModification` 在修改前检查 `PonderLevel.getBounds().isInside(pos)`，边界外直接返回；初始地板没建立机器高度范围，后续放置指令被忽略。

@@ -22,7 +22,14 @@ def schematic(name,stations):
     for pos,block,properties in stations:
         state=(block,tuple(sorted(properties.items())))
         if state not in palette:palette.append(state)
-        blocks.append(named(9,'pos',ints(pos))+named(3,'state',integer(palette.index(state)))+b'\0')
+        payload=named(9,'pos',ints(pos))+named(3,'state',integer(palette.index(state)))
+        # Ponder restores its rendered BE list from saved NBT, not lazy instances.
+        # Without this tag, animated partials and tank fluids have no renderer.
+        if block!='minecraft:andesite' and block!='minecraft:target':
+            tag=named(8,'id',string(block))
+            tag+=b''.join(named(3,axis,integer(value)) for axis,value in zip(('x','y','z'),pos))
+            payload+=named(10,'nbt',tag+b'\0')
+        blocks.append(payload+b'\0')
     entries=[]
     for block,properties in palette:
         payload=named(8,'Name',string(block))

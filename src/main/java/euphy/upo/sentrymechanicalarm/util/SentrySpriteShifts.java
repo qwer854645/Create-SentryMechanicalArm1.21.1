@@ -17,7 +17,8 @@ public class SentrySpriteShifts {
         for (DyeColor color : DyeColor.values()) {
             String colorName = color.getSerializedName();
             ResourceLocation targetColored = ResourceLocation.fromNamespaceAndPath("sentrymechanicalarm", "block/colored/arm_" + colorName);
-            ResourceLocation originalArm = ResourceLocation.fromNamespaceAndPath("create", "block/mechanical_arm");
+            // Our arm partials are baked from sentry_base, not Create's arm atlas entry.
+            ResourceLocation originalArm = ResourceLocation.fromNamespaceAndPath("sentrymechanicalarm", "block/sentry_base");
             SpriteShiftEntry armEntry = SpriteShifter.get(originalArm, targetColored);
             ARM_TEXTURES.put(color, armEntry);
             ResourceLocation originalBase = ResourceLocation.fromNamespaceAndPath("sentrymechanicalarm", "block/sentry_base");

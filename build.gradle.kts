@@ -74,6 +74,9 @@ neoForge {
     runs {
         configureEach {
             systemProperty("forge.logging.console.level", "debug")
+            if (providers.gradleProperty("devRunDirectory").isPresent) {
+                gameDirectory.set(file(providers.gradleProperty("devRunDirectory").get()))
+            }
         }
 
         register("client") {
@@ -81,6 +84,7 @@ neoForge {
             if (providers.gradleProperty("sentryClientSmoke").isPresent) {
                 systemProperty("sentry.clientSmoke", "true")
                 if (providers.gradleProperty("casingClientSmoke").isPresent) systemProperty("sentry.casingClientSmoke", "true")
+                if (providers.gradleProperty("ponderSmoke").isPresent) systemProperty("sentry.ponderSmoke", "true")
                 if (providers.gradleProperty("gunpackClientSmoke").isPresent) systemProperty("sentry.gunpackClientSmoke", "true")
                 if (providers.gradleProperty("sentryClientReloadSmoke").isPresent) systemProperty("sentry.clientReloadSmoke", "true")
                 programArgument("--quickPlaySingleplayer")
@@ -102,9 +106,9 @@ neoForge {
                     require(casingWorld.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,79}")))
                     programArgument(casingWorld)
                 }
-                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart", "gunpacks", "randompacks", "casingconfig", "reloading")) suite else "true")
+                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart", "gunpacks", "randompacks", "casingconfig", "reloading", "release")) suite else "true")
                 if (providers.gradleProperty("trainDepotSmoke").isPresent) systemProperty("sentry.trainDepot","true")
-                if (suite == "casingconfig" || suite == "reloading") {
+                if (suite == "casingconfig" || suite == "reloading" || suite == "release") {
                     programArgument("--universe")
                     programArgument(file("../casing-config-worlds").absolutePath)
                     programArgument("--world")
@@ -193,6 +197,7 @@ dependencies {
 }
 
 tasks.named<Jar>("jar") {
+    from("LICENSE")
     manifest {
         attributes["Specification-Title"] = "Sentry Mechanical Arm"
         attributes["Specification-Vendor"] = "Euphy"

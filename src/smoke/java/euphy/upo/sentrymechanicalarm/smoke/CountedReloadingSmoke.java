@@ -30,11 +30,11 @@ final class CountedReloadingSmoke {
             check(CountedDeployerIngredient.amount(copper)==4&&copper.getItems()[0].getCount()==4,"copper quantity lost");
             var ops=level.registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
             var copy=(SequencedAssemblyRecipe)Recipe.CODEC.parse(ops,Recipe.CODEC.encodeStart(ops,seq).getOrThrow()).getOrThrow();
-            check(((FillingRecipe)copy.getSequence().get(1).getRecipe()).getRequiredFluid().amount()==324,"JSON lost fluid");
+            check(((FillingRecipe)copy.getSequence().getFirst().getRecipe()).getRequiredFluid().amount()==334,"JSON lost fluid");
             var buffer=new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(),level.registryAccess());
             try{RecipeHolder.STREAM_CODEC.encode(buffer,holder);var restored=(SequencedAssemblyRecipe)RecipeHolder.STREAM_CODEC.decode(buffer).value();
-                check(((FillingRecipe)restored.getSequence().get(1).getRecipe()).getRequiredFluid().amount()==324,"network lost fluid");
-                check(CountedDeployerIngredient.amount(restored.getSequence().get(2).getRecipe().getIngredients().get(1))==4,"network lost metal count");
+                check(((FillingRecipe)restored.getSequence().getFirst().getRecipe()).getRequiredFluid().amount()==334,"network lost fluid");
+                check(CountedDeployerIngredient.amount(restored.getSequence().get(1).getRecipe().getIngredients().get(1))==4,"network lost metal count");
             }finally{buffer.release();}
         });
         test("large fluid charges split without changing total",()->{

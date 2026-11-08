@@ -69,8 +69,12 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
 
     @Override
     protected void renderSafe(SentryArmBlockEntity be, float pt, PoseStack ms, MultiBufferSource buffer, int light, int overlay) {
+        // A failed external gun/effect renderer must not leak pushed poses into Ponder or the world.
+        PoseStack isolated = new PoseStack();
+        isolated.mulPose(ms.last().pose());
+        isolated.last().normal().set(ms.last().normal());
         try {
-            renderSafeInner(be, pt, ms, buffer, light, overlay);
+            renderSafeInner(be, pt, isolated, buffer, light, overlay);
         } catch (Exception e) {
             LOGGER.warn("Failed to render SentryArmBlockEntity", e);
         }
@@ -210,7 +214,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
         if (gunModel == null) return;
 
         MuzzleFlash muzzleFlash = display.getMuzzleFlash();
-        if (muzzleFlash == null) return;
+        if (muzzleFlash == null || muzzleFlash.isRenew() || muzzleFlash.getTexture() == null) return;
 
         ms.pushPose();
 
@@ -794,7 +798,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
 
                 long now = System.currentTimeMillis();
                 long lst = virtualBE.getLastShootTime();
-                LOGGER.info("[ContraptionShellCheck] lst={} now-lst={} lastEject={}", lst, now - lst, virtualBE.lastShellEjectTime);
+                LOGGER.trace("[ContraptionShellCheck] lst={} now-lst={} lastEject={}", lst, now - lst, virtualBE.lastShellEjectTime);
                 if (lst > 0 && now - lst < 200 && lst != virtualBE.lastShellEjectTime) {
                     Optional<GunDisplayInstance> displayOpt = TimelessAPI.getGunDisplay(heldItem);
                     displayOpt.ifPresent(display -> {
@@ -842,7 +846,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
                                     final Vector3f fAccel = accel;
                                     TimelessAPI.getCommonGunIndex(((IGun) heldItem.getItem()).getGunId(heldItem)).ifPresent(idx ->
                                         SentryShellManager.addShell(idx.getGunData().getAmmoId(), fPos, fVel, display.getShellEjection().getAngularVelocity(), fAccel, display.getShellEjection().getLivingTime()));
-                                    LOGGER.info("[ContraptionShell] added at ({},{},{}) lst={} diff={}", String.format("%.1f",fPos.x),String.format("%.1f",fPos.y),String.format("%.1f",fPos.z), lst, now-lst);
+                                    LOGGER.trace("[ContraptionShell] added at ({},{},{}) lst={} diff={}", String.format("%.1f",fPos.x),String.format("%.1f",fPos.y),String.format("%.1f",fPos.z), lst, now-lst);
                                 }
                             }
                         }
@@ -883,7 +887,7 @@ public class SentryArmRenderer extends KineticBlockEntityRenderer<SentryArmBlock
         if (gunModel == null) return;
 
         MuzzleFlash muzzleFlash = display.getMuzzleFlash();
-        if (muzzleFlash == null) return;
+        if (muzzleFlash == null || muzzleFlash.isRenew() || muzzleFlash.getTexture() == null) return;
 
         ms.pushPose();
 

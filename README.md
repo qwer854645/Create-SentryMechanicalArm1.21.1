@@ -1,10 +1,12 @@
 # Create: Sentry Mechanical Arm（非官方移植）
 
-当前修复开发版本：**1.4.0-alpha.40**。目标环境：Minecraft 1.21.1 / NeoForge 21.1.228+ / Create 6.0.10 / TaCZ 1.2.0 / Java 21。当前本地开发运行环境使用 NeoForge 21.1.248 与 JEI 19.70.0.469。
+当前修复开发版本：**1.4.0-alpha.41**。目标环境：Minecraft 1.21.1 / NeoForge 21.1.228+ / Create 6.0.10 / TaCZ 1.2.0 / Java 21。当前本地开发运行环境使用 NeoForge 21.1.248 与 JEI 19.70.0.469。
 
 **当前完整玩法、配置、制造成本和兼容边界见 [模组完整介绍](docs/MOD_GUIDE.md)。** 各阶段文档保留开发历史；现行功能以该介绍与当前源码为准。
 
 保留原四段思索并新增五段教程；alpha.40 修复新场景空白，收集器改为机壳顶部的单块漏斗背面板。详见 [alpha.40 修复说明](docs/PONDER_FIX_AND_TEXT.md) 与 [Create 文案风格](docs/CREATE_TEXT_STYLE.md)。
+
+alpha.41 补全思索方块实体、迁移旧物品数据，修复染色 UV 与新式枪焰导致的渲染异常。发布检查和限制见 [RELEASE_READINESS.md](docs/RELEASE_READINESS.md)，建议作为 Alpha 测试版发布。Create JEI Compat 1.0.3 仅放客户端，不放独立服务端。
 
 两份第三方枪包的实测与限制见 [docs/GUNPACK_COMPATIBILITY.md](docs/GUNPACK_COMPATIBILITY.md)。
 
@@ -21,7 +23,7 @@
 - **火控系统** — 连接烈焰火控台，可跨多个哨戒臂统一管理目标白名单/黑名单。
 - **聚焦瞄准** — 使用哨戒瞄准镜指定优先目标，所有已连接哨戒集中攻击。
 - **弹药管理** — 为哨戒臂附加弹药箱实现自动补给，弹药可用时即时装填。
-- **物理结构兼容** — 实现 **Sable**（Create: Aeronautics）姿态与子世界坐标变换，新增移动收集逻辑尚待当前版本游戏内验收。
+- **物理结构兼容** — 实现 **Sable**（Create: Aeronautics）姿态与子世界坐标变换，alpha.41 已验证实际旋转结构射击与同结构收集，复杂多船及长期运行仍有待验收。
 - **静态 + Contraption 双状态** — 支持普通方块放置和 Create 动态结构（传送带/矿车/飞船）安装。
 - **弹壳回收与再装填** — 通用识别枪包弹壳，口径模具制造新壳，无水流态火药按原方比例装药，单壳装配单发弹药；普通材料定量投放，JEI 按口径区分。旧模板链、底火与小火药已移除。现行成本见 [成本分摊](docs/COST_ALLOCATION.md)，自定义见 [制造与抛壳规则](docs/CUSTOM_MANUFACTURING.md)。
 - **弹壳收集** — 动力臂优先存入相邻或同结构的 27 格弹壳收集器，余量落地；玩家默认背包收集，满包参考原版 /give 溢出。
@@ -84,7 +86,7 @@
 ```bash
 ./gradlew build          # 编译打包
 ./gradlew runClient      # 启动游戏客户端
-./gradlew runServer      # 启动专用服务器
+./gradlew runServer -PwithoutJei -PdevRunDirectory=run-server # 使用独立目录启动专用服务器
 ```
 
 ## 版本历史

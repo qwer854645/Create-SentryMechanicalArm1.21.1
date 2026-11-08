@@ -151,7 +151,7 @@ public class AeronauticsHelper {
                     queryWorldPos.y + contraptionLocalPos.y,
                     queryWorldPos.z + contraptionLocalPos.z);
             if (result.distanceTo(sourcePos) > 0.01) {
-                SentryMechanicalArm.LOGGER.info("[AeroTransform] localToSimulatedWorld ...");
+                SentryMechanicalArm.LOGGER.trace("[AeroTransform] localToSimulatedWorld ...");
             }
             return result;
         } catch (Exception e) {

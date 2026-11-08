@@ -1906,7 +1906,9 @@ public class SentryArmBlockEntity extends KineticBlockEntity implements IArmAmmo
         heldItem = ItemStack.EMPTY;
         if (registries != null) {
             if (compound.contains("SentryHeldItem")) {
-                heldItem = ItemStack.parseOptional(registries, compound.getCompound("SentryHeldItem"));
+                var saved=compound.getCompound("SentryHeldItem");
+                // Older Ponder/saves represented an empty slot explicitly as air.
+                if(!"minecraft:air".equals(saved.getString("id")))heldItem = ItemStack.parseOptional(registries, saved);
             }
             for (int i = 0; i < attachedAmmoBoxes.size(); i++) {
                 attachedAmmoBoxes.set(i, ItemStack.EMPTY);
