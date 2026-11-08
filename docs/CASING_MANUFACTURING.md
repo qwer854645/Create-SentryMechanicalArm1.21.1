@@ -1,5 +1,7 @@
 # alpha.25：口径模具与新制弹壳
 
+> alpha.26 已替换模具、底火壳、底火和少量火药的临时图标，现行资源说明见 [ART_DIRECTION.md](ART_DIRECTION.md)。下文保留 alpha.25 的功能与验证记录。
+
 环境：Minecraft 1.21.1 / NeoForge 21.1.228 / Create 6.0.10 / 官方 TaCZ 1.2.0 / Java 21；开发客户端 JEI 19.21.0.247。
 
 ## 使用
