@@ -84,6 +84,7 @@ public final class ClientGeometrySmoke {
         catch(Throwable e){failed++;SentryMechanicalArm.LOGGER.error("COG_CLIENT FAIL renderer frame",e);}
         try{verifyDepotClient();SentryMechanicalArm.LOGGER.info("DEPOT_CLIENT PASS mounted ledger codec, supply state and translations");}
         catch(Throwable e){failed++;SentryMechanicalArm.LOGGER.error("DEPOT_CLIENT FAIL",e);}
+        failed += UpstreamRenderSmoke.verify();
         try{verifyDyeSprites();SentryMechanicalArm.LOGGER.info("DYE_CLIENT PASS 16 colors: baked source sprites and shifted UV bounds");}
         catch(Throwable e){failed++;SentryMechanicalArm.LOGGER.error("DYE_CLIENT FAIL",e);}
         SentryMechanicalArm.LOGGER.info("PHASE3_CLIENT RESULT passed={} failed={} skipped={} maxModelError={} receivedProfiles={}",
@@ -185,7 +186,10 @@ public final class ClientGeometrySmoke {
             if(gun)arm.setHeldItem(com.tacz.guns.api.item.builder.GunItemBuilder.create().setId(net.minecraft.resources.ResourceLocation.parse("tacz:ak47")).build());
             var pose=matrices.getModel();pose.pushPose();pose.translate(3,4,5);
             var before=new org.joml.Matrix4f(pose.last().pose());
+            var heldBuffer = mc.renderBuffers().bufferSource().getBuffer(net.minecraft.client.renderer.RenderType.solid());
+            UpstreamRenderSmoke.quad(heldBuffer);
             euphy.upo.sentrymechanicalarm.content.SentryArmRenderer.renderInContraption(ctx,world,matrices,mc.renderBuffers().bufferSource());
+            UpstreamRenderSmoke.quad(heldBuffer);
             if(!pose.last().pose().equals(before))throw new AssertionError("Actor renderer popped or changed caller pose");
             pose.popPose();
         }

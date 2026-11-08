@@ -123,6 +123,7 @@ public final class StaticSentrySmoke {
         passed = failed = ticks = fired = 0;
         var level = event.getServer().overworld();
         level.getChunkAt(POS);
+        UpstreamRepairSmoke.start(level);
         test("barrel-only ammo remains usable", () -> {
             var a = arm(level); a.setHeldItem(gun(0, true)); check(a.hasAnyAmmo(), "Loaded chamber ignored");
         });
@@ -344,6 +345,7 @@ public final class StaticSentrySmoke {
                 placedTarget.setPos(PLACED.getX()+.5, PLACED.getY(), PLACED.getZ()+14.5);
                 placedTarget.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
             }
+            UpstreamRepairSmoke.tick();
             active.tick(); ticks++;
             if (ticks == 160) {
                 test("placed sentry receives Create motor power and fires", () ->
