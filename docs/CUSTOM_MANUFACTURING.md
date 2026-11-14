@@ -99,3 +99,62 @@ forming.enabled:false 可实现只回收、不制造新壳。制壳总开关和�
 ## 示例数据包
 
 [examples/manufacturing-rules](../examples/manufacturing-rules) 中只有 data/tacz/sentry_manufacturing/9mm.json 默认生效；examples/ 下的文件供复制参考。数据包需要自行安装到世界 datapacks 目录。
+
+## 枪械零件与总装
+
+枪械生产独立于弹壳规则和弹壳注册开关。所有零件与总装均采用 Create 序列装配，不需要加工图样或蓝图。
+
+世界服务器配置：
+
+```toml
+[gunManufacturing]
+enabled = true
+autoFromTaCZ = true
+```
+
+修改后执行 /reload。关闭 autoFromTaCZ 仍允许显式枪械规则；关闭 enabled 停止本模组生成的零件和总装路线。原生数据包自行提供的完整配方由作者管理。
+
+### 通用零件
+
+八种基础零件 ID：barrel_blank、receiver_blank、bolt_blank、gun_spring、gun_fastener、grip_blank、feed_part、conductive_part。六种组件 ID：barrel_component、receiver_component、action_component、grip_component、feed_component、control_component。命名空间均为 sentrymechanicalarm。
+
+单种零件覆盖入口：`data/sentrymechanicalarm/gun_parts/<零件ID路径>.json`。
+
+```json
+{
+  "enabled": true,
+  "input": {"item": "create:iron_sheet"},
+  "materials": [{"ingredient": {"item": "minecraft:iron_nugget"}, "count": 1}],
+  "output_count": 8
+}
+```
+
+上例用于 gun_spring。input 表示每次消耗一件起始物；materials 为额外材料，不包括起始物。省略字段沿用默认值，materials 空数组明确不添加额外材料。output_count 为 1–64，enabled:false 停用该零件生成路线。
+
+### 单把枪总装
+
+入口：`data/<枪械命名空间>/sentry_guns/<枪械路径>.json`。例如 tacz:ak47 对应 data/tacz/sentry_guns/ak47.json。
+
+允许字段：enabled、input、materials、extra_materials、output。
+
+- input：起始原料，默认一个机匣组件。
+- materials：完整替换总装所需的额外材料列表。每行包含 ingredient 和可选 count，count 默认 1、范围 1–1024。
+- extra_materials：在选定材料列表后追加的材料。
+- output：可选标准 1.21 ItemStack JSON；必须是一把与文件目标 GunId 一致的枪。省略时优先保留原枪匠台成品及配件数据。
+- enabled:false：停用该枪的生成路线，显式错误规则不回退到自动路线。
+
+材料会按相邻同类材料压缩为定量机械手投放，序列最多 16 步。工具和带容器余料的材料保持逐次投入。
+
+自动路线只读取已加载的原生枪匠台枪械配方，采用本模组的零件成本，不复刻原方的普通铁、铜、金、木材与青金石投入。其他特殊材料按原 Ingredient 和数量保留。手枪、冲锋枪、霰弹枪使用基础总装；步枪加入黄铜；狙击枪加入精密构件和额外枪管组件；机枪加入精密构件和额外供弹组件。其他类别使用显式规则。
+
+### 原生配方覆盖与进度
+
+优先级：完整原生 Create 配方覆盖 → 单个 JSON 规则 → 默认零件或自动枪械路线。
+
+零件的原生覆盖配方 ID 为 `sentrymechanicalarm:gun_manufacturing/parts/<零件路径>`；枪械为 `sentrymechanicalarm:gun_manufacturing/guns/<枪械命名空间>/<枪械路径>`。存在这些资源时，不再生成该项序列。
+
+生成配方的实际 ID 带成本指纹；在制品记录独立配方和进度，避免跨零件、跨枪械串线。修改费用后，旧半成品不能继续套用新费用，已投入材料不退还。
+
+共用起始物的路线应在机械手上用配方过滤选择最终产物。弹簧、连接件和握持件采用两次冲压；其他路线从安装第一份材料开始，最后冲压。工作件的 JEI 子类型按配方身份区分。
+
+[可用示例数据包](../examples/gun-manufacturing) 需自行安装，不会随模组自动启用。

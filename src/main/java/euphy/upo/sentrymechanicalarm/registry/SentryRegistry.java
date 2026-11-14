@@ -102,6 +102,7 @@ public class SentryRegistry {
                         output.accept(new net.minecraft.world.item.ItemStack(APPLE_PIE.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(SENTRY_SCOPE.get(), 1));
                         output.accept(CASING_COLLECTOR_ITEM.get());
+                        for (String part : GunParts.names()) output.accept(GunParts.item(part));
                         if(CASING_MOLD.isBound())output.accept(new net.minecraft.world.item.ItemStack(CASING_MOLD.get()));
                     })
                     .build());

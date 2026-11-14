@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "input": {
+    "item": "create:iron_sheet"
+  },
+  "materials": [
+    {
+      "ingredient": {
+        "item": "minecraft:iron_nugget"
+      },
+      "count": 1
+    }
+  ],
+  "output_count": 8
+}

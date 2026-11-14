@@ -5,6 +5,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class SMAServerConfig {
 
     public static final ModConfigSpec SPEC;
+    public static final ModConfigSpec.BooleanValue GUN_MANUFACTURING, AUTO_GUN_MANUFACTURING;
     public static final ModConfigSpec.IntValue SENTRY_RELOAD_DELAY;
     public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> EXTRA_TARGETS;
     public static final ModConfigSpec.BooleanValue ENABLE_RELOADING, AUTO_RELOADING, LEGACY_RELOADING_SOURCES, RESTORE_LEGACY_AMMO_RECIPES, ENABLE_CASING_FORMING, GENERIC_CASING_FORMING;
@@ -51,6 +52,10 @@ public class SMAServerConfig {
         DEFAULT_CASING_YIELD=builder.comment("Cases per copper nugget for generic fallback only; native-budget yields remain automatic.").defineInRange("fallbackCasesPerCopperNugget",1,1,64);
         builder.pop();
 
+        builder.push("gunManufacturing");
+        GUN_MANUFACTURING = builder.comment("Enable shared gun-part sequences and firearm assembly. Reload data packs after changing.").define("enabled", true);
+        AUTO_GUN_MANUFACTURING = builder.comment("Generate standard firearm routes from loaded native gun recipes. Explicit sentry_guns rules remain available.").define("autoFromTaCZ", true);
+        builder.pop();
         SPEC = builder.build();
     }
 }

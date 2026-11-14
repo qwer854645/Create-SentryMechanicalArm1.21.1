@@ -32,6 +32,8 @@ public final class DynamicRecipeManager {
         // Forming prices must see this rebuild's real reloading recipes, including explicit data-pack costs.
         manager.replaceRecipes(combined.values());
         for(var h:CasingFormingRecipes.build(manager))if(combined.putIfAbsent(h.id(),h)==null)owned.put(h.id(),h);
+        manager.replaceRecipes(combined.values());
+        for(var h:GunManufacturingRecipes.build(manager))if(combined.putIfAbsent(h.id(),h)==null)owned.put(h.id(),h);
         manager.replaceRecipes(combined.values());GENERATED.put(manager,owned);
     }
 }

@@ -1,0 +1,32 @@
+{
+  "enabled": true,
+  "input": {
+    "item": "sentrymechanicalarm:receiver_component"
+  },
+  "materials": [
+    {
+      "ingredient": {
+        "item": "sentrymechanicalarm:barrel_component"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "item": "sentrymechanicalarm:action_component"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "sentrymechanicalarm:grip_component"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "item": "sentrymechanicalarm:feed_component"
+      },
+      "count": 1
+    }
+  ]
+}

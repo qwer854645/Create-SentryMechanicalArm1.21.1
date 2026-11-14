@@ -4,7 +4,7 @@ Equip mechanical arms with TaCZ firearms and connect automated defense, ammuniti
 
 This is an unofficial repair and extension of [pihoue's Minecraft 1.21.1 port](https://github.com/pihoue/Create-SentryMechanicalArm1.21.1). It builds on that port rather than porting the original 1.20.1 mod again.
 
-**Current version: 1.4.0-alpha.42 · Minecraft 1.21.1 · NeoForge**
+**Current version: 1.4.0-alpha.43 · Minecraft 1.21.1 · NeoForge**
 
 ## Features
 
@@ -36,6 +36,15 @@ This is an unofficial repair and extension of [pihoue's Minecraft 1.21.1 port](h
 Override manufacturing materials, fluid propellant amounts, new casing yields, and the type, quantity, and chance of shot byproducts.
 
 **Explicit custom rules take priority over automatic derivation.** New casing manufacturing, reloading, and casing drops can each be disabled for individual ammunition types without editing the gunpack itself.
+
+## Gun manufacturing
+
+Produce eight shared parts and six functional components, then assemble TaCZ firearms using Create sequenced assembly. No blueprints are required. Recipes use an independent iron, andesite alloy and brass material progression, with precision mechanisms for advanced routes. Native gunpack special materials and output attachments are preserved.
+
+Use recipe filters on Deployers when routes share an initial ingredient. Small parts use two pressing operations. The initial release uses shared component specifications and references existing Create/vanilla item textures.
+
+- [Gun manufacturing rules](docs/CUSTOM_MANUFACTURING.md#枪械零件与总装)
+- [Example gun manufacturing data pack](examples/gun-manufacturing)
 
 ## Requirements
 

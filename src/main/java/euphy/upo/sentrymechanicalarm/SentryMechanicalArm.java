@@ -23,6 +23,7 @@ public class SentryMechanicalArm
     public SentryMechanicalArm(IEventBus modEventBus, ModContainer modContainer)
     {
         modContainer.registerConfig(ModConfig.Type.STARTUP, SMAStartupConfig.SPEC, "sentrymechanicalarm-startup.toml");
+        GunParts.register();
         SentryRegistry.register(modEventBus);
         SentryFluids.register(modEventBus);
         euphy.upo.sentrymechanicalarm.compat.CasingCollectorStorageCompat.register(modEventBus);

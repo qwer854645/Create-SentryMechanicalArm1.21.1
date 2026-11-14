@@ -10,5 +10,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(SequencedAssemblyRecipe.class)
 public class SequencedAssemblyRecipeMixin {
     @Inject(method="appliesTo",at=@At("HEAD"),cancellable=true)
-    private void sentry$disableReloading(ResourceLocation id,ItemStack input,CallbackInfoReturnable<Boolean> cir){if(id.getNamespace().equals("sentrymechanicalarm")&&id.getPath().startsWith("casing_reloading/")&&!ReloadingRecipes.enabled())cir.setReturnValue(false);}
+    private void sentry$disableReloading(ResourceLocation id,ItemStack input,CallbackInfoReturnable<Boolean> cir){if(id.getNamespace().equals("sentrymechanicalarm")&&id.getPath().startsWith("casing_reloading/")&&!ReloadingRecipes.enabled())cir.setReturnValue(false);
+        if(id.getNamespace().equals("sentrymechanicalarm")&&id.getPath().startsWith("gun_manufacturing/")&&id.getPath().contains("/v_")&&!euphy.upo.sentrymechanicalarm.recipe.GunManufacturingRecipes.enabled())cir.setReturnValue(false);}
 }

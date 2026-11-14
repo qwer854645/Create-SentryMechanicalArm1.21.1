@@ -176,5 +176,22 @@
   "block.sentrymechanicalarm.casing_collector.tooltip.condition1": "与动力臂相邻时",
   "block.sentrymechanicalarm.casing_collector.tooltip.behaviour1": "自动接收射后产物。装满后，_剩余物品落地_。",
   "block.sentrymechanicalarm.casing_collector.tooltip.condition2": "在动态结构上时",
-  "block.sentrymechanicalarm.casing_collector.tooltip.behaviour2": "接收_同一结构_内动力臂的射后产物。"
+  "block.sentrymechanicalarm.casing_collector.tooltip.behaviour2": "接收_同一结构_内动力臂的射后产物。",
+  "item.sentrymechanicalarm.barrel_blank": "枪管毛坯",
+  "item.sentrymechanicalarm.receiver_blank": "机匣毛坯",
+  "item.sentrymechanicalarm.bolt_blank": "枪机毛坯",
+  "item.sentrymechanicalarm.gun_spring": "弹簧",
+  "item.sentrymechanicalarm.gun_fastener": "连接件",
+  "item.sentrymechanicalarm.grip_blank": "握持件",
+  "item.sentrymechanicalarm.feed_part": "供弹件",
+  "item.sentrymechanicalarm.conductive_part": "导电件",
+  "item.sentrymechanicalarm.barrel_component": "枪管组件",
+  "item.sentrymechanicalarm.receiver_component": "机匣组件",
+  "item.sentrymechanicalarm.action_component": "枪机组件",
+  "item.sentrymechanicalarm.grip_component": "握持组件",
+  "item.sentrymechanicalarm.feed_component": "供弹组件",
+  "item.sentrymechanicalarm.control_component": "控制组件",
+  "item.sentrymechanicalarm.gun_workpiece": "枪械加工半成品",
+  "item.sentrymechanicalarm.gun_workpiece.named": "加工中：%s",
+  "item.sentrymechanicalarm.gun_workpiece.step": "已完成工序：%s"
 }

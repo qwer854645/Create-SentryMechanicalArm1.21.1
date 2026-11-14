@@ -26,6 +26,14 @@ public final class CasingJeiPlugin implements IModPlugin {
     };
     public ResourceLocation getPluginUid(){return ResourceLocation.parse("sentrymechanicalarm:casings");}
     public void registerItemSubtypes(ISubtypeRegistration registration){
+        registration.registerSubtypeInterpreter(VanillaTypes.ITEM_STACK, euphy.upo.sentrymechanicalarm.registry.GunParts.WORKPIECE.get(), new ISubtypeInterpreter<ItemStack>() {
+            public Object getSubtypeData(ItemStack stack, UidContext context) { return getLegacyStringSubtypeInfo(stack, context); }
+            public String getLegacyStringSubtypeInfo(ItemStack stack, UidContext context) {
+                var identity = stack.get(euphy.upo.sentrymechanicalarm.registry.ModDataComponents.GUN_WORK.get());
+                var progress = stack.get(com.simibubi.create.AllDataComponents.SEQUENCED_ASSEMBLY);
+                return identity == null ? "" : identity + (context == UidContext.Ingredient && progress != null ? "|" + progress.step() : "");
+            }
+        });
         if(SentryRegistry.CASING_MOLD.isBound())registration.registerSubtypeInterpreter(VanillaTypes.ITEM_STACK,SentryRegistry.CASING_MOLD.get(),SUBTYPE);
         if(SentryRegistry.EMPTY_CASING.isBound())registration.registerSubtypeInterpreter(VanillaTypes.ITEM_STACK,SentryRegistry.EMPTY_CASING.get(),SUBTYPE);
         if(SentryRegistry.RELOADING_CASING.isBound())registration.registerSubtypeInterpreter(VanillaTypes.ITEM_STACK,SentryRegistry.RELOADING_CASING.get(),SUBTYPE);

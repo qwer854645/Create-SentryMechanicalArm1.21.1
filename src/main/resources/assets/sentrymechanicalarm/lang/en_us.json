@@ -179,5 +179,22 @@
   "block.sentrymechanicalarm.casing_collector.tooltip.condition1": "When next to a sentry",
   "block.sentrymechanicalarm.casing_collector.tooltip.behaviour1": "Receives shot byproducts automatically. When full, _remaining items drop_.",
   "block.sentrymechanicalarm.casing_collector.tooltip.condition2": "On a Contraption",
-  "block.sentrymechanicalarm.casing_collector.tooltip.behaviour2": "Receives byproducts from sentries on the _same structure_."
+  "block.sentrymechanicalarm.casing_collector.tooltip.behaviour2": "Receives byproducts from sentries on the _same structure_.",
+  "item.sentrymechanicalarm.barrel_blank": "Gun Barrel Blank",
+  "item.sentrymechanicalarm.receiver_blank": "Receiver Blank",
+  "item.sentrymechanicalarm.bolt_blank": "Bolt Blank",
+  "item.sentrymechanicalarm.gun_spring": "Gun Spring",
+  "item.sentrymechanicalarm.gun_fastener": "Gun Fastener",
+  "item.sentrymechanicalarm.grip_blank": "Grip Blank",
+  "item.sentrymechanicalarm.feed_part": "Feed Part",
+  "item.sentrymechanicalarm.conductive_part": "Conductive Part",
+  "item.sentrymechanicalarm.barrel_component": "Barrel Component",
+  "item.sentrymechanicalarm.receiver_component": "Receiver Component",
+  "item.sentrymechanicalarm.action_component": "Action Component",
+  "item.sentrymechanicalarm.grip_component": "Grip Component",
+  "item.sentrymechanicalarm.feed_component": "Feed Component",
+  "item.sentrymechanicalarm.control_component": "Control Component",
+  "item.sentrymechanicalarm.gun_workpiece": "Unfinished Gun Assembly",
+  "item.sentrymechanicalarm.gun_workpiece.named": "In progress: %s",
+  "item.sentrymechanicalarm.gun_workpiece.step": "Completed operations: %s"
 }
