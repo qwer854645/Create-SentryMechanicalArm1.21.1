@@ -1,32 +1,12 @@
 {
   "enabled": true,
-  "input": {
-    "item": "sentrymechanicalarm:receiver_component"
+  "component_tiers": {
+    "barrel": "reinforced",
+    "grip": "basic"
   },
-  "materials": [
-    {
-      "ingredient": {
-        "item": "sentrymechanicalarm:barrel_component"
-      },
-      "count": 1
-    },
-    {
-      "ingredient": {
-        "item": "sentrymechanicalarm:action_component"
-      },
-      "count": 2
-    },
-    {
-      "ingredient": {
-        "item": "sentrymechanicalarm:grip_component"
-      },
-      "count": 1
-    },
-    {
-      "ingredient": {
-        "item": "sentrymechanicalarm:feed_component"
-      },
-      "count": 1
-    }
-  ]
+  "component_counts": {
+    "action": 2,
+    "recoil": 1,
+    "control": 0
+  }
 }

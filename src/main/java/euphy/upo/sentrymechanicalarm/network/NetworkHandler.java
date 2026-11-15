@@ -16,7 +16,9 @@ public class NetworkHandler {
 
     @SubscribeEvent
     public static void register(final RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("16");
+        PayloadRegistrar registrar = event.registrar("19");
+        registrar.playToServer(GunAssemblySelectPacket.TYPE,GunAssemblySelectPacket.CODEC,
+                (payload,context)->context.enqueueWork(()->GunAssemblySelectPacket.handle(payload,(ServerPlayer)context.player())));
         registrar.playToServer(CasingMoldSelectPacket.TYPE,CasingMoldSelectPacket.CODEC,
                 (payload,context)->context.enqueueWork(()->CasingMoldSelectPacket.handle(payload,(ServerPlayer)context.player())));
         registrar.playToClient(SentryContraptionStatePacket.TYPE,SentryContraptionStatePacket.CODEC,

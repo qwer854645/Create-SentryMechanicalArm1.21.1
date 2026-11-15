@@ -25,8 +25,8 @@ def schematic(name,stations):
         payload=named(9,'pos',ints(pos))+named(3,'state',integer(palette.index(state)))
         # Ponder restores its rendered BE list from saved NBT, not lazy instances.
         # Without this tag, animated partials and tank fluids have no renderer.
-        if block!='minecraft:andesite' and block!='minecraft:target':
-            tag=named(8,'id',string(block))
+        if block not in ('minecraft:andesite','minecraft:target','create:andesite_casing'):
+            tag=named(8,'id',string({'create:mechanical_saw':'create:saw'}.get(block,block)))
             tag+=b''.join(named(3,axis,integer(value)) for axis,value in zip(('x','y','z'),pos))
             payload+=named(10,'nbt',tag+b'\0')
         blocks.append(payload+b'\0')
@@ -40,6 +40,9 @@ def schematic(name,stations):
         +named(9,'entities',sequence(10,[]))+b'\0')
     (ASSETS/f'ponder/{name}.nbt').write_bytes(gzip.compress(nbt,mtime=0))
 def station(x,y,z,name,**properties):return ((x,y,z),name,properties)
+def pipe(x,y,z,*connections):
+    return station(x,y,z,'create:fluid_pipe',waterlogged='false',
+        **{side:str(side in connections).lower() for side in ('down','up','north','south','west','east')})
 arm='sentrymechanicalarm:sentry_mechanical_arm'
 collector='sentrymechanicalarm:casing_collector'
 control='sentrymechanicalarm:blaze_fire_control'
@@ -48,11 +51,40 @@ schematic('casing_reloading',[
     station(1,1,2,'create:basin'),station(1,3,2,'create:mechanical_mixer'),station(2,1,5,'create:fluid_tank'),
     station(4,1,3,'create:depot'),station(4,3,3,'create:spout'),
     station(7,1,3,'create:depot'),station(7,3,3,'create:mechanical_press'),
-    station(5,1,6,'create:depot'),station(5,3,6,'create:deployer',facing='down')])
-schematic('casing_collection',[station(3,1,3,arm),station(4,1,3,collector),
-    station(4,1,4,'minecraft:hopper',facing='south',enabled='true'),station(4,1,5,'minecraft:chest')])
+    station(5,1,6,'create:depot'),station(5,3,6,'create:deployer',facing='down'),
+    pipe(2,1,2,'west','south'),station(2,1,3,'create:mechanical_pump',facing='south',waterlogged='false'),pipe(2,1,4,'north','south'),
+    pipe(2,2,5,'down','up'),pipe(2,3,5,'down','east'),station(3,3,5,'create:mechanical_pump',facing='east',waterlogged='false'),
+    pipe(4,3,5,'west','north'),pipe(4,3,4,'south','north')])
+schematic('casing_collection',[station(3,1,3,'create:andesite_casing'),station(3,2,3,arm),station(4,2,3,collector),
+    station(4,1,3,'minecraft:hopper',facing='south',enabled='true'),station(4,1,4,'minecraft:chest')])
 schematic('sentry_depot_supply',[station(3,1,3,arm),station(4,1,3,'tacz:ammo_storage')])
 schematic('sentry_targeting',[station(2,1,3,arm),station(5,1,3,control),station(6,1,6,'minecraft:target')])
+schematic('gun_components',[
+    *(s for x in (2,4,6) for s in (station(x,1,3,'create:depot'),station(x,3,3,'create:deployer',facing='down'))),
+    station(4,1,6,'create:mechanical_saw',facing='up'),station(6,1,6,'create:depot'),station(6,3,6,'create:mechanical_press')])
+schematic('gun_assembly',[
+    *(s for x in (2,4) for s in (station(x,1,3,'create:depot'),station(x,3,3,'create:deployer',facing='down'))),
+    station(6,1,3,'create:depot'),station(6,3,3,'create:mechanical_press')])
+schematic('gun_target_copying',[station(3,1,4,'create:depot'),station(3,3,4,'create:deployer',facing='down'),station(6,1,4,'create:depot')])
+schematic('attachment_assembly',[
+    *(station(x,1,z,'create:depot') for x in (2,4,6) for z in (3,6)),
+    station(2,3,3,'create:deployer',facing='down'),station(6,3,3,'create:mechanical_press')])
+
+# Preserve the original introduction layout, but preload its final container.
+# Replacing an unrelated sentry during playback leaves its old rendered BE behind.
+import runpy
+codec=runpy.run_path(str(ROOT/'scripts/normalize-ponder-empty-items.py'))
+intro=ASSETS/'ponder/introduce.nbt'
+root_name,root_tag=codec['read_tag'](gzip.decompress(intro.read_bytes()))
+root=root_tag[1]
+palette=root['palette'][1][1]
+barrel={'Name':(8,'minecraft:barrel'),'Properties':(10,{'facing':(8,'up'),'open':(8,'false')})}
+if barrel not in palette:palette.append(barrel)
+for block in root['blocks'][1][1]:
+    if block['pos'][1][1]==[4,1,2]:
+        block['state']=(3,palette.index(barrel))
+        block['nbt']=(10,{'id':(8,'minecraft:barrel'),'x':(3,4),'y':(3,1),'z':(3,2)})
+intro.write_bytes(gzip.compress(codec['encode'](root_name,root_tag),mtime=0))
 obsolete=ASSETS/'ponder/casing_workshop.nbt'
 if obsolete.exists():obsolete.unlink()
 
@@ -78,7 +110,8 @@ captions={
  ('收集器装满后，无法存入的部分会落在地上。','When collectors are full, the remaining items drop onto the ground.'),
  ('在动态结构上，动力臂会使用同一结构内的收集器。','On contraptions, sentries use collectors on their own structure.'),
  ('玩家射击产生的弹壳默认存入背包。','Players collect their casings into their inventory by default.'),
- ('背包放不下的弹壳会在玩家身旁掉落。','Casings that do not fit drop beside the player.')]),
+ ('背包放不下的弹壳会在玩家身旁掉落。','Casings that do not fit drop beside the player.'),
+ ('默认只回收声明了抛壳的枪械产物，自定义规则可改变掉落物。','By default, only guns declaring shell ejection produce casings. Custom rules can change the drops.')]),
  'depotSupply':('sentry_depot_supply','使用弹药库补给','Supplying Sentries from Ammo Depots',[
  ('为哨戒动力臂装上匹配的弹药盒。','Attach matching Ammo Boxes to the sentry.'),
  ('相邻弹药库中的弹药会补充到弹药盒内。','Matching ammunition from adjacent depots replenishes the boxes.'),
@@ -92,7 +125,37 @@ captions={
  ('手持瞄准镜潜行右击火控台，即可绑定。','Sneak-right-click a Fire Control with the scope to bind it.'),
  ('使用瞄准镜时，左击实体可指挥动力臂集火。','While using the scope, left-click an entity to focus linked sentries.'),
  ('中键可以标记位置，引导爆炸武器攻击。','Middle-click marks a position for explosive weapons to attack.'),
- ('动力臂仍需有效动力、足够弹药，并处于射程内。','Sentries still require rotational power, ammunition and a target within range.')])}
+ ('动力臂仍需有效动力、足够弹药，并处于射程内。','Sentries still require rotational power, ammunition and a target within range.')]),
+ 'components':('gun_components','加工不同等级的零件','Manufacturing Graded Components',[
+ ('先按配方生产毛坯和基础件，再交给机器继续加工。','Produce blanks and basic parts according to their recipes, then process them further.'),
+ ('同一种毛坯，安装连接件、黄铜板或坚固板，可以进入不同加工路线。','Apply Fasteners, Brass Sheets or Sturdy Sheets to select different routes from the same blank.'),
+ ('基础、精密和强化组件从毛坯分别加工，无需逐级升级。','Basic, Precision and Reinforced Components are made directly from blanks, without upgrading through tiers.'),
+ ('沿配方完成后续切削、安装和冲压，便可得到对应组件。','Complete the remaining cutting, deploying and pressing operations to obtain the component.'),
+ ('组件等级决定制造用料，不会改变成品枪械的属性。','Component grades determine manufacturing materials, without changing firearm stats.'),
+ ('不同组件的后续工序各不相同，可在配方查看器中查看。','Further operations vary by component. Consult the recipe viewer for each route.')]),
+ 'assembly':('gun_assembly','选择并装配枪械','Selecting and Assembling Firearms',[
+ ('手持机匣组件右击，可以选择要装配的枪械。','Right-click with a Receiver Component to select a firearm.'),
+ ('机匣规格必须符合配方；开启“仅适配”可筛选当前机匣能制作的枪械。','The receiver must match the recipe. Enable Match to show compatible firearms.'),
+ ('确认后消耗一个机匣，得到选定枪型的待装配件。','Confirm to consume one receiver and obtain an unfinished part for the selected firearm.'),
+ ('按照目标配方，依次安装所需组件。','Install the required components in the order specified by the selected recipe.'),
+ ('零件的等级和数量随枪械而变，不必为所有枪械准备同一套组件。','Component grades and quantities vary by firearm. Different firearms use different combinations.'),
+ ('完成配方中的全部工序，再经最后冲压，即可得到枪械。','Complete every operation in the recipe, then press one last time to finish the firearm.'),
+ ('尚未加工的待装配件可潜行右击，退回原机匣。','Sneak-right-click an unprocessed assembly to recover its original receiver.')]),
+ 'copying':('gun_target_copying','批量选择装配目标','Selecting Assembly Targets in Bulk',[
+ ('先选择一种枪械，保留一个尚未加工的待装配件。','Select a firearm and keep one unfinished assembly before processing it.'),
+ ('将它交给机械手，作为选择同一装配目标的工具。','Give it to a Deployer as a tool for selecting the same assembly target.'),
+ ('在下方送入符合目标配方、尚未选择枪型的机匣。','Supply unconfigured receivers matching the target recipe below the Deployer.'),
+ ('机械手将机匣设为相同目标，手中的工具不会消耗。','The Deployer selects the same target for the receiver without consuming its held tool.'),
+ ('将得到的待装配件送入后续生产线，即可连续制造同一种枪械。','Send the prepared assemblies down the production line to manufacture the same firearm continuously.'),
+ ('已开始加工，或配方已经变化的待装配件，不能作为选择工具。','Assemblies already being processed, or belonging to an outdated recipe, cannot be used as selection tools.')])}
+captions['attachmentAssembly']=('attachment_assembly','制造枪械配件','Manufacturing Firearm Attachments',[
+ ('基座、光学和枪口组件都有基础、精密与强化规格，可从各自毛坯直接加工。','Bases, optical components and muzzle components have Basic, Precision and Reinforced grades, made directly from their blanks.'),
+ ('手持配件基座右击，按类别、枪包或名称选择目标配件。','Right-click with an Attachment Base to select a target by category, gunpack or name.'),
+ ('确认后得到选定目标的待装配件；尚未加工时，可潜行右击取回原基座。','Confirm to prepare the selected assembly. Sneak-right-click before processing to recover the original base.'),
+ ('机械手可重复使用未加工的待装配件，为下方的合格基座选择同一目标。','A Deployer can reuse an unprocessed assembly to select the same target for matching bases below.'),
+ ('按目标配方安装组件。瞄具倍率、扩容等级与消音数据会影响默认用料。','Install components according to the target recipe. Magnification, magazine level and silencing data affect default costs.'),
+ ('完成配方中的所有工序和特殊材料投入，再进行最后冲压。','Complete all operations and special material additions before the final pressing.'),
+ ('批量配方会保留产量，并按整批计入基座和组件；具体用料以当前配方为准。','Batch recipes retain their yield and charge for all bases and components. Consult the current recipe for exact costs.')])
 old={
  'sentry_arm_intro.text_2':('手持 TaCZ 枪械，按交互键（默认 O）装入动力臂。','Hold a TaCZ gun and press its Interact key (default O) to equip the sentry.'),
  'sentry_arm_intro.text_3':('右击装入弹药盒，潜行右击取下。','Right-click to attach an Ammo Box. Sneak-right-click to remove it.'),
@@ -102,7 +165,7 @@ old={
  'fire_control.text_8':('黑名单指定攻击目标，白名单指定需要保护的目标。','Blacklist selects targets to attack; Whitelist selects targets to protect.')}
 # Replace only captions authored in the recent update, not the original scene choreography.
 for method,(scene_id,zh_title,en_title,texts) in captions.items():
-    file=SCENES/('FireControlScene.java' if method=='targeting' else 'CasingScenes.java')
+    file=SCENES/('AttachmentManufacturingScenes.java' if method=='attachmentAssembly' else 'FireControlScene.java' if method=='targeting' else 'GunManufacturingScenes.java' if method in ('components','assembly','copying') else 'CasingScenes.java')
     source=file.read_text(encoding='utf-8')
     begin=source.index(f'public static void {method}(')
     end=source.index('scene.markAsFinished();',begin)

@@ -16,6 +16,9 @@ public class ModDataComponents {
 
     public static final DeferredRegister<DataComponentType<?>> DATA_COMPONENT_TYPES =
             DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, SentryMechanicalArm.MODID);
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<net.minecraft.world.item.component.ItemContainerContents>> GUN_RECEIVER =
+            register("gun_receiver", builder -> builder.persistent(net.minecraft.world.item.component.ItemContainerContents.CODEC)
+                    .networkSynchronized(net.minecraft.world.item.component.ItemContainerContents.STREAM_CODEC));
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<net.minecraft.resources.ResourceLocation>> GUN_WORK =
             register("gun_work", builder -> builder.persistent(net.minecraft.resources.ResourceLocation.CODEC)
                     .networkSynchronized(net.minecraft.resources.ResourceLocation.STREAM_CODEC));

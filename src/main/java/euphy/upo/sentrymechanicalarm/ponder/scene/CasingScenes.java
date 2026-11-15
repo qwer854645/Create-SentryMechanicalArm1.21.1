@@ -28,7 +28,7 @@ import net.neoforged.neoforge.fluids.FluidStack;
 public final class CasingScenes {
     private static final ResourceLocation NINE_MM=ResourceLocation.parse("tacz:9mm");
 
-    private static CreateSceneBuilder start(SceneBuilder builder,String id,String title) {
+    static CreateSceneBuilder start(SceneBuilder builder,String id,String title) {
         var scene=new CreateSceneBuilder(builder);
         scene.title(id,title);
         scene.configureBasePlate(0,0,9);
@@ -38,22 +38,22 @@ public final class CasingScenes {
         return scene;
     }
 
-    private static void note(CreateSceneBuilder scene,BlockPos pos,String text) {
+    static void note(CreateSceneBuilder scene,BlockPos pos,String text) {
         scene.overlay().showText(90).text(text).pointAt(Vec3.atCenterOf(pos)).placeNearTarget().attachKeyFrame();
         scene.idle(100);
     }
 
-    private static void show(CreateSceneBuilder scene,SceneBuildingUtil util,BlockPos pos) {
+    static void show(CreateSceneBuilder scene,SceneBuildingUtil util,BlockPos pos) {
         scene.world().showSection(util.select().position(pos),Direction.DOWN);
         scene.idle(10);
     }
 
-    private static void hold(CreateSceneBuilder scene,SceneBuildingUtil util,BlockPos deployer,ItemStack stack) {
+    static void hold(CreateSceneBuilder scene,SceneBuildingUtil util,BlockPos deployer,ItemStack stack) {
         scene.world().modifyBlockEntityNBT(util.select().position(deployer),DeployerBlockEntity.class,
             tag->tag.put("HeldItem",stack.saveOptional(scene.world().getHolderLookupProvider())));
     }
 
-    private static void deploy(CreateSceneBuilder scene,BlockPos pos) {
+    static void deploy(CreateSceneBuilder scene,BlockPos pos) {
         scene.world().moveDeployer(pos,1,20);
         scene.idle(21);
         scene.world().moveDeployer(pos,-1,20);
@@ -92,11 +92,17 @@ public final class CasingScenes {
         BlockPos pressing=new BlockPos(7,1,3),press=pressing.above(2);
         BlockPos materialDepot=new BlockPos(5,1,6),materialDeployer=materialDepot.above(2);
         show(scene,util,basin);show(scene,util,mixer);
+        scene.world().setKineticSpeed(util.select().position(mixer),64);
         scene.overlay().showControls(Vec3.atCenterOf(basin.above()),Pointing.RIGHT,70).withItem(new ItemStack(Items.GUNPOWDER));
         note(scene,basin,"使用动力搅拌器，将火药加工成流态火药。");
         show(scene,util,tank);
         scene.world().modifyBlockEntity(tank,FluidTankBlockEntity.class,
             be->be.getTankInventory().setFluid(new FluidStack(SentryFluids.PROPELLANT.get(),1000)));
+        scene.world().showSection(util.select().fromTo(2,1,2,2,1,4),Direction.DOWN);
+        scene.world().showSection(util.select().fromTo(2,2,5,4,3,5),Direction.DOWN);
+        scene.world().showSection(util.select().position(4,3,4),Direction.DOWN);
+        scene.world().setKineticSpeed(util.select().position(2,1,3),64);
+        scene.world().setKineticSpeed(util.select().position(3,3,5),64);
         note(scene,tank,"使用管道，将流态火药送入注液器。");
         show(scene,util,filling);show(scene,util,spout);
         var casing=EmptyCasingItem.create(NINE_MM,1);
@@ -113,8 +119,12 @@ public final class CasingScenes {
         partial.set(ModDataComponents.CASING_AMMO.get(),NINE_MM);
         scene.overlay().showControls(Vec3.atCenterOf(filling.above()),Pointing.RIGHT,70).withItem(partial);
         show(scene,util,materialDepot);show(scene,util,materialDeployer);
+        scene.world().setKineticSpeed(util.select().position(materialDeployer),64);
         hold(scene,util,materialDeployer,new ItemStack(AllItems.COPPER_NUGGET.get()));
+        scene.world().createItemOnBelt(materialDepot,Direction.UP,partial.copy());
         note(scene,materialDeployer,"部分弹药还需要机械手加入金属或其他材料。");
+        deploy(scene,materialDeployer);
+        scene.world().removeItemsFromBelt(materialDepot);
         show(scene,util,pressing);show(scene,util,press);
         scene.world().setKineticSpeed(util.select().position(press),64);
         scene.world().createItemOnBelt(pressing,Direction.UP,partial);
@@ -133,7 +143,8 @@ public final class CasingScenes {
 
     public static void collecting(SceneBuilder builder,SceneBuildingUtil util) {
         var scene=start(builder,"casing_collection","收集弹壳");
-        BlockPos arm=new BlockPos(3,1,3),collector=arm.east(),hopper=collector.south(),chest=hopper.south();
+        BlockPos arm=new BlockPos(3,2,3),collector=arm.east(),hopper=collector.below(),chest=hopper.south();
+        show(scene,util,arm.below());
         show(scene,util,arm);
         SentryMechanicalArmScene.setGun(scene,arm,"tacz:glock_17");
         show(scene,util,collector);
@@ -152,15 +163,16 @@ public final class CasingScenes {
         note(scene,hopper,"使用漏斗等物流组件，可以取出收集器内的物品。");
         note(scene,collector,"收集器装满后，无法存入的部分会落在地上。");
         // Replace the visible static section before animating the same blocks as one group.
-        scene.world().hideSection(util.select().fromTo(3,1,3,4,1,3),Direction.DOWN);
+        scene.world().hideSection(util.select().fromTo(3,2,3,4,2,3),Direction.DOWN);
         scene.idle(15);
-        var group=scene.world().showIndependentSection(util.select().fromTo(3,1,3,4,1,3),Direction.DOWN);
+        var group=scene.world().showIndependentSection(util.select().fromTo(3,2,3,4,2,3),Direction.DOWN);
         scene.world().moveSection(group,new Vec3(0,1,0),25);
         scene.idle(30);
         note(scene,collector.above(),"在动态结构上，动力臂会使用同一结构内的收集器。");
         scene.overlay().showControls(new Vec3(2,2,5),Pointing.RIGHT,70).withItem(casing);
         note(scene,chest,"玩家射击产生的弹壳默认存入背包。");
-        note(scene,arm,"背包放不下的弹壳会在玩家身旁掉落。");
+        note(scene,arm.above(),"背包放不下的弹壳会在玩家身旁掉落。");
+        note(scene,collector.above(),"默认只回收声明了抛壳的枪械产物，自定义规则可改变掉落物。");
         scene.markAsFinished();
     }
 

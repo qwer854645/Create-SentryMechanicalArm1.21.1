@@ -12,7 +12,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import java.util.*;
 
-/** Real Ponder UI, block entity restoration and every instruction in all nine scenes. */
+/** Real Ponder UI, block entity restoration and every instruction in all thirteen scenes. */
 @net.neoforged.fml.common.EventBusSubscriber(modid="sentrymechanicalarm",value=net.neoforged.api.distmarker.Dist.CLIENT)
 public final class PonderRenderSmoke {
     private static List<PonderScene> scenes;
@@ -37,10 +37,11 @@ public final class PonderRenderSmoke {
             listener.start();((org.apache.logging.log4j.core.Logger)org.apache.logging.log4j.LogManager.getRootLogger()).addAppender(listener);
             var unique=new LinkedHashMap<ResourceLocation,PonderScene>();
             for(var component:List.of(SentryRegistry.SENTRY_ARM_ITEM.getId(),SentryRegistry.BLAZE_FIRE_CONTROL.getId(),
-                    SentryRegistry.CASING_MOLD.getId(),SentryRegistry.SENTRY_SCOPE.getId()))
+                    SentryRegistry.CASING_MOLD.getId(),SentryRegistry.SENTRY_SCOPE.getId(),
+                    euphy.upo.sentrymechanicalarm.registry.GunParts.WORKPIECE.getId()))
                 for(var scene:PonderIndex.getSceneAccess().compile(component))unique.putIfAbsent(scene.getId(),scene);
             scenes=new ArrayList<>(unique.values());
-            if(scenes.size()!=9)throw new AssertionError("Expected nine Ponder scenes, got "+unique.keySet());
+            if(scenes.size()!=13)throw new AssertionError("Expected thirteen Ponder scenes, got "+unique.keySet());
         }
         if(preview==null) {
             if(index==scenes.size()) {

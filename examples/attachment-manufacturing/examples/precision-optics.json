@@ -1,0 +1,8 @@
+{
+  "enabled": true,
+  "component_tiers": {"optics": "precision"},
+  "component_counts": {"optics": 2},
+  "extra_materials": [
+    {"ingredient": {"item": "create:electron_tube"}, "count": 1}
+  ]
+}

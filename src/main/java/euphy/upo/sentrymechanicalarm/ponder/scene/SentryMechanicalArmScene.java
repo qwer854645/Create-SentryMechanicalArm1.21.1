@@ -106,7 +106,6 @@ public class SentryMechanicalArmScene {
         scene.idle(25);
 
         BlockPos tempBarrelSpawnPos = util.grid().at(4, 1, 2);
-        scene.world().setBlock(tempBarrelSpawnPos, Blocks.BARREL.defaultBlockState(), false);
 
         ElementLink<WorldSectionElement> barrelLink = scene.world().showIndependentSection(util.select().position(tempBarrelSpawnPos), Direction.NORTH);
 
@@ -223,6 +222,8 @@ public class SentryMechanicalArmScene {
         scene.idle(20);
 
         scene.world().setKineticSpeed(supplySelect_2, -64);
+        scene.world().removeItemsFromBelt(depotPos);
+        scene.world().createItemOnBelt(depotPos,Direction.UP,ammoStack.copy());
         scene.idle(5);
         scene.world().instructArm(supply_2, ArmBlockEntity.Phase.MOVE_TO_INPUT, ItemStack.EMPTY, 0);
         scene.idle(24);
@@ -327,7 +328,6 @@ public class SentryMechanicalArmScene {
         ElementLink<WorldSectionElement> piston_pos = scene.world().showIndependentSection(util.select().fromTo(4, 1, 3, 4, 1, 3), Direction.DOWN);
         ItemStack ammoStack = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("tacz:ammo_box")));
 
-        setGun(scene, util.grid().at(2, 1, 2), "tacz:minigun");
         setGun(scene, util.grid().at(2, 2, 2), "tacz:minigun");
         scene.world().moveSection(piston_pos, util.vector().of(0, 0, -1), 0);
 
@@ -364,13 +364,15 @@ public class SentryMechanicalArmScene {
         scene.idle(20);
 
         scene.world().showIndependentSection(train, Direction.DOWN);
+        setGun(scene, util.grid().at(2, 3, 4), "tacz:minigun");
+        setGun(scene, util.grid().at(6, 3, 4), "tacz:minigun");
         scene.idle(20);
         scene.world().setKineticSpeed(util.select().everywhere(), -64f);
         scene.idle(20);
 
         scene.overlay().showText(60)
                 .text("哨戒动力臂会使用结构中容器内的弹药")
-                .pointAt(util.vector().topOf(util.grid().at(2, 2, 2)))
+                .pointAt(util.vector().topOf(util.grid().at(3, 4, 5)))
                 .placeNearTarget().attachKeyFrame();
         scene.overlay().showControls(util.grid().at(3, 4, 5).getCenter(), Pointing.UP, 60).withItem(ammoStack);
         scene.idle(70);

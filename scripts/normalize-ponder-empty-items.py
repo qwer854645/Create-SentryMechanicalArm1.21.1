@@ -68,9 +68,10 @@ def normalize(tag):
             normalized,count=normalize((child,item));result.append(normalized[1]);changes+=count
         return (9,(child,result)),changes
     return tag,0
-for path in ROOT.glob('*.nbt'):
-    name,tag=read_tag(gzip.decompress(path.read_bytes()))
-    normalized,changes=normalize(tag)
-    if changes:
-        path.write_bytes(gzip.compress(encode(name,normalized),mtime=0))
-        print(f'Normalized {changes} legacy item stacks in {path.name}')
+if __name__=='__main__':
+    for path in ROOT.glob('*.nbt'):
+        name,tag=read_tag(gzip.decompress(path.read_bytes()))
+        normalized,changes=normalize(tag)
+        if changes:
+            path.write_bytes(gzip.compress(encode(name,normalized),mtime=0))
+            print(f'Normalized {changes} legacy item stacks in {path.name}')

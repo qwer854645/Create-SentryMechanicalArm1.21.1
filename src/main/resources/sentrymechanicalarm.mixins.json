@@ -18,6 +18,8 @@
     "TaczEntityUtilMixin"
   ],
   "client": [
+    "TaczGunPackLanguageMixin",
+    "TaczGunNameMixin",
     "GunDisplayInstanceAccessor",
     "InteractKeyMixin",
     "SpyglassOverlayMixin"

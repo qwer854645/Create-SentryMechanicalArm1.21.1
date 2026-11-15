@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "create:item/precision_mechanism"
+    "layer0": "sentrymechanicalarm:item/action_component"
   }
 }

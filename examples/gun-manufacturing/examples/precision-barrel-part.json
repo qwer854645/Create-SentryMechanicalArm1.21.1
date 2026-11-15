@@ -1,0 +1,11 @@
+{
+  "enabled": true,
+  "input": {"item": "sentrymechanicalarm:barrel_blank"},
+  "steps": [
+    {"type": "deploying", "ingredient": {"item": "create:brass_sheet"}},
+    {"type": "cutting"},
+    {"type": "deploying", "ingredient": {"item": "sentrymechanicalarm:gun_fastener"}},
+    {"type": "pressing"}
+  ],
+  "output_count": 1
+}

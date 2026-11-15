@@ -4,7 +4,7 @@ Equip mechanical arms with TaCZ firearms and connect automated defense, ammuniti
 
 This is an unofficial repair and extension of [pihoue's Minecraft 1.21.1 port](https://github.com/pihoue/Create-SentryMechanicalArm1.21.1). It builds on that port rather than porting the original 1.20.1 mod again.
 
-**Current version: 1.4.0-alpha.43 · Minecraft 1.21.1 · NeoForge**
+**Current version: 1.4.0-alpha.47 · Minecraft 1.21.1 · NeoForge**
 
 ## Features
 
@@ -39,12 +39,21 @@ Override manufacturing materials, fluid propellant amounts, new casing yields, a
 
 ## Gun manufacturing
 
-Produce eight shared parts and six functional components, then assemble TaCZ firearms using Create sequenced assembly. No blueprints are required. Recipes use an independent iron, andesite alloy and brass material progression, with precision mechanisms for advanced routes. Native gunpack special materials and output attachments are preserved.
+Produce nine shared blanks and parts, then process them into eight component families in three grades: basic, precision and reinforced. Each grade is made directly from the shared blank through a different sequenced assembly route, with a distinct first held material to select the branch. Right-click a receiver to select a firearm, then finish it on a **sequenced assembly line**. Deployers can use a selected, unprocessed workpiece as a reusable tool to prepare further matching receivers. Target data prevents different firearms from sharing the same assembly entrance. Data packs can specify operations and overall or per-component grades. No blueprints are required. Native gunpack special materials and output attachments are preserved. All parts have original 16×16 textures inspired by Create's material palette.
 
-Use recipe filters on Deployers when routes share an initial ingredient. Small parts use two pressing operations. The initial release uses shared component specifications and references existing Create/vanilla item textures.
+Component grades and quantities are derived from firearm categories, action types, firing modes, magazine capacities and charging data. Data packs can override individual grades and quantities or supply complete materials and operations. Explicit settings take priority over automatic derivation.
 
 - [Gun manufacturing rules](docs/CUSTOM_MANUFACTURING.md#枪械零件与总装)
 - [Example gun manufacturing data pack](examples/gun-manufacturing)
+
+## Attachment manufacturing
+
+Attachment manufacturing extends the same production workflow to scopes, muzzle devices, stocks, grips, lasers and extended magazines. Produce graded attachment bases, optical components and muzzle components, then right-click an attachment base to choose a target in a separate selection screen. Deployers can reuse a prepared workpiece to configure further bases. Native batch yields and item data are retained; only successfully replaced, matching native outputs are eligible for optional recipe removal. Built-in and hidden attachments require explicit data-pack rules.
+
+- [Attachment manufacturing rules](docs/CUSTOM_MANUFACTURING.md#配件制造)
+- [Attachment data-pack templates](examples/attachment-manufacturing)
+
+Default costs also follow declared magnification, magazine extension levels and silencing modifiers. Data packs can override spring and fastener quantities independently. Attachment parts use original native 16×16 pixel textures, and a dedicated bilingual Ponder scene introduces the workflow.
 
 ## Requirements
 

@@ -1,0 +1,12 @@
+{
+  "enabled": true,
+  "component_tiers": {
+    "barrel": "reinforced",
+    "grip": "basic"
+  },
+  "component_counts": {
+    "action": 2,
+    "recoil": 1,
+    "control": 0
+  }
+}

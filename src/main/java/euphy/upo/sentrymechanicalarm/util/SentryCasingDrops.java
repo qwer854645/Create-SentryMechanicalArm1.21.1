@@ -25,7 +25,7 @@ import java.util.*;
 /** Pre/post pairs prove real ammunition was consumed, including native delayed bursts. */
 @EventBusSubscriber(modid=SentryMechanicalArm.MODID)
 public final class SentryCasingDrops {
-    private record Before(ItemStack gun,ResourceLocation ammo,long count) {}
+    private record Before(ItemStack gun,ResourceLocation gunId,ResourceLocation ammo,long count) {}
     private static final Map<LivingEntity,Before> pending=new WeakHashMap<>();
     private record ChunkKey(ResourceLocation dimension,long chunk) {}
     private static final Map<ChunkKey,Integer> budgets=new HashMap<>();
@@ -69,14 +69,18 @@ public final class SentryCasingDrops {
         if(!SentryRegistry.EMPTY_CASING.isBound())return;
         var gun=event.getGunItemStack();var api=IGun.getIGunOrNull(gun);if(api==null)return;
         var index=TimelessAPI.getCommonGunIndex(api.getGunId(gun));if(index.isEmpty())return;
-        var ammo=index.get().getGunData().getAmmoId();if(!shooterAllowed(shooter,ammo))return;
-        pending.put(shooter,new Before(gun,ammo,ammunition(shooter,gun,ammo)));
+        var gunId=api.getGunId(gun);var ammo=index.get().getGunData().getAmmoId();
+        if(!shooterAllowed(shooter,ammo)||!SentryCasingProfiles.allowsGun(gunId,ammo))return;
+        pending.put(shooter,new Before(gun,gunId,ammo,ammunition(shooter,gun,ammo)));
     }
     @SubscribeEvent public static void after(GunFirePostEvent event) {
         if(event.getLogicalSide()!=LogicalSide.SERVER)return;
         var shooter=event.getShooter();var before=pending.remove(shooter);
         if(before==null||before.gun()!=event.getGunItemStack()||!(shooter.level() instanceof ServerLevel level)
                 ||!shooterAllowed(shooter,before.ammo())||before.count()<=ammunition(shooter,before.gun(),before.ammo()))return;
+        var api=IGun.getIGunOrNull(before.gun());
+        if(api==null||!before.gunId().equals(api.getGunId(before.gun()))
+                ||!SentryCasingProfiles.allowsGun(before.gunId(),before.ammo()))return;
         var rule=SentryCasingProfiles.drop(before.ammo());
         if(level.random.nextDouble()>=(rule.chance()==null?SMAServerConfig.CASING_CHANCE.get():rule.chance()))return;
         var template=rule.template();int remaining=rule.count();

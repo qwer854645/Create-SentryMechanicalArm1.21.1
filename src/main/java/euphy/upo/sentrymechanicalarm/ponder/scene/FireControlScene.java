@@ -123,7 +123,7 @@ public class FireControlScene {
 
         scene.idle(20);
 
-        scene.overlay().showControls(villagerPos.east().getCenter(), Pointing.RIGHT, 60)
+        scene.overlay().showControls(new Vec3(3.5,2.5,.5), Pointing.RIGHT, 60)
                 .withItem(new ItemStack(Items.SPYGLASS));
         scene.idle(7);
         scene.overlay().showText(60)

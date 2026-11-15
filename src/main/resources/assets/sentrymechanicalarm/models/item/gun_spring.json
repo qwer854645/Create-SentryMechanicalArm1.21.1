@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "create:item/whisk"
+    "layer0": "sentrymechanicalarm:item/gun_spring"
   }
 }

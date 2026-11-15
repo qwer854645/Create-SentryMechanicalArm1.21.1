@@ -195,6 +195,6 @@
   "item.sentrymechanicalarm.feed_component": "給弾ユニット",
   "item.sentrymechanicalarm.control_component": "制御ユニット",
   "item.sentrymechanicalarm.gun_workpiece": "加工中の銃部品",
-  "item.sentrymechanicalarm.gun_workpiece.named": "加工中：%s",
+  "item.sentrymechanicalarm.gun_workpiece.named": "未完成の%s",
   "item.sentrymechanicalarm.gun_workpiece.step": "完了した工程：%s"
 }

@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "component_tiers": {"feed": "precision"},
+  "component_counts": {"feed": 2},
+  "spring_count": 1,
+  "fastener_count": 0
+}

@@ -5,12 +5,26 @@ import euphy.upo.sentrymechanicalarm.registry.SentryRegistry;
 import euphy.upo.sentrymechanicalarm.ponder.scene.FireControlScene;
 import euphy.upo.sentrymechanicalarm.ponder.scene.SentryMechanicalArmScene;
 import euphy.upo.sentrymechanicalarm.ponder.scene.CasingScenes;
+import euphy.upo.sentrymechanicalarm.ponder.scene.GunManufacturingScenes;
+import euphy.upo.sentrymechanicalarm.registry.GunParts;
 import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
 import net.minecraft.resources.ResourceLocation;
 
 public class SMAPonderScenes {
 
     public static void register(PonderSceneRegistrationHelper<ResourceLocation> helper) {
+        helper.forComponents(GunParts.names().stream().filter(GunParts::attachmentPart).map(name->ResourceLocation.fromNamespaceAndPath("sentrymechanicalarm",name)).toArray(ResourceLocation[]::new))
+                .addStoryBoard("attachment_assembly",euphy.upo.sentrymechanicalarm.ponder.scene.AttachmentManufacturingScenes::attachmentAssembly,AllCreatePonderTags.KINETIC_APPLIANCES);
+        helper.forComponents(GunParts.WORKPIECE.getId())
+                .addStoryBoard("attachment_assembly",euphy.upo.sentrymechanicalarm.ponder.scene.AttachmentManufacturingScenes::attachmentAssembly,AllCreatePonderTags.KINETIC_APPLIANCES);
+        helper.forComponents(GunParts.names().stream().map(name->ResourceLocation.fromNamespaceAndPath("sentrymechanicalarm",name)).toArray(ResourceLocation[]::new))
+                .addStoryBoard("gun_components",GunManufacturingScenes::components,AllCreatePonderTags.KINETIC_APPLIANCES);
+        helper.forComponents(GunParts.WORKPIECE.getId())
+                .addStoryBoard("gun_components",GunManufacturingScenes::components,AllCreatePonderTags.KINETIC_APPLIANCES);
+        helper.forComponents(GunParts.WORKPIECE.getId(),ResourceLocation.parse("sentrymechanicalarm:receiver_component"),
+                ResourceLocation.parse("sentrymechanicalarm:precision_receiver_component"),ResourceLocation.parse("sentrymechanicalarm:reinforced_receiver_component"))
+                .addStoryBoard("gun_assembly",GunManufacturingScenes::assembly,AllCreatePonderTags.KINETIC_APPLIANCES)
+                .addStoryBoard("gun_target_copying",GunManufacturingScenes::copying,AllCreatePonderTags.KINETIC_APPLIANCES);
         helper.forComponents(SentryRegistry.SENTRY_ARM_BLOCK.getId())
                 .addStoryBoard("introduce", SentryMechanicalArmScene::introducing, AllCreatePonderTags.KINETIC_APPLIANCES)
                 .addStoryBoard("supply", SentryMechanicalArmScene::supplying, AllCreatePonderTags.KINETIC_APPLIANCES)

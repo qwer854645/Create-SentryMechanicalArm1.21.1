@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "create:item/incomplete_precision_mechanism"
+    "layer0": "sentrymechanicalarm:item/gun_workpiece"
   }
 }

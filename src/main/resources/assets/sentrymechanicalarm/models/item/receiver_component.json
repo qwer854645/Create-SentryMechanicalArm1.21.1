@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "create:item/brass_sheet"
+    "layer0": "sentrymechanicalarm:item/receiver_component"
   }
 }

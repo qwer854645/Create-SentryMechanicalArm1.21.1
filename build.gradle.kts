@@ -18,6 +18,9 @@ java {
 if (providers.gradleProperty("sentrySmoke").isPresent || providers.gradleProperty("sentryClientSmoke").isPresent) {
     sourceSets.main { java.srcDir("src/smoke/java") }
 }
+if (providers.gradleProperty("sentryGuiTrial").isPresent) {
+    sourceSets.main { java.srcDir("src/guiTrial/java") }
+}
 if (providers.gradleProperty("sentrySmoke").getOrElse("") == "phase3") {
     sourceSets.main { resources.srcDir("src/smoke/resources") }
 }
@@ -81,6 +84,11 @@ neoForge {
 
         register("client") {
             client()
+            if (providers.gradleProperty("sentryGuiTrial").isPresent) {
+                systemProperty("sentry.guiTrial", "true")
+                programArgument("--quickPlaySingleplayer")
+                programArgument(providers.gradleProperty("guiTrialWorld").getOrElse("receiver-gui-trial"))
+            }
             if (providers.gradleProperty("sentryClientSmoke").isPresent) {
                 systemProperty("sentry.clientSmoke", "true")
                 if (providers.gradleProperty("casingClientSmoke").isPresent) systemProperty("sentry.casingClientSmoke", "true")
@@ -106,7 +114,7 @@ neoForge {
                     require(casingWorld.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,79}")))
                     programArgument(casingWorld)
                 }
-                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart", "gunpacks", "randompacks", "casingconfig", "reloading", "release")) suite else "true")
+                systemProperty("sentry.smoke", if (suite in listOf("phase2", "phase3", "compat", "train", "depot", "restart", "gunpacks", "randompacks", "casingconfig", "reloading", "release", "gunassembly")) suite else "true")
                 if (providers.gradleProperty("trainDepotSmoke").isPresent) systemProperty("sentry.trainDepot","true")
                 if (suite == "casingconfig" || suite == "reloading" || suite == "release") {
                     programArgument("--universe")
