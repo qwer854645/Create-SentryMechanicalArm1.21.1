@@ -102,9 +102,18 @@ public class SentryRegistry {
                         output.accept(new net.minecraft.world.item.ItemStack(APPLE_PIE.get(), 1));
                         output.accept(new net.minecraft.world.item.ItemStack(SENTRY_SCOPE.get(), 1));
                         output.accept(CASING_COLLECTOR_ITEM.get());
+                    })
+                    .build());
+
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MANUFACTURING_TAB = CREATIVE_TABS.register("manufacturing",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup." + MODID + ".manufacturing"))
+                    .icon(() -> new net.minecraft.world.item.ItemStack(GunParts.item("gun_spring")))
+                    .withTabsAfter(ResourceLocation.fromNamespaceAndPath(MODID, "main"))
+                    .displayItems((parameters, output) -> {
                         for (String part : GunParts.names()) output.accept(GunParts.item(part));
                         output.accept(GunParts.FORMING_JIG.get());
-                        if(CASING_MOLD.isBound())output.accept(new net.minecraft.world.item.ItemStack(CASING_MOLD.get()));
+                        output.accept(GunParts.WORKPIECE.get());
                     })
                     .build());
 
@@ -116,6 +125,7 @@ public class SentryRegistry {
                     .withTabsAfter(ResourceLocation.parse("tacz:ammo"))
                     .withTabsBefore(ResourceLocation.parse("tacz:other"))
                     .displayItems((parameters, output) -> {
+                        if(CASING_MOLD.isBound())output.accept(new net.minecraft.world.item.ItemStack(CASING_MOLD.get()));
                         com.tacz.guns.api.TimelessAPI.getAllCommonAmmoIndex().stream()
                                 .filter(entry -> euphy.upo.sentrymechanicalarm.util.SentryCasingProfiles.creativeEligible(entry.getKey()))
                                 .sorted(java.util.Map.Entry.comparingByKey())

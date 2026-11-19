@@ -1,4 +1,4 @@
-# alpha.48 安装与升级
+# alpha.49 安装与升级
 
 这是 Create: Sentry Mechanical Arm 的非官方修复开发版本，建议作为 Alpha 测试版使用。完整玩法、配置与兼容边界见 [MOD_GUIDE.md](MOD_GUIDE.md)。
 

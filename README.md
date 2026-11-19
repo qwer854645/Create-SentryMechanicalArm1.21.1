@@ -4,7 +4,7 @@ Equip mechanical arms with TaCZ firearms and connect automated defense, ammuniti
 
 This is an unofficial repair and extension of [pihoue's Minecraft 1.21.1 port](https://github.com/pihoue/Create-SentryMechanicalArm1.21.1). It builds on that port rather than porting the original 1.20.1 mod again.
 
-**Current version: 1.4.0-alpha.48 · Minecraft 1.21.1 · NeoForge**
+**Current version: 1.4.0-alpha.49 · Minecraft 1.21.1 · NeoForge**
 
 ## Features
 
