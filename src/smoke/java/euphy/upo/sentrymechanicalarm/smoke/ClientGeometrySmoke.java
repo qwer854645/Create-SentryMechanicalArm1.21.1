@@ -53,6 +53,7 @@ public final class ClientGeometrySmoke {
         if(Boolean.getBoolean("sentry.casingClientSmoke")){try{if(!CasingJeiSmoke.verify())return;}catch(Throwable e){reloadFailures++;SentryMechanicalArm.LOGGER.error("JEI_CASING FAIL",e);}}
         if(Boolean.getBoolean("sentry.casingClientSmoke") && !CasingClientSmoke.preview()) return;
         if(Boolean.getBoolean("sentry.ponderSmoke")&&!PonderRenderSmoke.run())return;
+        if (Boolean.getBoolean("sentry.taczHotfixSmoke") && !TaczHotfixClientSmoke.run()) return;
         done=true; int passed=0,failed=reloadFailures+CasingClientSmoke.failures+extraFailures,skipped=0; double maxError=0;
         if(Boolean.getBoolean("sentry.gunpackClientSmoke")) for(String id:java.util.List.of("ars_armorer:mortar_source_thrower","applied_armorer:niklas_pistol_double_win_win")) SentryMechanicalArm.LOGGER.info("GUNPACK_CLIENT PROFILE {} {}",id,SentryGunProfiles.get(net.minecraft.resources.ResourceLocation.parse(id)));
         for (var entry:TimelessAPI.getAllClientGunIndex()) {

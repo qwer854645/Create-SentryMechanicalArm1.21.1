@@ -21,7 +21,9 @@ import java.util.*;
 public final class GunManufacturingRecipes {
     public static final String PREFIX = "gun_manufacturing/";
     private enum Operation { DEPLOYING, PRESSING, CUTTING }
-    private record Step(Operation operation, Ingredient material) {}
+    private record Step(Operation operation, Ingredient material, boolean keepHeldItem) {
+        Step(Operation operation, Ingredient material) { this(operation, material, false); }
+    }
     private record Plan(Ingredient input, List<Step> steps, ItemStack output) {}
     public static boolean enabled() { return SMAServerConfig.GUN_MANUFACTURING.get(); }
     private static Ingredient of(Item item) { return Ingredient.of(item); }
@@ -54,6 +56,16 @@ public final class GunManufacturingRecipes {
         p.put("attachment_blank", plan(of(AllItems.BRASS_NUGGET.get()), GunParts.item("attachment_blank"), 1, of(Items.IRON_NUGGET)));
         p.put("optical_blank", new Plan(of(Items.GLASS_PANE), List.of(cut(),press()), new ItemStack(GunParts.item("optical_blank"))));
         p.put("muzzle_blank", plan(of(Items.COPPER_INGOT), GunParts.item("muzzle_blank"), 1, of(AllItems.IRON_SHEET.get())));
+        // Start common-material routes with our reusable jig, not a generic saw/press recipe.
+        // These five inputs do not overlap; routes sharing iron sheet still start with
+        // different held items (jig, andesite alloy, or fastener).
+        for (String name : List.of("barrel_blank", "gun_spring", "gun_fastener", "grip_blank", "optical_blank")) {
+            var original = p.get(name);
+            var guarded = new ArrayList<Step>();
+            guarded.add(new Step(Operation.DEPLOYING, of(GunParts.FORMING_JIG.get()), true));
+            guarded.addAll(original.steps());
+            p.put(name, new Plan(original.input(), List.copyOf(guarded), original.output()));
+        }
         for (String family : GunParts.allFamilies()) for (var tier : GunParts.Tier.values()) {
             String blank = switch (family) {
                 case "attachment_base" -> "attachment_blank";
@@ -229,6 +241,7 @@ public final class GunManufacturingRecipes {
         var operations = new JsonArray();
         for (var step : plan.steps()) {
             var row = new JsonObject(); row.addProperty("type", step.operation().name());
+            if (step.keepHeldItem()) row.addProperty("keep_held_item", true);
             if (step.material() != null) row.add("ingredient", Ingredient.CODEC.encodeStart(ops, step.material()).getOrThrow());
             operations.add(row);
         }
@@ -238,7 +251,11 @@ public final class GunManufacturingRecipes {
         var builder = new SequencedAssemblyRecipeBuilder(id).require(plan.input()).transitionTo(GunParts.WORKPIECE.get())
                 .addOutput(plan.output(), 1).loops(1);
         for (var operation : plan.steps()) switch (operation.operation()) {
-            case DEPLOYING -> builder.addStep(DeployerApplicationRecipe::new, step -> step.require(operation.material()));
+            case DEPLOYING -> builder.addStep(DeployerApplicationRecipe::new, step -> {
+                step.require(operation.material());
+                if (operation.keepHeldItem()) step.toolNotConsumed();
+                return step;
+            });
             case PRESSING -> builder.addStep(PressingRecipe::new, step -> step);
             case CUTTING -> builder.addStep(CuttingRecipe::new, step -> step.duration(60));
         }

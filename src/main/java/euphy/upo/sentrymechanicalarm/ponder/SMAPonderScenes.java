@@ -19,7 +19,7 @@ public class SMAPonderScenes {
                 .addStoryBoard("attachment_assembly",euphy.upo.sentrymechanicalarm.ponder.scene.AttachmentManufacturingScenes::attachmentAssembly,AllCreatePonderTags.KINETIC_APPLIANCES);
         helper.forComponents(GunParts.names().stream().map(name->ResourceLocation.fromNamespaceAndPath("sentrymechanicalarm",name)).toArray(ResourceLocation[]::new))
                 .addStoryBoard("gun_components",GunManufacturingScenes::components,AllCreatePonderTags.KINETIC_APPLIANCES);
-        helper.forComponents(GunParts.WORKPIECE.getId())
+        helper.forComponents(GunParts.WORKPIECE.getId(),GunParts.FORMING_JIG.getId())
                 .addStoryBoard("gun_components",GunManufacturingScenes::components,AllCreatePonderTags.KINETIC_APPLIANCES);
         helper.forComponents(GunParts.WORKPIECE.getId(),ResourceLocation.parse("sentrymechanicalarm:receiver_component"),
                 ResourceLocation.parse("sentrymechanicalarm:precision_receiver_component"),ResourceLocation.parse("sentrymechanicalarm:reinforced_receiver_component"))

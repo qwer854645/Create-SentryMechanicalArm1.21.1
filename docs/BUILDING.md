@@ -28,7 +28,7 @@ src/smoke 是可重复执行的测试代码，不是测试结果归档。通过�
 ./gradlew runServer -PsentrySmoke=release -PwithoutJei -PdevRunDirectory=verification/release
 ```
 
-服务端还提供 phase3、compat、train、depot、restart、gunpacks、randompacks、casingconfig、reloading 等测试入口；部分入口需要额外模组、枪包、测试属性或连续重启。入口参数以 build.gradle.kts 及对应测试类为准。客户端入口为 -PsentryClientSmoke，思索检查另加 -PponderSmoke。
+服务端还提供 phase3、compat、train、depot、restart、gunpacks、randompacks、casingconfig、reloading 等测试入口；部分入口需要额外模组、枪包、测试属性或连续重启。入口参数以 build.gradle.kts 及对应测试类为准。客户端入口为 -PsentryClientSmoke，思索检查另加 -PponderSmoke。加 `-PtaczHotfixSmoke` 可检查 TaCZ 共用按键、独立交互键和手柄输入的实际装枪及物品消耗；应使用独立测试世界副本，该检查会清空测试玩家背包。
 
 枪械制造可用 `./gradlew runServer -PsentrySmoke=gunassembly -PwithoutJei -PdevRunDirectory=verification/gun-assembly-server`。该入口需要独立测试目录中的 EULA 和枪包，检查所有生成序列的原生匹配与加工结果，再以真实机械手、冲压机和锯床分步加工全部零件及代表枪械，包含不消耗工具的目标复制、原枪械配方移除／恢复与数据重载。夹具负责在机器之间搬运物品，不覆盖连续传送带物流。结果以 `GUN_ASSEMBLY RESULT` 的 failed=0 为准。
 

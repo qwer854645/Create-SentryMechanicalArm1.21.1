@@ -35,6 +35,8 @@ public final class GunParts {
                     ? new euphy.upo.sentrymechanicalarm.content.AttachmentBaseItem(new Item.Properties()) : new Item(new Item.Properties())));
         }
     }
+    public static final DeferredItem<Item> FORMING_JIG = SentryRegistry.ITEMS.register("part_forming_jig",
+            () -> new Item(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<GunWorkpieceItem> WORKPIECE = SentryRegistry.ITEMS.register("gun_workpiece",
             () -> new GunWorkpieceItem(new Item.Properties().stacksTo(1)));
     public static void register() {} // Trigger registration before the item register is attached to the bus.

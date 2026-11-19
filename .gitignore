@@ -58,3 +58,9 @@ src/generated/resources/
 # Machine-specific development settings
 /local-development.properties
 /local.properties
+
+/_workspace/
+/Start-Client.ps1
+/Build-Mod.ps1
+/启动客户端.cmd
+/打包模组.cmd

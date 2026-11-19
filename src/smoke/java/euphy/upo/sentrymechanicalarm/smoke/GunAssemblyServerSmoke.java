@@ -251,7 +251,12 @@ public final class GunAssemblyServerSmoke {
                 check(ItemStack.isSameItemSameComponents(current, output.get(ModDataComponents.GUN_RECEIVER.get()).copyOne()), "copy lost receiver data " + label);
                 current = output.copy(); copy = false;
             } else {
-                if (hand != null) check(hand.getPlayer().getMainHandItem().isEmpty(), "wrong material debit " + label + " step=" + step);
+                if (hand != null) {
+                    var application = (DeployerApplicationRecipe) assembly.getSequence().get(step).getRecipe();
+                    if (application.shouldKeepHeldItem())
+                        check(ItemStack.matches(tool, hand.getPlayer().getMainHandItem()), "tool consumed " + label + " step=" + step);
+                    else check(hand.getPlayer().getMainHandItem().isEmpty(), "wrong material debit " + label + " step=" + step);
+                }
                 step++; current = output.copy();
                 if (step == assembly.getSequence().size()) {
                     check(ItemStack.matches(current, assembly.getResultItem(level.registryAccess())), "wrong physical result " + label);

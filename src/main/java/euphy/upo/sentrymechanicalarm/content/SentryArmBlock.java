@@ -104,6 +104,15 @@ public class SentryArmBlock extends KineticBlock implements IBE<SentryArmBlockEn
         if ("create:wrench".equals(itemId) || stack.getItem().getDescriptionId().contains("wrench")) {
             return super.useItemOn(stack, state, level, pos, player, hand, hit);
         }
+        // TaCZ lets vanilla handle use when its Interact key shares the Use Item binding.
+        SentryArmBlockEntity sentry = getBlockEntity(level, pos);
+        if (stack.getItem() instanceof com.tacz.guns.api.item.IGun
+                && sentry != null && sentry.getHeldItem().isEmpty() && !player.isSpectator()) {
+            if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)
+                euphy.upo.sentrymechanicalarm.network.SentryInteractPacket.handle(
+                        new euphy.upo.sentrymechanicalarm.network.SentryInteractPacket(pos, hand, false), serverPlayer);
+            return ItemInteractionResult.SUCCESS;
+        }
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 

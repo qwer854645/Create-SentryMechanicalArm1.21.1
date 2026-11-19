@@ -44,8 +44,8 @@ public final class CasingJeiSmoke {
             }
             check(found==1,"JEI missing or duplicates recipe for "+ammo+": "+found);covered++;
         }
-        check(covered==37,"client recipe coverage "+covered);
-        euphy.upo.sentrymechanicalarm.SentryMechanicalArm.LOGGER.info("FULL_RELOADING_JEI PASS 37 synchronized caliber-specific assembly lookups");
+        check(covered>0 && covered==entries.size(),"client recipe coverage "+covered+"/"+entries.size());
+        euphy.upo.sentrymechanicalarm.SentryMechanicalArm.LOGGER.info("FULL_RELOADING_JEI PASS {} synchronized caliber-specific assembly lookups",covered);
         var focus=runtime.getJeiHelpers().getFocusFactory().createFocus(RecipeIngredientRole.INPUT,VanillaTypes.ITEM_STACK,a);
         var matches=runtime.getRecipeManager().createRecipeLookup(type).limitFocus(List.of(focus)).get().toList();int count=0;
         for(var value:matches){Object unwrapped=value instanceof net.minecraft.world.item.crafting.RecipeHolder<?> h?h.value():value;if(unwrapped instanceof SequencedAssemblyRecipe seq){var output=seq.getResultItem(mc.level.registryAccess());var api=com.tacz.guns.api.item.IAmmo.getIAmmoOrNull(output);if(api!=null){check(ResourceLocation.parse("tacz:9mm").equals(api.getAmmoId(output)),"JEI returns a wrong-caliber recipe");count++;}}}

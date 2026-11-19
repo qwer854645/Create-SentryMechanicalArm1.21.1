@@ -73,6 +73,8 @@ public final class GunManufacturingScenes {
         scene.effects().indicateSuccess(pressDepot);
         note(scene,pressDepot,"组件等级决定制造用料，不会改变成品枪械的属性。");
         note(scene,precision,"不同组件的后续工序各不相同，可在配方查看器中查看。");
+        scene.overlay().showControls(basic.above(2).getCenter(),Pointing.RIGHT,90).withItem(new ItemStack(GunParts.FORMING_JIG.get()));
+        note(scene,basic.above(2),"制作枪管毛坯、弹簧、连接件、握持件和光学毛坯时，先让机械手持零件加工夹具处理原材料；夹具不会消耗。");
         scene.markAsFinished();
     }
 

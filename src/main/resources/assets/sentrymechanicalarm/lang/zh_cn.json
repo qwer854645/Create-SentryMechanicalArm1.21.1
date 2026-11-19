@@ -249,6 +249,7 @@
   "sentrymechanicalarm.ponder.gun_components.text_4": "沿配方完成后续切削、安装和冲压，便可得到对应组件。",
   "sentrymechanicalarm.ponder.gun_components.text_5": "组件等级决定制造用料，不会改变成品枪械的属性。",
   "sentrymechanicalarm.ponder.gun_components.text_6": "不同组件的后续工序各不相同，可在配方查看器中查看。",
+  "sentrymechanicalarm.ponder.gun_components.text_7": "制作枪管毛坯、弹簧、连接件、握持件和光学毛坯时，先让机械手持零件加工夹具处理原材料；夹具不会消耗。",
   "sentrymechanicalarm.ponder.gun_assembly.header": "选择并装配枪械",
   "sentrymechanicalarm.ponder.gun_assembly.text_1": "手持机匣组件右击，可以选择要装配的枪械。",
   "sentrymechanicalarm.ponder.gun_assembly.text_2": "机匣规格必须符合配方；开启“仅适配”可筛选当前机匣能制作的枪械。",
@@ -319,5 +320,6 @@
   "sentrymechanicalarm.ponder.attachment_assembly.text_4": "机械手可重复使用未加工的待装配件，为下方的合格基座选择同一目标。",
   "sentrymechanicalarm.ponder.attachment_assembly.text_5": "按目标配方安装组件。瞄具倍率、扩容等级与消音数据会影响默认用料。",
   "sentrymechanicalarm.ponder.attachment_assembly.text_6": "完成配方中的所有工序和特殊材料投入，再进行最后冲压。",
-  "sentrymechanicalarm.ponder.attachment_assembly.text_7": "批量配方会保留产量，并按整批计入基座和组件；具体用料以当前配方为准。"
+  "sentrymechanicalarm.ponder.attachment_assembly.text_7": "批量配方会保留产量，并按整批计入基座和组件；具体用料以当前配方为准。",
+  "item.sentrymechanicalarm.part_forming_jig": "零件加工夹具"
 }

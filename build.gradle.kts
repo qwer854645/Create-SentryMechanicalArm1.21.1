@@ -91,6 +91,7 @@ neoForge {
             }
             if (providers.gradleProperty("sentryClientSmoke").isPresent) {
                 systemProperty("sentry.clientSmoke", "true")
+                if (providers.gradleProperty("taczHotfixSmoke").isPresent) systemProperty("sentry.taczHotfixSmoke", "true")
                 if (providers.gradleProperty("casingClientSmoke").isPresent) systemProperty("sentry.casingClientSmoke", "true")
                 if (providers.gradleProperty("ponderSmoke").isPresent) systemProperty("sentry.ponderSmoke", "true")
                 if (providers.gradleProperty("gunpackClientSmoke").isPresent) systemProperty("sentry.gunpackClientSmoke", "true")
@@ -108,7 +109,7 @@ neoForge {
                 if (providers.gradleProperty("casingSmoke").isPresent) {
                     systemProperty("sentry.casingSmoke", "true")
                     programArgument("--universe")
-                    programArgument(file("../casing-worlds").absolutePath)
+                    programArgument(file("_workspace/casing-worlds").absolutePath)
                     programArgument("--world")
                     val casingWorld = providers.gradleProperty("casingWorld").getOrElse("alpha11-"+System.currentTimeMillis())
                     require(casingWorld.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,79}")))
@@ -118,7 +119,7 @@ neoForge {
                 if (providers.gradleProperty("trainDepotSmoke").isPresent) systemProperty("sentry.trainDepot","true")
                 if (suite == "casingconfig" || suite == "reloading" || suite == "release") {
                     programArgument("--universe")
-                    programArgument(file("../casing-config-worlds").absolutePath)
+                    programArgument(file("_workspace/casing-config-worlds").absolutePath)
                     programArgument("--world")
                     programArgument("validation-"+System.currentTimeMillis())
                 }
@@ -127,20 +128,20 @@ neoForge {
                     require(namespace.matches(Regex("[a-z0-9_]+")))
                     systemProperty("sentry.randomNamespace",namespace)
                     programArgument("--universe")
-                    programArgument(file("../randompack-worlds").absolutePath)
+                    programArgument(file("_workspace/randompack-worlds").absolutePath)
                     programArgument("--world")
                     programArgument(namespace+"-"+System.currentTimeMillis())
                 }
                 if (suite == "gunpacks") {
                     programArgument("--universe")
-                    programArgument(file("../gunpack-worlds").absolutePath)
+                    programArgument(file("_workspace/gunpack-worlds").absolutePath)
                     programArgument("--world")
                     programArgument("ars-applied-"+System.currentTimeMillis())
                 }
                 if (suite == "restart") {
                     systemProperty("sentry.restartPhase",providers.gradleProperty("restartPhase").getOrElse("prepare"))
                     programArgument("--universe")
-                    programArgument(file("../restart-worlds").absolutePath)
+                    programArgument(file("_workspace/restart-worlds").absolutePath)
                     programArgument("--world")
                     val validationWorld = providers.gradleProperty("restartWorld").getOrElse("restart-alpha8-validation")
                     require(validationWorld.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,79}"))) { "Use a simple restart world name without paths" }

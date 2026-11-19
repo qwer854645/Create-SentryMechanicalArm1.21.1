@@ -252,6 +252,7 @@
   "sentrymechanicalarm.ponder.gun_components.text_4": "Complete the remaining cutting, deploying and pressing operations to obtain the component.",
   "sentrymechanicalarm.ponder.gun_components.text_5": "Component grades determine manufacturing materials, without changing firearm stats.",
   "sentrymechanicalarm.ponder.gun_components.text_6": "Further operations vary by component. Consult the recipe viewer for each route.",
+  "sentrymechanicalarm.ponder.gun_components.text_7": "To make Barrel Blanks, Springs, Fasteners, Grip Blanks and Optical Blanks, first process the raw material with a Deployer holding a Part Forming Jig. The jig is not consumed.",
   "sentrymechanicalarm.ponder.gun_assembly.header": "Selecting and Assembling Firearms",
   "sentrymechanicalarm.ponder.gun_assembly.text_1": "Right-click with a Receiver Component to select a firearm.",
   "sentrymechanicalarm.ponder.gun_assembly.text_2": "The receiver must match the recipe. Enable Match to show compatible firearms.",
@@ -322,5 +323,6 @@
   "sentrymechanicalarm.ponder.attachment_assembly.text_4": "A Deployer can reuse an unprocessed assembly to select the same target for matching bases below.",
   "sentrymechanicalarm.ponder.attachment_assembly.text_5": "Install components according to the target recipe. Magnification, magazine level and silencing data affect default costs.",
   "sentrymechanicalarm.ponder.attachment_assembly.text_6": "Complete all operations and special material additions before the final pressing.",
-  "sentrymechanicalarm.ponder.attachment_assembly.text_7": "Batch recipes retain their yield and charge for all bases and components. Consult the current recipe for exact costs."
+  "sentrymechanicalarm.ponder.attachment_assembly.text_7": "Batch recipes retain their yield and charge for all bases and components. Consult the current recipe for exact costs.",
+  "item.sentrymechanicalarm.part_forming_jig": "Part Forming Jig"
 }

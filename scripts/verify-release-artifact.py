@@ -28,7 +28,7 @@ with zipfile.ZipFile(artifact) as jar:
     metadata=tomllib.loads(jar.read('META-INF/neoforge.mods.toml').decode())
     check(metadata['mods'][0]['version']==version,'expanded version '+version)
     requirements={d['modId']:d['versionRange'] for d in metadata['dependencies']['sentrymechanicalarm']}
-    check(requirements['minecraft']=='[1.21.1]' and requirements['create']=='[6.0.10]' and requirements['tacz']=='[1.2.0]','target versions fixed correctly')
+    check(requirements['minecraft']=='[1.21.1]' and requirements['create']=='[6.0.10]' and requirements['tacz']=='[1.2.0,)','Minecraft/Create targets and TaCZ minimum version declared correctly')
     jars=[n for n in names if n.endswith('.jar')]
     check(len(jars)==1 and 'sable-companion' in jars[0],'only the declared compatibility library is embedded')
     classes=[n for n in names if n.endswith('.class')]
